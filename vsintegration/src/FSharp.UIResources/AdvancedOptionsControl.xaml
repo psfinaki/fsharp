@@ -24,6 +24,20 @@
                     <CheckBox x:Name="toggleOutloning" IsChecked="{Binding IsOutliningEnabled}"
                               Content="{x:Static local:Strings.Show_Outlining}"/>
                 </GroupBox>
+
+                <GroupBox Header="{x:Static local:Strings.CodeLens}">
+                    <StackPanel>
+                        <StackPanel>
+                            <CheckBox x:Name="enableCodeLens" IsChecked="{Binding CodeLensOptions.Enabled}"
+                                  Content="{x:Static local:Strings.CodeLens_Switch}"/>
+                        </StackPanel>
+                        <StackPanel Margin="15 0 0 0">
+                            <CheckBox x:Name="useColors" IsChecked="{Binding CodeLensOptions.UseColors}"
+                                  Content="{x:Static local:Strings.CodeLens_UseColors}"
+                                  IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>

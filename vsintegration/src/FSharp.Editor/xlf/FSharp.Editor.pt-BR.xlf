@@ -7,6 +7,11 @@
         <target state="translated">Adicionar o '=' ausente à definição de tipo</target>
         <note />
       </trans-unit>
+      <trans-unit id="6013">
+        <source>Formatting</source>
+        <target state="new">Formatting</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddMissingFunKeyword">
         <source>Add missing 'fun' keyword</source>
         <target state="translated">Adicionar palavra-chave 'fun' ausente</target>
@@ -235,16 +240,6 @@
       <trans-unit id="6012">
         <source>Advanced</source>
         <target state="translated">Avançado</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6013">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6014">
-        <source>Formatting</source>
-        <target state="translated">Formatação</target>
         <note />
       </trans-unit>
       <trans-unit id="UseFSharpLambda">

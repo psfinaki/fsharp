@@ -57,21 +57,20 @@ type Document with
                 languageServices.GetService<'T>()
                 |> Some
 
-    member this.IsFSharpScript =
-        isScriptFile this.FilePath
+/// Ported from Roslyn.Utilities
+[<RequireQualifiedAccess>]
+module Hash =
+    /// (From Roslyn) This is how VB Anonymous Types combine hash values for fields.
+    let combine (newKey: int) (currentKey: int) = (currentKey * (int 0xA5555529)) + newKey
+
+    let combineValues (values: seq<'T>) =
+        (0, values) ||> Seq.fold (fun hash value -> combine (value.GetHashCode()) hash)
 
 module private SourceText =
-
     open System.Runtime.CompilerServices
 
-    /// Ported from Roslyn.Utilities
-    [<RequireQualifiedAccess>]
-    module Hash =
-        /// (From Roslyn) This is how VB Anonymous Types combine hash values for fields.
-        let combine (newKey: int) (currentKey: int) = (currentKey * (int 0xA5555529)) + newKey
-
-        let combineValues (values: seq<'T>) =
-            (0, values) ||> Seq.fold (fun hash value -> combine (value.GetHashCode()) hash)
+    member this.IsFSharpScript =
+        isScriptFile this.FilePath
 
     let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 

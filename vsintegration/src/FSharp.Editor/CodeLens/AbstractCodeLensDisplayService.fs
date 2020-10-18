@@ -13,19 +13,18 @@ open System.Collections.Generic
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 
 [<AbstractClass>]
-type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerName) as self =
+type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName) as self =
 
     // Add buffer changed event handler
-    do (
+    do
         buffer.Changed.Add self.HandleBufferChanged
         view.LayoutChanged.Add self.HandleLayoutChanged
-       )
        
     /// <summary>
     /// Enqueing an unit signals to the tagger that all visible line lens must be layouted again,
     /// to respect single line changes.
     /// </summary>
-    member val RelayoutRequested : Queue<_> = Queue() with get
+    member val RelayoutRequested: Queue<_> = Queue() with get
 
     member val WpfView = view
 
@@ -64,16 +63,16 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
     member val CurrentBufferSnapshot = null with get, set
 
     /// Helper method which returns the start line number of a tracking span
-    member _.GetTrackingSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
+    member _.GetTrackingSpanStartLine (snapshot: ITextSnapshot) (trackingSpan: ITrackingSpan) =
         snapshot.GetLineNumberFromPosition(trackingSpan.GetStartPoint(snapshot).Position)
 
     /// Helper method which returns the start line number of a tracking span
-    member _.TryGetTSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
+    member _.TryGetTSpanStartLine (snapshot: ITextSnapshot) (trackingSpan: ITrackingSpan) =
         let pos = trackingSpan.GetStartPoint(snapshot).Position
         if snapshot.Length - 1 < pos then None
         else pos |> snapshot.GetLineNumberFromPosition |> Some
 
-    member self.UpdateTrackingSpansFast (snapshot:ITextSnapshot) lineNumber =
+    member self.UpdateTrackingSpansFast (snapshot: ITextSnapshot) lineNumber =
         if lineNumber |> self.TrackingSpans.ContainsKey then
             let currentTrackingSpans = self.TrackingSpans.[lineNumber] |> ResizeArray // We need a copy because we modify the list.
             for trackingSpan in currentTrackingSpans do
@@ -117,7 +116,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
         grid
 
     /// Helper methods which invokes every action which is needed for new trackingSpans
-    member self.AddTrackingSpan (trackingSpan:ITrackingSpan)=
+    member self.AddTrackingSpan (trackingSpan: ITrackingSpan)=
         let snapshot = buffer.CurrentSnapshot
         let startLineNumber = snapshot.GetLineNumberFromPosition(trackingSpan.GetStartPoint(snapshot).Position)
         let uiElement = 
@@ -140,9 +139,8 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
             self.TrackingSpans.[startLineNumber] <- ResizeArray()
             self.TrackingSpans.[startLineNumber].Add trackingSpan
         uiElement
-        
 
-    member self.HandleBufferChanged(e:TextContentChangedEventArgs) =
+    member self.HandleBufferChanged(e: TextContentChangedEventArgs) =
         try
             let oldSnapshot = e.Before
             let snapshot = e.After
@@ -160,16 +158,16 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
             ignore e
 #endif
 
-    /// Public non-thread-safe method to add line lens for a given tracking span.
-    /// Returns an UIElement which can be used to add Ui elements and to remove the line lens later.
-    member self.AddCodeLens (trackingSpan:ITrackingSpan) =
+    /// Public non-thread-safe method to add lenses for a given tracking span.
+    /// Returns a UIElement which can be used to add Ui elements and to remove the line lens later.
+    member self.AddCodeLens (trackingSpan: ITrackingSpan) =
         if trackingSpan.TextBuffer <> buffer then failwith "TrackingSpan text buffer does not equal with CodeLens text buffer"
         let Grid = self.AddTrackingSpan trackingSpan
         self.RelayoutRequested.Enqueue(())
         Grid :> UIElement
     
-    /// Public non-thread-safe method to remove line lens for a given tracking span.
-    member self.RemoveCodeLens (trackingSpan:ITrackingSpan) =
+    /// Public non-thread-safe method to remove lenses for a given tracking span.
+    member self.RemoveCodeLens (trackingSpan: ITrackingSpan) =
         if self.UiElements.ContainsKey trackingSpan then
             let Grid = self.UiElements.[trackingSpan]
             Grid.Children.Clear()
@@ -202,22 +200,22 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #endif
 
     abstract member AddUiElementToCodeLens : ITrackingSpan * UIElement -> unit
-    default self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
+    default self.AddUiElementToCodeLens (trackingSpan: ITrackingSpan, uiElement: UIElement) =
         let Grid = self.UiElements.[trackingSpan]
         Grid.Children.Add uiElement |> ignore
 
     abstract member AddUiElementToCodeLensOnce : ITrackingSpan * UIElement -> unit
-    default self.AddUiElementToCodeLensOnce (trackingSpan:ITrackingSpan, uiElement:UIElement)=
+    default self.AddUiElementToCodeLensOnce (trackingSpan: ITrackingSpan, uiElement: UIElement)=
         let Grid = self.UiElements.[trackingSpan]
         if uiElement |> Grid.Children.Contains |> not then
             self.AddUiElementToCodeLens (trackingSpan, uiElement)
 
     abstract member RemoveUiElementFromCodeLens : ITrackingSpan * UIElement -> unit
-    default self.RemoveUiElementFromCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
+    default self.RemoveUiElementFromCodeLens (trackingSpan: ITrackingSpan, uiElement: UIElement) =
         let Grid = self.UiElements.[trackingSpan]
         Grid.Children.Remove(uiElement) |> ignore
     
-     member self.HandleLayoutChanged (e:TextViewLayoutChangedEventArgs) =
+     member self.HandleLayoutChanged (e: TextViewLayoutChangedEventArgs) =
         try
             // We can cancel existing stuff because the algorithm supports abortion without any data loss
             self.LayoutChangedCts.Cancel()

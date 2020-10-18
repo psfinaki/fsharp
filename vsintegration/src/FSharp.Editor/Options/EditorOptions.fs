@@ -73,22 +73,20 @@ type LanguageServicePerformanceOptions =
 [<CLIMutable>]
 type CodeLensOptions =
   { Enabled : bool
-    ReplaceWithLineLens: bool
-    UseColors: bool
-    Prefix : string }
+    UseColors: bool }
     static member Default =
-      { Enabled = false
-        UseColors = false
-        ReplaceWithLineLens = true
-        Prefix = "// " }
+      { Enabled = true
+        UseColors = false }
 
 [<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
-      IsOutliningEnabled: bool }
+      IsOutliningEnabled: bool
+      CodeLensOptions: CodeLensOptions }
     static member Default =
       { IsBlockStructureEnabled = true
-        IsOutliningEnabled = true }
+        IsOutliningEnabled = true
+        CodeLensOptions = CodeLensOptions.Default }
 
 [<CLIMutable>]
 type FormattingOptions =
@@ -112,7 +110,6 @@ type EditorOptions
         store.Register LanguageServicePerformanceOptions.Default
         store.Register AdvancedOptions.Default
         store.Register IntelliSenseOptions.Default
-        store.Register CodeLensOptions.Default
         store.Register FormattingOptions.Default
 
     member _.IntelliSense : IntelliSenseOptions = store.Get()
@@ -120,7 +117,6 @@ type EditorOptions
     member _.CodeFixes : CodeFixesOptions = store.Get()
     member _.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
     member _.Advanced: AdvancedOptions = store.Get()
-    member _.CodeLens: CodeLensOptions = store.Get()
     member _.Formatting : FormattingOptions = store.Get()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
@@ -170,12 +166,6 @@ module internal OptionsUI =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
-
-    [<Guid(Guids.codeLensOptionPageIdString)>]
-    type internal CodeLensOptionPage() =
-        inherit AbstractOptionPage<CodeLensOptions>()
-        override this.CreateView() =
-            upcast CodeLensOptionControl()
 
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =

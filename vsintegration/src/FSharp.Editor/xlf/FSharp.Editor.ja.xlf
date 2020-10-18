@@ -7,6 +7,11 @@
         <target state="translated">不足している '=' を型定義に追加します</target>
         <note />
       </trans-unit>
+      <trans-unit id="6013">
+        <source>Formatting</source>
+        <target state="new">Formatting</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddMissingFunKeyword">
         <source>Add missing 'fun' keyword</source>
         <target state="translated">不足している 'fun' キーワードを追加する</target>
@@ -235,16 +240,6 @@
       <trans-unit id="6012">
         <source>Advanced</source>
         <target state="translated">詳細</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6013">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6014">
-        <source>Formatting</source>
-        <target state="translated">書式設定</target>
         <note />
       </trans-unit>
       <trans-unit id="UseFSharpLambda">

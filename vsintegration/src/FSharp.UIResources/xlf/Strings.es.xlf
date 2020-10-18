@@ -12,19 +12,9 @@
         <target state="translated">CodeLens</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Mostrar anotaciones a la derecha en lugar de encima de la línea</target>
-        <note />
-      </trans-unit>
       <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Habilitar CodeLens (experimental)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">Prefijo de anotación</target>
+        <source>Enable CodeLens</source>
+        <target state="needs-review-translation">Habilitar CodeLens (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_UseColors">

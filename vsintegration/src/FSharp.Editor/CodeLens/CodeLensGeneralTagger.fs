@@ -66,43 +66,43 @@ type CodeLensGeneralTagger (view, buffer) as self =
 
     override self.AsyncCustomLayoutOperation _ _ =
         asyncMaybe {
-                // Suspend 16 ms, instantly applying the layout to the adornment elements isn't needed 
-                // and would consume too much performance
-                do! Async.Sleep(16) |> liftAsync // Skip at least one frames
-                do! Async.SwitchToContext self.UiContext |> liftAsync
-                let layer = self.CodeLensLayer
+            // Suspend 16 ms, instantly applying the layout to the adornment elements isn't needed 
+            // and would consume too much performance
+            do! Async.Sleep(16) |> liftAsync // Skip at least one frames
+            do! Async.SwitchToContext self.UiContext |> liftAsync
+            let layer = self.CodeLensLayer
 
-                do! Async.Sleep(495) |> liftAsync
+            //do! Async.Sleep(100) |> liftAsync
 
-                // WORKAROUND FOR VS BUG
-                // The layout changed event may not provide us all real changed lines so
-                // we take care of this on our own.
-                let visibleSpan =
-                    let first, last = 
-                        view.TextViewLines.FirstVisibleLine, 
-                        view.TextViewLines.LastVisibleLine
-                    SnapshotSpan(first.Start, last.End)
-                let customVisibleLines = view.TextViewLines.GetTextViewLinesIntersectingSpan visibleSpan
-                let isLineVisible (line:ITextViewLine) = line.IsValid
-                let linesToProcess = customVisibleLines |> Seq.filter isLineVisible
+            // WORKAROUND FOR VS BUG
+            // The layout changed event may not provide us all real changed lines so
+            // we take care of this on our own.
+            let visibleSpan =
+                let first, last = 
+                    view.TextViewLines.FirstVisibleLine, 
+                    view.TextViewLines.LastVisibleLine
+                SnapshotSpan(first.Start, last.End)
+            let customVisibleLines = view.TextViewLines.GetTextViewLinesIntersectingSpan visibleSpan
+            let isLineVisible (line:ITextViewLine) = line.IsValid
+            let linesToProcess = customVisibleLines |> Seq.filter isLineVisible
 
-                for line in linesToProcess do
-                    try
-                        match line.GetAdornmentTags self |> Seq.tryHead with
-                        | Some (:? seq<Grid> as stackPanels) ->
-                            for stackPanel in stackPanels do
-                                if stackPanel |> self.AddedAdornments.Contains |> not then
-                                    layer.AddAdornment(AdornmentPositioningBehavior.OwnerControlled, Nullable(), 
-                                        self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
-                                    self.AddedAdornments.Add stackPanel |> ignore
-                        | _ -> ()
-                    with e ->
+            for line in linesToProcess do
+                try
+                    match line.GetAdornmentTags self |> Seq.tryHead with
+                    | Some (:? seq<Grid> as stackPanels) ->
+                        for stackPanel in stackPanels do
+                            if stackPanel |> self.AddedAdornments.Contains |> not then
+                                layer.AddAdornment(AdornmentPositioningBehavior.OwnerControlled, Nullable(), 
+                                    self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
+                                self.AddedAdornments.Add stackPanel |> ignore
+                    | _ -> ()
+                with e ->
 #if DEBUG
-                        logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
+                    logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
 #else
-                        ignore e
+                    ignore e
 #endif
-            } |> Async.Ignore
+        } |> Async.Ignore
     
     override self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement)=
         base.AddUiElementToCodeLens (trackingSpan, uiElement) // We do the same as the base call execpt that we need to notify that the tag needs to be refreshed.
@@ -180,7 +180,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
 #endif
                                     0.0
                             
-                            yield TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
+                            TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
                 }
             with e ->
 #if DEBUG

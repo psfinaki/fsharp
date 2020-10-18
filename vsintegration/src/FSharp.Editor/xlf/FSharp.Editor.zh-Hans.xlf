@@ -7,6 +7,11 @@
         <target state="translated">将缺少的 "=" 添加到类型定义</target>
         <note />
       </trans-unit>
+      <trans-unit id="6013">
+        <source>Formatting</source>
+        <target state="new">Formatting</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddMissingFunKeyword">
         <source>Add missing 'fun' keyword</source>
         <target state="translated">添加缺少的 "fun" 关键字</target>
@@ -235,16 +240,6 @@
       <trans-unit id="6012">
         <source>Advanced</source>
         <target state="translated">高级</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6013">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="6014">
-        <source>Formatting</source>
-        <target state="translated">正在格式化</target>
         <note />
       </trans-unit>
       <trans-unit id="UseFSharpLambda">
