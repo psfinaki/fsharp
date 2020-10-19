@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Windows.Controls
@@ -24,7 +24,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
     let tagsChangedEvent = new Event<EventHandler<SnapshotSpanEventArgs>,SnapshotSpanEventArgs>()
     
     /// Layouts all stack panels on the line
-    override self.LayoutUIElementOnLine (view:IWpfTextView) (line:ITextViewLine) (ui:Grid) =
+    override self.LayoutUIElementOnLine (view: IWpfTextView) (line: ITextViewLine) (ui: Grid) =
         let left, top = 
             match self.UiElementNeighbour.TryGetValue ui with
             | true, parent -> 
@@ -72,7 +72,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
             do! Async.SwitchToContext self.UiContext |> liftAsync
             let layer = self.CodeLensLayer
 
-            do! Async.Sleep(100) |> liftAsync
+            do! Async.Sleep(1000) |> liftAsync
 
             // WORKAROUND FOR VS BUG
             // The layout changed event may not provide us all real changed lines so
@@ -104,11 +104,11 @@ type CodeLensGeneralTagger (view, buffer) as self =
 #endif
         } |> Async.Ignore
     
-    override self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement)=
+    override self.AddUiElementToCodeLens (trackingSpan: ITrackingSpan, uiElement: UIElement)=
         base.AddUiElementToCodeLens (trackingSpan, uiElement) // We do the same as the base call execpt that we need to notify that the tag needs to be refreshed.
         tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan(buffer.CurrentSnapshot)))
 
-    override self.RemoveUiElementFromCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
+    override self.RemoveUiElementFromCodeLens (trackingSpan: ITrackingSpan, uiElement: UIElement) =
         base.RemoveUiElementFromCodeLens (trackingSpan, uiElement)
         tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan(buffer.CurrentSnapshot))) // Need to refresh the tag.
 
@@ -134,7 +134,6 @@ type CodeLensGeneralTagger (view, buffer) as self =
 #endif
                                 0
                         if self.TrackingSpans.ContainsKey(lineNumber) && self.TrackingSpans.[lineNumber] |> Seq.isEmpty |> not then
-                            
                             let tagSpan = snapshot.GetLineFromLineNumber(lineNumber).Extent
                             let stackPanels = 
                                 self.TrackingSpans.[lineNumber] 
@@ -179,7 +178,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
                                     ignore e
 #endif
                                     0.0
-                            
+
                             TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
                 }
             with e ->

@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Windows.Controls
 open Microsoft.VisualStudio.Text
@@ -26,10 +26,6 @@ type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName)
     /// </summary>
     member val RelayoutRequested: Queue<_> = Queue() with get
 
-    member val WpfView = view
-
-    member val TextBuffer = buffer
-
     /// Saves the ui context to switch context for ui related work.
     member val UiContext = SynchronizationContext.Current
 
@@ -42,9 +38,6 @@ type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName)
 
     /// Caches the current used TrackingSpans per line. One line can contain multiple trackingSpans
     member val TrackingSpans = Dictionary<int, ResizeArray<_>>()
-
-    /// Text view for accessing the adornment layer.
-    member val View: IWpfTextView = view
 
     member val CodeLensLayer = view.GetAdornmentLayer layerName
 
@@ -67,7 +60,7 @@ type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName)
         snapshot.GetLineNumberFromPosition(trackingSpan.GetStartPoint(snapshot).Position)
 
     /// Helper method which returns the start line number of a tracking span
-    member _.TryGetTSpanStartLine (snapshot: ITextSnapshot) (trackingSpan: ITrackingSpan) =
+    member _.TryGetSpanStartLine (snapshot: ITextSnapshot) (trackingSpan: ITrackingSpan) =
         let pos = trackingSpan.GetStartPoint(snapshot).Position
         if snapshot.Length - 1 < pos then None
         else pos |> snapshot.GetLineNumberFromPosition |> Some
@@ -76,7 +69,7 @@ type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName)
         if lineNumber |> self.TrackingSpans.ContainsKey then
             let currentTrackingSpans = self.TrackingSpans.[lineNumber] |> ResizeArray // We need a copy because we modify the list.
             for trackingSpan in currentTrackingSpans do
-                let newLineOption = self.TryGetTSpanStartLine snapshot trackingSpan
+                let newLineOption = self.TryGetSpanStartLine snapshot trackingSpan
                 match newLineOption with 
                 | None -> ()
                 | Some newLine ->
@@ -116,7 +109,7 @@ type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName)
         grid
 
     /// Helper methods which invokes every action which is needed for new trackingSpans
-    member self.AddTrackingSpan (trackingSpan: ITrackingSpan)=
+    member self.AddTrackingSpan (trackingSpan: ITrackingSpan) =
         let snapshot = buffer.CurrentSnapshot
         let startLineNumber = snapshot.GetLineNumberFromPosition(trackingSpan.GetStartPoint(snapshot).Position)
         let uiElement = 
@@ -176,27 +169,24 @@ type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName)
                 self.CodeLensLayer.RemoveAdornment(Grid) 
             with e ->
 #if DEBUG
-                logExceptionWithContext(e, "Removing line lens")
+                logExceptionWithContext(e, "Removing codelens")
 #else
                 ignore e
 #endif
+        if not (isNull self.CurrentBufferSnapshot) then
+            let lineNumber = 
+                (trackingSpan.GetStartPoint self.CurrentBufferSnapshot).Position 
+                |> self.CurrentBufferSnapshot.GetLineNumberFromPosition
+            if self.TrackingSpans.ContainsKey lineNumber then
 #if DEBUG
-        else
-            logWarningf "No ui element is attached to this tracking span!"
+                if self.TrackingSpans.[lineNumber].Remove trackingSpan |> not then
+                    logWarningf "(nested) No tracking span is associated with this line number %d!" lineNumber
 #endif
-        let lineNumber = 
-            (trackingSpan.GetStartPoint self.CurrentBufferSnapshot).Position 
-            |> self.CurrentBufferSnapshot.GetLineNumberFromPosition
-        if self.TrackingSpans.ContainsKey lineNumber then
+                if self.TrackingSpans.[lineNumber].Count = 0 then
+                    self.TrackingSpans.Remove lineNumber |> ignore
 #if DEBUG
-            if self.TrackingSpans.[lineNumber].Remove trackingSpan |> not then
-                logWarningf "No tracking span is accociated with this line number %d!" lineNumber
-#endif
-            if self.TrackingSpans.[lineNumber].Count = 0 then
-                self.TrackingSpans.Remove lineNumber |> ignore
-#if DEBUG
-        else
-            logWarningf "No tracking span is accociated with this line number %d!" lineNumber
+            else
+                logWarningf "No tracking span is associated with this line number %d!" lineNumber
 #endif
 
     abstract member AddUiElementToCodeLens : ITrackingSpan * UIElement -> unit

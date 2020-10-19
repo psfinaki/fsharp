@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open Microsoft.VisualStudio.Text
@@ -31,7 +31,7 @@ type internal CodeLensProvider
     let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
 
-    /// Returns an provider for the textView if already one has been created. Else create one.
+    /// Returns n provider for the textView if already one has been created. Else create one.
     let addCodeLensProviderOnce wpfView buffer =
         let res = taggers |> Seq.tryFind(fun (view, _) -> view = wpfView)
         match res with
