@@ -134,22 +134,15 @@ type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName)
         uiElement
 
     member self.HandleBufferChanged(e: TextContentChangedEventArgs) =
-        try
-            let oldSnapshot = e.Before
-            let snapshot = e.After
-            self.CurrentBufferSnapshot <- snapshot
-            for line in oldSnapshot.Lines do
-                let lineNumber = line.LineNumber
-                self.UpdateTrackingSpansFast snapshot lineNumber
-            let firstLine = view.TextViewLines.FirstVisibleLine
-            view.DisplayTextLineContainingBufferPosition (firstLine.Start, 0., ViewRelativePosition.Top)
-            self.RelayoutRequested.Enqueue(())
-         with e ->
-#if DEBUG
-            logErrorf "Error in line lens provider: %A" e
-#else
-            ignore e
-#endif
+        let oldSnapshot = e.Before
+        let snapshot = e.After
+        self.CurrentBufferSnapshot <- snapshot
+        for line in oldSnapshot.Lines do
+            let lineNumber = line.LineNumber
+            self.UpdateTrackingSpansFast snapshot lineNumber
+        let firstLine = view.TextViewLines.FirstVisibleLine
+        view.DisplayTextLineContainingBufferPosition (firstLine.Start, 0., ViewRelativePosition.Top)
+        self.RelayoutRequested.Enqueue(())
 
     /// Public non-thread-safe method to add lenses for a given tracking span.
     /// Returns a UIElement which can be used to add Ui elements and to remove the line lens later.
@@ -205,87 +198,77 @@ type CodeLensDisplayService (view: IWpfTextView, buffer: ITextBuffer, layerName)
         let Grid = self.UiElements.[trackingSpan]
         Grid.Children.Remove(uiElement) |> ignore
     
-     member self.HandleLayoutChanged (e: TextViewLayoutChangedEventArgs) =
-        try
-            // We can cancel existing stuff because the algorithm supports abortion without any data loss
-            self.LayoutChangedCts.Cancel()
-            self.LayoutChangedCts.Dispose()
-            self.LayoutChangedCts <- new CancellationTokenSource()
-            let buffer = e.NewSnapshot
-            let recentVisibleLineNumbers = Set [self.RecentFirstVsblLineNmbr .. self.RecentLastVsblLineNmbr]
-            let firstVisibleLineNumber, lastVisibleLineNumber =
-                let first, last = 
-                    view.TextViewLines.FirstVisibleLine, 
-                    view.TextViewLines.LastVisibleLine
-                buffer.GetLineNumberFromPosition(first.Start.Position),
-                buffer.GetLineNumberFromPosition(last.Start.Position)
-            let visibleLineNumbers = Set [firstVisibleLineNumber .. lastVisibleLineNumber]
-            let nonVisibleLineNumbers = Set.difference recentVisibleLineNumbers visibleLineNumbers
-            let newVisibleLineNumbers = Set.difference visibleLineNumbers recentVisibleLineNumbers
+    member self.HandleLayoutChanged (e: TextViewLayoutChangedEventArgs) =
+        // We can cancel existing stuff because the algorithm supports abortion without any data loss
+        self.LayoutChangedCts.Cancel()
+        self.LayoutChangedCts.Dispose()
+        self.LayoutChangedCts <- new CancellationTokenSource()
+        let buffer = e.NewSnapshot
+        let recentVisibleLineNumbers = Set [self.RecentFirstVsblLineNmbr .. self.RecentLastVsblLineNmbr]
+        let firstVisibleLineNumber, lastVisibleLineNumber =
+            let first, last = 
+                view.TextViewLines.FirstVisibleLine, 
+                view.TextViewLines.LastVisibleLine
+            buffer.GetLineNumberFromPosition(first.Start.Position),
+            buffer.GetLineNumberFromPosition(last.Start.Position)
+        let visibleLineNumbers = Set [firstVisibleLineNumber .. lastVisibleLineNumber]
+        let nonVisibleLineNumbers = Set.difference recentVisibleLineNumbers visibleLineNumbers
+        let newVisibleLineNumbers = Set.difference visibleLineNumbers recentVisibleLineNumbers
         
-            let applyFuncOnLineStackPanels (line:IWpfTextViewLine) (func:Grid -> unit) =
-                let lineNumber = line.Snapshot.GetLineNumberFromPosition(line.Start.Position)
-                if (self.TrackingSpans.ContainsKey lineNumber) && (self.TrackingSpans.[lineNumber]) |> (Seq.isEmpty >> not) then
-                    for trackingSpan in self.TrackingSpans.[lineNumber] do
-                        let success, ui = self.UiElements.TryGetValue trackingSpan
-                        if success then 
-                            func ui
+        let applyFuncOnLineStackPanels (line:IWpfTextViewLine) (func:Grid -> unit) =
+            let lineNumber = line.Snapshot.GetLineNumberFromPosition(line.Start.Position)
+            if (self.TrackingSpans.ContainsKey lineNumber) && (self.TrackingSpans.[lineNumber]) |> (Seq.isEmpty >> not) then
+                for trackingSpan in self.TrackingSpans.[lineNumber] do
+                    let success, ui = self.UiElements.TryGetValue trackingSpan
+                    if success then 
+                        func ui
 
-            if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
-                for lineNumber in nonVisibleLineNumbers do
-                    if lineNumber > 0 && lineNumber < buffer.LineCount then
-                        try
-                            let line = 
-                                (buffer.GetLineFromLineNumber lineNumber).Start
-                                |> view.GetTextViewLineContainingBufferPosition
-                            applyFuncOnLineStackPanels line (fun ui ->
-                                ui.Visibility <- Visibility.Hidden
-                            )
-                        with e ->
-#if DEBUG
-                            logErrorf "Error in non visible lines iteration %A" e
-#else
-                            ignore e
-#endif
-                for lineNumber in newVisibleLineNumbers do
+        if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
+            for lineNumber in nonVisibleLineNumbers do
+                if lineNumber > 0 && lineNumber < buffer.LineCount then
                     try
                         let line = 
-                                (buffer.GetLineFromLineNumber lineNumber).Start
-                                |> view.GetTextViewLineContainingBufferPosition
+                            (buffer.GetLineFromLineNumber lineNumber).Start
+                            |> view.GetTextViewLineContainingBufferPosition
                         applyFuncOnLineStackPanels line (fun ui ->
-                            ui.Visibility <- Visibility.Visible
-                            self.LayoutUIElementOnLine view line ui
-                        )
-                     with e ->
-#if DEBUG
-                        logErrorf "Error in new visible lines iteration %A" e
-#else
+                            ui.Visibility <- Visibility.Hidden)
+                    with e ->
+    #if DEBUG
+                        logErrorf "Error in non visible lines iteration %A" e
+    #else
                         ignore e
-#endif
-            if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
-                self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.
-            if self.RelayoutRequested.Count > 0 then
-                self.RelayoutRequested.Dequeue() |> ignore
-                for lineNumber in visibleLineNumbers do
+    #endif
+            for lineNumber in newVisibleLineNumbers do
+                try
                     let line = 
                         (buffer.GetLineFromLineNumber lineNumber).Start
                         |> view.GetTextViewLineContainingBufferPosition
                     applyFuncOnLineStackPanels line (fun ui ->
                         ui.Visibility <- Visibility.Visible
-                        self.LayoutUIElementOnLine view line ui
-                    )
-            // Save the new first and last visible lines for tracking
-            self.RecentFirstVsblLineNmbr <- firstVisibleLineNumber
-            self.RecentLastVsblLineNmbr <- lastVisibleLineNumber
+                        self.LayoutUIElementOnLine view line ui)
+                with e ->
+    #if DEBUG
+                    logErrorf "Error in new visible lines iteration %A" e
+    #else
+                    ignore e
+    #endif
+        if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
+            self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.
+        if self.RelayoutRequested.Count > 0 then
+            self.RelayoutRequested.Dequeue() |> ignore
+            for lineNumber in visibleLineNumbers do
+                let line = 
+                    (buffer.GetLineFromLineNumber lineNumber).Start
+                    |> view.GetTextViewLineContainingBufferPosition
+                applyFuncOnLineStackPanels line (fun ui ->
+                    ui.Visibility <- Visibility.Visible
+                    self.LayoutUIElementOnLine view line ui)
+        // Save the new first and last visible lines for tracking
+        self.RecentFirstVsblLineNmbr <- firstVisibleLineNumber
+        self.RecentLastVsblLineNmbr <- lastVisibleLineNumber
 
-            self.AsyncCustomLayoutOperation visibleLineNumbers buffer
-            |> RoslynHelpers.StartAsyncSafe self.LayoutChangedCts.Token "HandleLayoutChanged"
-        with e ->
-#if DEBUG
-            logExceptionWithContext (e, "Layout changed")
-#else
-            ignore e
-#endif
+        self.AsyncCustomLayoutOperation visibleLineNumbers buffer
+        |> RoslynHelpers.StartAsyncSafe self.LayoutChangedCts.Token "HandleLayoutChanged"
 
     abstract LayoutUIElementOnLine : IWpfTextView -> ITextViewLine -> Grid -> unit
 

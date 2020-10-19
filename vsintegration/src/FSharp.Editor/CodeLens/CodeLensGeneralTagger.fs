@@ -24,7 +24,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
     let tagsChangedEvent = new Event<EventHandler<SnapshotSpanEventArgs>,SnapshotSpanEventArgs>()
     
     /// Layouts all stack panels on the line
-    override self.LayoutUIElementOnLine (view:IWpfTextView) (line:ITextViewLine) (ui:Grid) =
+    override self.LayoutUIElementOnLine (view: IWpfTextView) (line: ITextViewLine) (ui: Grid) =
         let left, top = 
             match self.UiElementNeighbour.TryGetValue ui with
             | true, parent -> 
@@ -36,31 +36,23 @@ type CodeLensGeneralTagger (view, buffer) as self =
 #endif
                 left + width, top
             | _ ->
-                try
-                    // Get the real offset so that the code lens are placed respectively to their content
-                    let offset =
-                        [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
-                        |> Option.defaultValue 0
+                // Get the real offset so that the code lens are placed respectively to their content
+                let offset =
+                    [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
+                    |> Option.defaultValue 0
 
-                    let realStart = line.Start.Add(offset)
-                    let g = view.TextViewLines.GetCharacterBounds(realStart)
-                    // WORKAROUND VS BUG, left cannot be zero if the offset is creater than zero!
-                    // Calling the method twice fixes this bug and ensures that all values are correct.
-                    // Okay not really :( Must be replaced later with an own calculation depending on editor font settings!
-                    if 7 * offset > int g.Left then
+                let realStart = line.Start.Add(offset)
+                let g = view.TextViewLines.GetCharacterBounds(realStart)
+                // WORKAROUND VS BUG, left cannot be zero if the offset is creater than zero!
+                // Calling the method twice fixes this bug and ensures that all values are correct.
+                // Okay not really :( Must be replaced later with an own calculation depending on editor font settings!
+                if 7 * offset > int g.Left then
 #if DEBUG
-                        logErrorf "Incorrect return from geometry measure"
+                    logErrorf "Incorrect return from geometry measure"
 #endif
-                        Canvas.GetLeft ui, g.Top
-                    else 
-                        g.Left, g.Top
-                with e -> 
-#if DEBUG
-                    logExceptionWithContext (e, "Error in layout ui element on line")
-#else
-                    ignore e
-#endif
-                    Canvas.GetLeft ui, Canvas.GetTop ui
+                    Canvas.GetLeft ui, g.Top
+                else 
+                    g.Left, g.Top
         Canvas.SetLeft(ui, left)
         Canvas.SetTop(ui, top)
 
@@ -82,28 +74,21 @@ type CodeLensGeneralTagger (view, buffer) as self =
             let linesToProcess = customVisibleLines |> Seq.filter isLineVisible
 
             for line in linesToProcess do
-                try
-                    match line.GetAdornmentTags self |> Seq.tryHead with
-                    | Some (:? seq<Grid> as stackPanels) ->
-                        for stackPanel in stackPanels do
-                            if stackPanel |> self.AddedAdornments.Contains |> not then
-                                layer.AddAdornment(AdornmentPositioningBehavior.OwnerControlled, Nullable(), 
-                                    self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
-                                self.AddedAdornments.Add stackPanel |> ignore
-                    | _ -> ()
-                with e ->
-#if DEBUG
-                    logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
-#else
-                    ignore e
-#endif
+                match line.GetAdornmentTags self |> Seq.tryHead with
+                | Some (:? seq<Grid> as stackPanels) ->
+                    for stackPanel in stackPanels do
+                        if stackPanel |> self.AddedAdornments.Contains |> not then
+                            layer.AddAdornment(AdornmentPositioningBehavior.OwnerControlled, Nullable(), 
+                                self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
+                            self.AddedAdornments.Add stackPanel |> ignore
+                | _ -> ()
         } |> Async.Ignore
     
-    override self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement)=
+    override self.AddUiElementToCodeLens (trackingSpan: ITrackingSpan, uiElement: UIElement)=
         base.AddUiElementToCodeLens (trackingSpan, uiElement) // We do the same as the base call execpt that we need to notify that the tag needs to be refreshed.
         tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan(buffer.CurrentSnapshot)))
 
-    override self.RemoveUiElementFromCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
+    override self.RemoveUiElementFromCodeLens (trackingSpan: ITrackingSpan, uiElement: UIElement) =
         base.RemoveUiElementFromCodeLens (trackingSpan, uiElement)
         tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan(buffer.CurrentSnapshot))) // Need to refresh the tag.
 
@@ -114,72 +99,28 @@ type CodeLensGeneralTagger (view, buffer) as self =
         /// Returns the tags which reserve the correct space for adornments
         /// Notice, it's asumed that the data in the collection is valid.
         override _.GetTags spans =
-            try
-                seq {
-                    for span in spans do
-                        let snapshot = span.Snapshot
-                        let lineNumber = 
-                            try
-                                snapshot.GetLineNumberFromPosition(span.Start.Position)
-                            with e ->
-#if DEBUG
-                                logExceptionWithContext (e, "line number tagging")
-#else
-                                ignore e
-#endif
-                                0
-                        if self.TrackingSpans.ContainsKey(lineNumber) && self.TrackingSpans.[lineNumber] |> Seq.isEmpty |> not then
-                            let tagSpan = snapshot.GetLineFromLineNumber(lineNumber).Extent
-                            let stackPanels = 
-                                self.TrackingSpans.[lineNumber] 
-                                |> Seq.map (fun trackingSpan ->
-                                        let success, res = self.UiElements.TryGetValue trackingSpan
-                                        if success then res else null
-                                    )
-                                |> Seq.filter (isNull >> not)
-                            let span = 
-                                try 
-                                    tagSpan.TranslateTo(span.Snapshot, SpanTrackingMode.EdgeExclusive)
-                                with e -> 
-#if DEBUG
-                                    logExceptionWithContext (e, "tag span translation")
-#else
-                                    ignore e
-#endif
-                                    tagSpan
-                            let sizes = 
-                                try
-                                    stackPanels |> Seq.map (fun ui -> 
-                                        ui.Measure(Size(10000., 10000.))
-                                        ui.DesiredSize )
-                                with e ->
-#if DEBUG
-                                    logExceptionWithContext (e, "internal tagging")
-#else
-                                    ignore e
-#endif
-                                    Seq.empty
-                            let height = 
-                                try
-                                    sizes 
-                                    |> Seq.map (fun size -> size.Height) 
-                                    |> Seq.sortDescending 
-                                    |> Seq.tryHead
-                                    |> Option.defaultValue 0.
-                                with e ->
-#if DEBUG
-                                    logExceptionWithContext (e, "height tagging")
-#else
-                                    ignore e
-#endif
-                                    0.0
-                            
-                            TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
-                }
-            with e ->
-#if DEBUG
-                logErrorf "Error in code lens get tags %A" e
-#else
-                ignore e
-#endif
-                Seq.empty
+            seq {
+                for span in spans do
+                    let snapshot = span.Snapshot
+                    let lineNumber = snapshot.GetLineNumberFromPosition(span.Start.Position)
+                    if self.TrackingSpans.ContainsKey(lineNumber) && self.TrackingSpans.[lineNumber] |> Seq.isEmpty |> not then
+                        let tagSpan = snapshot.GetLineFromLineNumber(lineNumber).Extent
+                        let stackPanels = 
+                            self.TrackingSpans.[lineNumber] 
+                            |> Seq.choose (fun trackingSpan ->
+                                let success, res = self.UiElements.TryGetValue trackingSpan
+                                if success then Some res else None)
+                        let span = tagSpan.TranslateTo(span.Snapshot, SpanTrackingMode.EdgeExclusive)
+                        let sizes =
+                            stackPanels |> Seq.map (fun ui -> 
+                                ui.Measure(Size(10000., 10000.))
+                                ui.DesiredSize)
+                        let height = 
+                            sizes 
+                            |> Seq.map (fun size -> size.Height) 
+                            |> Seq.sortDescending 
+                            |> Seq.tryHead
+                            |> Option.defaultValue 0.0
+
+                        TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
+            }
