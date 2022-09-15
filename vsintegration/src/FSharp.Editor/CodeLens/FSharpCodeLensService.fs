@@ -29,12 +29,6 @@ open Microsoft.VisualStudio.Text.Classification
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
-type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
-    member val TaggedText: Async<(ResizeArray<TaggedText> * FSharpNavigation) option> = taggedText
-    member val Computed: bool = computed with get, set
-    member val TypeSignatureHash: int = fullTypeSignature 
-    member val UiElement: UIElement = uiElement with get, set
-
 type internal FSharpCodeLensService
     (
         serviceProvider: IServiceProvider,
@@ -47,9 +41,6 @@ type internal FSharpCodeLensService
         codeLensDisplayService: CodeLensDisplayService,
         settings: EditorOptions
     ) as self =
-
-    let checker = checkerProvider.Checker
-    let checker = checkerProvider.Checker
 
     let visit pos parseTree = 
         SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
@@ -85,7 +76,7 @@ type internal FSharpCodeLensService
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties   
 
-    let createTextBox (lensInfo: Option<ResizeArray<Layout.TaggedText> * QuickInfoNavigation>) =
+    let createTextBox (lensInfo: Option<ResizeArray<TaggedText> * FSharpNavigation>) =
         lensInfo
         |> Option.map(fun (taggedText, navigation) ->
             let textBlock = new TextBlock(Background = Brushes.AliceBlue, Opacity = 0.0, TextTrimming = TextTrimming.None)
@@ -113,11 +104,11 @@ type internal FSharpCodeLensService
                 let inl =
                     match text with
                         | :? NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
-                        let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
-                        h.Click.Add (fun _ -> 
+                            let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
+                            h.Click.Add (fun _ -> 
                                 navigation.NavigateTo(nav.Range, CancellationToken.None))
-                        h :> Documents.Inline
-                    | _ -> run :> _
+                            h :> Documents.Inline
+                        | _ -> run :> _
                 FSharpDependencyObjectExtensions.SetTextProperties (inl, actualProperties)
                 textBlock.Inlines.Add inl
 
@@ -140,17 +131,11 @@ type internal FSharpCodeLensService
             let useResults (displayContext: FSharpDisplayContext) (func: FSharpMemberOrFunctionOrValue) (realPosition: range) =
                 let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                 if (lineNumber >= 0 || lineNumber < textSnapshot.LineCount) then
-                    match func.FullTypeSafe with
-                    | Some _ ->
-                        let! maybeContext = checkFileResults.GetDisplayContextForPos(func.DeclarationLocation.Start)
-                    
-                        let displayContext = Option.defaultValue displayContext maybeContext
-
                     let typeLayout = func.FormatLayout displayContext
                     let taggedText = ResizeArray()        
-                                typeLayout |> Seq.iter taggedText.Add
+                    typeLayout |> Seq.iter taggedText.Add
                     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
-                                let navigation = FSharpNavigation(statusBar, metadataAsSource, document, realPosition)
+                    let navigation = FSharpNavigation(statusBar, metadataAsSource, document, realPosition)
                     Some(taggedText, navigation)
                 else
                     None

@@ -53,7 +53,6 @@ type internal CodeLensProvider
             taggers.Add((wpfView, (tagger, service)))
             tagger
 
-            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, LineLensDisplayService(wpfView, buffer), settings)
     [<Export(typeof<AdornmentLayerDefinition>); Name("CodeLens");
       Order(Before = PredefinedAdornmentLayers.Text);
       TextViewRole(PredefinedTextViewRoles.Document)>]

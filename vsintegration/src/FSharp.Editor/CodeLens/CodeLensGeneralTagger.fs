@@ -61,6 +61,8 @@ type CodeLensGeneralTagger (view, buffer) as self =
             do! Async.SwitchToContext self.UiContext |> liftAsync
             let layer = self.CodeLensLayer
 
+            do! Async.Sleep(1000) |> liftAsync
+
             // WORKAROUND FOR VS BUG
             // The layout changed event may not provide us all real changed lines so
             // we take care of this on our own.

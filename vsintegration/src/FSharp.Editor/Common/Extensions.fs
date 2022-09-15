@@ -57,6 +57,9 @@ type Document with
                 languageServices.GetService<'T>()
                 |> Some
 
+    member this.IsFSharpScript =
+        isScriptFile this.FilePath
+
 /// Ported from Roslyn.Utilities
 [<RequireQualifiedAccess>]
 module Hash =
@@ -68,9 +71,6 @@ module Hash =
 
 module private SourceText =
     open System.Runtime.CompilerServices
-
-    member this.IsFSharpScript =
-        isScriptFile this.FilePath
 
     let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
