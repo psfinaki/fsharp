@@ -9,14 +9,12 @@ open Microsoft.VisualStudio.Shell
 open Newtonsoft.Json
 
 module Settings =
-    type IPersistSettings =
+    type SettingsStore =
         abstract member LoadSettings : unit -> 't
         abstract member SaveSettings : 't -> unit
-
-    type SettingsStore =
-        inherit IPersistSettings
         abstract member Register : 't -> unit
         abstract member Get : unit -> 't
+
 
     // Each group of settings is a value of some named type, for example 'IntelliSenseOptions', 'QuickInfoOptions'
     // and it is usually representing one separate option page in the UI.
