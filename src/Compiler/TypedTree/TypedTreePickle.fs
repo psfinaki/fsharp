@@ -461,6 +461,15 @@ let p_option f x st =
     | None -> p_byte 0 st
     | Some h -> p_byte 1 st; f h st
 
+let _p_option2 f1 f2 x st =
+    match x with
+    | None -> p_byte 0 st
+    | Some h -> 
+        if true then
+            p_byte 2 st; f2 h st
+        else
+            p_byte 1 st; f1 h st
+
 // Pickle lazy values in such a way that they can, in some future F# compiler version, be read back
 // lazily. However, a lazy reader is not used in this version because the value may contain the definitions of some
 // OSGN nodes.
@@ -568,6 +577,14 @@ let u_option f st =
     | 0 -> None
     | 1 -> Some (f st)
     | n -> ufailwith st ("u_option: found number " + string n)
+
+let u_option2 f1 f2 st =
+    let tag = u_byte st
+    match tag with
+    | 0 -> None
+    | 1 -> Some (f1 st)
+    | 2 -> Some (f2 st)
+    | n -> ufailwith st ("u_option2: found number " + string n)
 
 // Boobytrap an OSGN node with a force of a lazy load of a bunch of pickled data
 #if LAZY_UNPICKLE
@@ -1949,7 +1966,7 @@ and p_tcaug p st =
       (p_space 1)
       (p.tcaug_compare,
        p.tcaug_compare_withc,
-       p.tcaug_hash_and_equals_withc,
+       p.tcaug_hash_and_equals_withc |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
        p.tcaug_equals,
        (p.tcaug_adhoc_list
            |> ResizeArray.toList
@@ -2246,7 +2263,9 @@ and u_tcaug st =
       u_tup9
         (u_option (u_tup2 u_vref u_vref))
         (u_option u_vref)
-        (u_option (u_tup3 u_vref u_vref u_vref))
+        (u_option2 
+            (fun st -> let v1, v2, v3 = u_tup3 u_vref u_vref u_vref st in (v1, v2, v3, None)) 
+            (fun st -> let v1, v2, v3, v4 = u_tup4 u_vref u_vref u_vref u_vref st in (v1, v2, v3, Some v4)))
         (u_option (u_tup2 u_vref u_vref))
         (u_list (u_tup2 u_string u_vref))
         (u_list (u_tup3 u_ty u_bool u_dummy_range))
