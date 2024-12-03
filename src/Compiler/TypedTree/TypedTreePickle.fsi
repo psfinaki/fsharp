@@ -85,7 +85,7 @@ val internal pickleCcuInfo: pickler<PickledCcuInfo>
 
 /// Serialize a file
 val internal pickleFile:
-    file: CheckedImplFile -> bool
+    file: string -> bool
 
 /// Serialize an arbitrary object using the given pickler
 val pickleObjWithDanglingCcus:

@@ -34,7 +34,7 @@
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="SyntaxTreeTests.fs" />
-    <Compile Include="TypedTreeTests.fs" />
+    <Compile Include="TypedTreePickleTests.fs" />
     <Compile Include="FileSystemTests.fs" />
     <Compile Include="ProjectAnalysisTests.fs" />
     <Compile Include="MultiProjectAnalysisTests.fs" />

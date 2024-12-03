@@ -2906,7 +2906,7 @@ let pickleModuleOrNamespace mspec st = p_entity_spec mspec st
 let pickleCcuInfo (minfo: PickledCcuInfo) st =
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations, ()) st
 
-let pickleFile (file: CheckedImplFile) =
+let pickleFile (file: string) =
     true
 
 let unpickleModuleOrNamespace st = u_entity_spec st
