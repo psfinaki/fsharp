@@ -5,11 +5,26 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
 
+open Internal.Utilities.Library
+
 open Xunit
 
 [<Fact>]
 let PickleModuleOrNamespace() =
-    let mspec = Entity.NewUnlinked()
+    let mspec : Entity =         
+        { entity_typars = LazyWithContext.NotLazy []
+          entity_flags = Unchecked.defaultof<_>
+          entity_stamp = Unchecked.defaultof<_>
+          entity_logical_name = Unchecked.defaultof<_> 
+          entity_range = Unchecked.defaultof<_> 
+          entity_attribs = Unchecked.defaultof<_>
+          entity_tycon_repr= Unchecked.defaultof<_>
+          entity_tycon_tcaug= Unchecked.defaultof<_>
+          entity_modul_type= Unchecked.defaultof<_>
+          entity_pubpath = Unchecked.defaultof<_>
+          entity_cpath = Unchecked.defaultof<_>
+          entity_il_repr_cache = Unchecked.defaultof<_>
+          entity_opt_data = Unchecked.defaultof<_>}
 
     let minfo: PickledCcuInfo = {
         mspec = mspec
@@ -18,7 +33,7 @@ let PickleModuleOrNamespace() =
     }
 
     let oentities = {
-        NodeStamp = fun (tc: FSharp.Compiler.TypedTree.Tycon) -> tc.Stamp
+        NodeStamp = fun (tc: TypedTree.Tycon) -> tc.Stamp
         NodeName = Unchecked.defaultof<_>
         GetRange = Unchecked.defaultof<_>
         Deref = id

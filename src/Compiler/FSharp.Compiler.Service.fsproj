@@ -569,14 +569,6 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
-    <!-- We are setting TFM explicitly here, since we are only using fslexyacc's dlls in msbuild -->
-    <ProjectReference Include="$(RepoRoot)\buildtools\fsyacc\fsyacc.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
-      <ExcludeAssets>compile</ExcludeAssets>
-    </ProjectReference>
-  </ItemGroup>
-
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
