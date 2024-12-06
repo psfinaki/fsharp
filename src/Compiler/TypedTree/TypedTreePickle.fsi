@@ -40,10 +40,26 @@ type NodeOutTable<'Data, 'Node> =
       Table: Table<Stamp> }
 
 /// The type of state written to by picklers
-[<Sealed>]
 type WriterState =
-
-    static member NewUnlinked: unit -> WriterState
+    { 
+        os: ByteBuffer
+        osB: ByteBuffer
+        oscope: CcuThunk
+        occus: Table<CcuReference>
+        oentities: NodeOutTable<EntityData, Entity>
+        otypars: NodeOutTable<TyparData, Typar>
+        ovals: NodeOutTable<ValData, Val>
+        oanoninfos: NodeOutTable<AnonRecdTypeInfo, AnonRecdTypeInfo>
+        ostrings: Table<string>
+        opubpaths: Table<int[]>
+        onlerefs: Table<int * int[]>
+        osimpletys: Table<int>
+        oglobals : TcGlobals
+        mutable isStructThisArgPos : bool
+        ofile : string
+        /// Indicates if we are using in-memory format, where we store XML docs as well
+        oInMem : bool
+    }
 
 /// A function to pickle a value into a given stateful writer
 type pickler<'T> = 'T -> WriterState -> unit
