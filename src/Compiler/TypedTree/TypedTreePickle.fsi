@@ -26,6 +26,18 @@ type PickledDataWithReferences<'RawData> =
     member OptionalFixup: (CcuReference -> CcuThunk option) -> 'RawData
 
 
+open FSharp.Compiler.Text
+
+type Table<'T>
+
+[<NoEquality; NoComparison>]
+type NodeOutTable<'Data, 'Node> =
+    { NodeStamp : 'Node -> Stamp
+      NodeName : 'Node -> string
+      GetRange : 'Node -> range
+      Deref: 'Node -> 'Data
+      Name: string
+      Table: Table<Stamp> }
 
 /// The type of state written to by picklers
 [<Sealed>]
