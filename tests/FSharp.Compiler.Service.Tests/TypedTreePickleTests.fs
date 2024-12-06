@@ -23,7 +23,7 @@ let PickleModuleOrNamespace() =
         GetRange = Unchecked.defaultof<_>
         Deref = Unchecked.defaultof<_>
         Name = Unchecked.defaultof<_>
-        Table = Unchecked.defaultof<_>
+        Table = Table<_>.Create ""
     }
 
     let st = 

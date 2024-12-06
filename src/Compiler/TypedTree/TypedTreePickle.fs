@@ -89,7 +89,6 @@ type Table<'T when 'T: not null> =
         | true, res -> res
         | _ -> tbl.Add x
 
-
     static member Create n =
       { name = n
         tbl = Dictionary<_, _>(1000, HashIdentity.Structural)

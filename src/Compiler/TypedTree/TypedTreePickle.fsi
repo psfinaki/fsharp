@@ -26,9 +26,17 @@ type PickledDataWithReferences<'RawData> =
     member OptionalFixup: (CcuReference -> CcuThunk option) -> 'RawData
 
 
+open System.Collections.Generic
 open FSharp.Compiler.Text
 
-type Table<'T>
+[<NoEquality; NoComparison>]
+type Table<'T> =
+    { name: string
+      tbl: Dictionary<'T, int>
+      mutable rows: ResizeArray<'T>
+      mutable count: int }
+
+    static member Create: n: string -> Table<'a> when 'a : equality
 
 [<NoEquality; NoComparison>]
 type NodeOutTable<'Data, 'Node> =
