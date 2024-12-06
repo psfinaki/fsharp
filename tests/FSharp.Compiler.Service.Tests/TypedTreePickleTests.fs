@@ -63,7 +63,7 @@ let PickleModuleOrNamespace() =
         Unchecked.defaultof<_>,
         Features.LanguageVersion.Default,
         false,
-        Unchecked.defaultof<_>)
+        TcGlobals.CompilationMode.Unset)
 
     let st = 
         {
