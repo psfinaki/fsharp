@@ -15,7 +15,7 @@ let PickleModuleOrNamespace() =
         { entity_typars = LazyWithContext.NotLazy []
           entity_flags = Unchecked.defaultof<_>
           entity_stamp = Unchecked.defaultof<_>
-          entity_logical_name = Unchecked.defaultof<_> 
+          entity_logical_name = "test" 
           entity_range = Unchecked.defaultof<_> 
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
@@ -38,7 +38,7 @@ let PickleModuleOrNamespace() =
         GetRange = Unchecked.defaultof<_>
         Deref = id
         Name = Unchecked.defaultof<_>
-        Table = Table<_>.Create ""
+        Table = Table<_>.Create "test"
     }
 
     let os = ByteBuffer.Create(42)
@@ -53,7 +53,7 @@ let PickleModuleOrNamespace() =
             otypars = Unchecked.defaultof<_>
             ovals = Unchecked.defaultof<_>
             oanoninfos = Unchecked.defaultof<_>
-            ostrings = Unchecked.defaultof<_>
+            ostrings = Table<_>.Create ""
             opubpaths = Unchecked.defaultof<_>
             onlerefs = Unchecked.defaultof<_>
             osimpletys = Unchecked.defaultof<_>
