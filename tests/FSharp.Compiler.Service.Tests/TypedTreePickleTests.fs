@@ -26,9 +26,11 @@ let PickleModuleOrNamespace() =
         Table = Table<_>.Create ""
     }
 
+    let os = ByteBuffer.Create(42)
+
     let st = 
         {
-            os = Unchecked.defaultof<_>
+            os = os
             osB = Unchecked.defaultof<_>
             oscope = Unchecked.defaultof<_>
             occus = Unchecked.defaultof<_>
