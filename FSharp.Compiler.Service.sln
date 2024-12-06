@@ -17,11 +17,6 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TestTP", "tests\service\dat
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Test.Utilities", "tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{38A23D53-E2BF-4B76-907F-49F41D60C88E}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.ComponentTests", "tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj", "{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{38A23D53-E2BF-4B76-907F-49F41D60C88E} = {38A23D53-E2BF-4B76-907F-49F41D60C88E}
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{AF321816-B4A0-41DD-9A1D-484E8A20C6F6}"
 	ProjectSection(SolutionItems) = preProject
 		tests\benchmarks\FCSBenchmarks\decentlySizedStandAloneFile.fs = tests\benchmarks\FCSBenchmarks\decentlySizedStandAloneFile.fs
@@ -31,9 +26,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DD4D4A7E-D519-4409-89DA-16DCA3EF80AA}"
 	ProjectSection(SolutionItems) = preProject
-		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
+		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
 		global.json = global.json
 	EndProjectSection
 EndProject
@@ -83,10 +78,6 @@ Global
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A6995088-3C1D-42BC-B3DD-72B1EEAB23F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A6995088-3C1D-42BC-B3DD-72B1EEAB23F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6995088-3C1D-42BC-B3DD-72B1EEAB23F4}.Release|Any CPU.ActiveCfg = Release|Any CPU

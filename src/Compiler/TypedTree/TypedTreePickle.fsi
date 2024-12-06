@@ -25,8 +25,13 @@ type PickledDataWithReferences<'RawData> =
     /// Like Fixup but loader may return None, in which case there is no fixup.
     member OptionalFixup: (CcuReference -> CcuThunk option) -> 'RawData
 
+
+
 /// The type of state written to by picklers
-type WriterState
+[<Sealed>]
+type WriterState =
+
+    static member NewUnlinked: unit -> WriterState
 
 /// A function to pickle a value into a given stateful writer
 type pickler<'T> = 'T -> WriterState -> unit

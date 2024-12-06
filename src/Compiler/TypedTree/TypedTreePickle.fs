@@ -142,6 +142,27 @@ type WriterState =
     /// Indicates if we are using in-memory format, where we store XML docs as well
     oInMem : bool
   }
+
+  static member NewUnlinked() : WriterState =
+      {
+        os = Unchecked.defaultof<_>
+        osB = Unchecked.defaultof<_>
+        oscope = Unchecked.defaultof<_>
+        occus = Unchecked.defaultof<_>
+        oentities = Unchecked.defaultof<_>
+        otypars = Unchecked.defaultof<_>
+        ovals = Unchecked.defaultof<_>
+        oanoninfos = Unchecked.defaultof<_>
+        ostrings = Unchecked.defaultof<_>
+        opubpaths = Unchecked.defaultof<_>
+        onlerefs = Unchecked.defaultof<_>
+        osimpletys = Unchecked.defaultof<_>
+        oglobals = Unchecked.defaultof<_>
+        isStructThisArgPos = Unchecked.defaultof<_>
+        ofile = Unchecked.defaultof<_>
+        oInMem = Unchecked.defaultof<_>
+      }
+
 let pfailwith st str = ffailwith st.ofile str
 
 [<NoEquality; NoComparison>]
