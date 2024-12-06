@@ -8,6 +8,7 @@ open FSharp.Compiler.TypedTreePickle
 open Internal.Utilities.Library
 
 open Xunit
+open FSharp.Test.ScriptHelpers
 
 [<Fact>]
 let PickleModuleOrNamespace() =
@@ -43,6 +44,8 @@ let PickleModuleOrNamespace() =
 
     let os = ByteBuffer.Create(42)
 
+    let tryFindSysTypeCcu path typeName publicOnly = None
+
     let oglobals = TcGlobals.TcGlobals(
         false,
         Unchecked.defaultof<_>,
@@ -52,11 +55,11 @@ let PickleModuleOrNamespace() =
         false,
         false,
         false,
-        Unchecked.defaultof<_>,
+        tryFindSysTypeCcu,
         false,
         false,
         Unchecked.defaultof<_>,
-        Unchecked.defaultof<_>,
+        Features.LanguageVersion.Default,
         false,
         Unchecked.defaultof<_>)
 
