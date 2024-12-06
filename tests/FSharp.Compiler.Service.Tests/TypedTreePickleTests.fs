@@ -43,6 +43,23 @@ let PickleModuleOrNamespace() =
 
     let os = ByteBuffer.Create(42)
 
+    let oglobals = TcGlobals.TcGlobals(
+        false,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
+        "test",
+        false,
+        false,
+        false,
+        false,
+        Unchecked.defaultof<_>,
+        false,
+        false,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
+        false,
+        Unchecked.defaultof<_>)
+
     let st = 
         {
             os = os
@@ -57,7 +74,7 @@ let PickleModuleOrNamespace() =
             opubpaths = Unchecked.defaultof<_>
             onlerefs = Unchecked.defaultof<_>
             osimpletys = Unchecked.defaultof<_>
-            oglobals = Unchecked.defaultof<_>
+            oglobals = oglobals
             isStructThisArgPos = Unchecked.defaultof<_>
             ofile = Unchecked.defaultof<_>
             oInMem = Unchecked.defaultof<_>
