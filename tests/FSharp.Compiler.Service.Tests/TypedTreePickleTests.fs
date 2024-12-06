@@ -18,7 +18,7 @@ let PickleModuleOrNamespace() =
     }
 
     let oentities = {
-        NodeStamp = Unchecked.defaultof<_>
+        NodeStamp = fun (tc: FSharp.Compiler.TypedTree.Tycon) -> tc.Stamp
         NodeName = Unchecked.defaultof<_>
         GetRange = Unchecked.defaultof<_>
         Deref = Unchecked.defaultof<_>

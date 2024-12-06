@@ -579,10 +579,6 @@
       <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
       <ExcludeAssets>compile</ExcludeAssets>
     </ProjectReference>
-    <ProjectReference Include="$(RepoRoot)\buildtools\AssemblyCheck\AssemblyCheck.fsproj" ReferenceOutputAssembly="False">
-      <SetTargetFramework>TargetFramework=$(FSharpNetCoreProductTargetFramework)</SetTargetFramework>
-      <ExcludeAssets>compile</ExcludeAssets>
-    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
