@@ -9,8 +9,6 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service.Tes
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FSharp.Compiler.Service.Tests support", "FSharp.Compiler.Service.Tests support", "{875D91AC-BA4C-4191-AB11-AE461DB9B8DB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp_Analysis", "tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj", "{BFE6E6F1-1B73-404F-A3A5-30B57E5E0731}"
-EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Test.Utilities", "tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{38A23D53-E2BF-4B76-907F-49F41D60C88E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{AF321816-B4A0-41DD-9A1D-484E8A20C6F6}"
@@ -50,10 +48,6 @@ Global
 		{8D9C9683-5041-48AB-8FA9-0939D2D27D33}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D9C9683-5041-48AB-8FA9-0939D2D27D33}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D9C9683-5041-48AB-8FA9-0939D2D27D33}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BFE6E6F1-1B73-404F-A3A5-30B57E5E0731}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BFE6E6F1-1B73-404F-A3A5-30B57E5E0731}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BFE6E6F1-1B73-404F-A3A5-30B57E5E0731}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BFE6E6F1-1B73-404F-A3A5-30B57E5E0731}.Release|Any CPU.Build.0 = Release|Any CPU
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -79,7 +73,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{BFE6E6F1-1B73-404F-A3A5-30B57E5E0731} = {875D91AC-BA4C-4191-AB11-AE461DB9B8DB}
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E} = {875D91AC-BA4C-4191-AB11-AE461DB9B8DB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
