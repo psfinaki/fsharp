@@ -17,9 +17,16 @@ let PickleModuleOrNamespace() =
         usesQuotations = true
     }
 
-    let oentities : NodeOutTable<EntityData, Entity> = Unchecked.defaultof<_>
+    let oentities = {
+        NodeStamp = Unchecked.defaultof<_>
+        NodeName = Unchecked.defaultof<_>
+        GetRange = Unchecked.defaultof<_>
+        Deref = Unchecked.defaultof<_>
+        Name = Unchecked.defaultof<_>
+        Table = Unchecked.defaultof<_>
+    }
 
-    let st : WriterState = 
+    let st = 
         {
             os = Unchecked.defaultof<_>
             osB = Unchecked.defaultof<_>
