@@ -184,11 +184,29 @@ let EncodeSignatureData() =
         "test",
         ccuData)
 
+    let ilg = PrimaryAssemblyILGlobals
+    let tryFindSysTypeCcu path typeName publicOnly = None
 
+    let tcGlobals = TcGlobals.TcGlobals(
+        false,
+        ilg,
+        Unchecked.defaultof<_>,
+        "test",
+        false,
+        false,
+        false,
+        false,
+        tryFindSysTypeCcu,
+        false,
+        false,
+        Unchecked.defaultof<_>,
+        Features.LanguageVersion.Default,
+        false,
+        TcGlobals.CompilationMode.OneOff)
 
     let result = CompilerImports.EncodeSignatureData(
         tcConfig,
-        Unchecked.defaultof<_>,
+        tcGlobals,
         Unchecked.defaultof<_>,
         ccuThunk,
         Unchecked.defaultof<_>,
