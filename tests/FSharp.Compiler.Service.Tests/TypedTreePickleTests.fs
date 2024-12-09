@@ -185,7 +185,7 @@ let PickleModuleOrNamespace() =
 
     Assert.True(true)
 
-//[<Fact>]
+[<Fact>]
 let EncodeSignatureData() =
     let resolver = SimulatedMSBuildReferenceResolver.getResolver()
     let currentDir = Directory.GetCurrentDirectory()
@@ -200,7 +200,8 @@ let EncodeSignatureData() =
         CopyFSharpCoreFlag.No,
         (fun _ -> None),
         None,
-        Range.range0
+        Range.range0,
+        compilationMode = CompilationMode.OneOff
         )
 
     let tcConfig = TcConfig.Create(builder, false)
@@ -246,22 +247,16 @@ let EncodeSignatureData() =
     let ilg = PrimaryAssemblyILGlobals
     let tryFindSysTypeCcu path typeName publicOnly = None
 
-    let tcGlobals = TcGlobals.TcGlobals(
-        false,
-        ilg,
-        Unchecked.defaultof<_>,
-        "test",
-        false,
-        false,
-        false,
-        false,
-        tryFindSysTypeCcu,
-        false,
-        false,
-        Unchecked.defaultof<_>,
-        Features.LanguageVersion.Default,
-        false,
-        TcGlobals.CompilationMode.OneOff)
+    let sysRes, otherRes, _ =
+        TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+    
+    let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
+    let tcGlobals, _ = 
+        TcImports.BuildFrameworkTcImports(
+            foundationalTcConfigP,
+            sysRes,
+            otherRes) 
+        |> Async.RunImmediate
 
     let result = CompilerImports.EncodeSignatureData(
         tcConfig,
