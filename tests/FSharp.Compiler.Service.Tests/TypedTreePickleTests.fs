@@ -48,10 +48,34 @@ let PickleModuleOrNamespace() =
 
     let ilg = PrimaryAssemblyILGlobals
 
+    let ccuData : CcuData = 
+        {
+            IsFSharp = true
+            UsesFSharp20PlusQuotations = false
+            InvalidateEvent = (Event<_>()).Publish
+            IsProviderGenerated = false
+            ImportProvidedType = Unchecked.defaultof<_>
+            TryGetILModuleDef = (fun () -> None)
+            FileName = None
+            Stamp = Unchecked.defaultof<_>
+            QualifiedName = None
+            SourceCodeDirectory = Unchecked.defaultof<_>
+            ILScopeRef = ILScopeRef.Local
+            Contents = Unchecked.defaultof<_>
+            MemberSignatureEquality = Unchecked.defaultof<_>
+            TypeForwarders = CcuTypeForwarderTable.Empty
+            XmlDocumentationInfo = None
+        }
+
+    let fslibCcu = CcuThunk.Create(
+        "test",
+        ccuData)
+
+
     let oglobals = TcGlobals.TcGlobals(
         false,
         ilg,
-        Unchecked.defaultof<_>,
+        fslibCcu,
         "test",
         false,
         false,
@@ -63,7 +87,7 @@ let PickleModuleOrNamespace() =
         Unchecked.defaultof<_>,
         Features.LanguageVersion.Default,
         false,
-        TcGlobals.CompilationMode.Unset)
+        TcGlobals.CompilationMode.OneOff)
 
     let st = 
         {
