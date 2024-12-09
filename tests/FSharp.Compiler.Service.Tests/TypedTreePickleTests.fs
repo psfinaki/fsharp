@@ -1,14 +1,20 @@
 ﻿module FSharp.Compiler.Service.Tests.TypedTreePickleTests
 
+open System.IO
+
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.IO
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
-open FSharp.Compiler.AbstractIL.IL
 
 open Internal.Utilities.Library
 
 open Xunit
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 
 //[<Fact>]
 let PickleModuleOrNamespace() =
@@ -118,8 +124,33 @@ let PickleModuleOrNamespace() =
 
 
 [<Fact>]
-let EncodeTypecheckingData() =
-    //let _result = FSharp.Compiler.CompilerImports.Encode
+let EncodeSignatureData() =
+    let resolver = SimulatedMSBuildReferenceResolver.getResolver()
+    let currentDir = Directory.GetCurrentDirectory()
+
+    let builder = TcConfigBuilder.CreateNew(
+        resolver,
+        currentDir,
+        ReduceMemoryFlag.No,
+        currentDir,
+        false,
+        false,
+        CopyFSharpCoreFlag.No,
+        (fun _ -> None),
+        None,
+        Range.range0
+        )
+
+    let tcConfig = TcConfig.Create(builder, false)
+
+
+    let result = CompilerImports.EncodeSignatureData(
+        tcConfig,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>)
 
     Assert.True(true)
 
