@@ -71,6 +71,10 @@ val EncodeOptimizationData:
     isIncrementalBuild: bool ->
         ILResource list
 
+val EncodeTypecheckingData:
+    fileName: string ->
+        bool
+
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode =
     | Speculative

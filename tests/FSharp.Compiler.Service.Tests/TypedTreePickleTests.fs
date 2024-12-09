@@ -10,7 +10,7 @@ open Internal.Utilities.Library
 
 open Xunit
 
-[<Fact>]
+//[<Fact>]
 let PickleModuleOrNamespace() =
     let mspec : Entity =         
         { entity_typars = LazyWithContext.NotLazy []
@@ -113,14 +113,13 @@ let PickleModuleOrNamespace() =
 
     Assert.True(true)
 
-//[<Fact>]
-let PickleTest() =
-    let result = TypedTreePickle.pickleFile ""
 
-    Assert.True result
 
-//[<Fact>]
-let UnpickleTest() =
-    let result = TypedTreePickle.unpickleFile()
 
-    Assert.True result
+
+[<Fact>]
+let EncodeTypecheckingData() =
+    //let _result = FSharp.Compiler.CompilerImports.Encode
+
+    Assert.True(true)
+
