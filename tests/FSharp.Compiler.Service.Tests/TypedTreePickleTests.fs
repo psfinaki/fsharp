@@ -7,6 +7,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.IO
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -49,8 +50,14 @@ let Test3() =
 
     let tcConfig = TcConfig.Create(tcConfigB, false)
     
-    let tcGlobals: TcGlobals = Unchecked.defaultof<_>
+    let sysRes, otherRes, _ =
+        TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
     
+    let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
+    let tcGlobals, _ = 
+        TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes) 
+        |> Async.RunImmediate
+
     let ccuThunk: CcuThunk = Unchecked.defaultof<_>
 
     let exportRemapping = MakeExportRemapping ccuThunk ccuThunk.Contents
