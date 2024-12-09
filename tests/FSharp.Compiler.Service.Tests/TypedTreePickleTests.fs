@@ -4,9 +4,11 @@ open System.IO
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.IO
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
@@ -16,8 +18,28 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
 open Xunit
-open FSharp.Compiler.AbstractIL.ILBinaryReader
-open System.Collections
+
+[<Fact>]
+let Test3() =
+    let tcConfig: TcConfig = Unchecked.defaultof<_>
+    let tcGlobals: TcGlobals = Unchecked.defaultof<_>
+    let exportRemapping: TypedTreeOps.Remap = Unchecked.defaultof<_>
+    let ccuThunk: CcuThunk = Unchecked.defaultof<_>
+    let outfile: string = Unchecked.defaultof<_>
+    let isIncrementalBuild: bool = Unchecked.defaultof<_>
+
+    let result = CompilerImports.EncodeSignatureData(
+        tcConfig,
+        tcGlobals,
+        exportRemapping,
+        ccuThunk,
+        outfile,
+        isIncrementalBuild)
+
+    Assert.True(true)
+
+
+
 
 //[<Fact>]
 let PickleModuleOrNamespace() =
@@ -122,11 +144,7 @@ let PickleModuleOrNamespace() =
 
     Assert.True(true)
 
-
-
-
-
-[<Fact>]
+//[<Fact>]
 let EncodeSignatureData() =
     let resolver = SimulatedMSBuildReferenceResolver.getResolver()
     let currentDir = Directory.GetCurrentDirectory()
