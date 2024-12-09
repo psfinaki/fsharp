@@ -10,9 +10,12 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.IO
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle
 
+open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -21,12 +24,40 @@ open Xunit
 
 [<Fact>]
 let Test3() =
-    let tcConfig: TcConfig = Unchecked.defaultof<_>
+    let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.getResolver ()
+    let defaultFSharpBinariesDir = 
+        FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
+    let directoryBuildingFrom = Directory.GetCurrentDirectory()
+    let tryGetMetadataSnapshot = (fun _ -> None)
+
+    let tcConfigB = 
+        TcConfigBuilder.CreateNew(
+            legacyReferenceResolver,
+            defaultFSharpBinariesDir,
+            ReduceMemoryFlag.Yes,
+            directoryBuildingFrom,
+            false,
+            false,
+            CopyFSharpCoreFlag.No,
+            tryGetMetadataSnapshot,
+            None,
+            range0,
+            compilationMode = CompilationMode.OneOff
+        )
+
+
+
+    let tcConfig = TcConfig.Create(tcConfigB, false)
+    
     let tcGlobals: TcGlobals = Unchecked.defaultof<_>
-    let exportRemapping: TypedTreeOps.Remap = Unchecked.defaultof<_>
+    
     let ccuThunk: CcuThunk = Unchecked.defaultof<_>
+
+    let exportRemapping = MakeExportRemapping ccuThunk ccuThunk.Contents
+    
     let outfile: string = Unchecked.defaultof<_>
-    let isIncrementalBuild: bool = Unchecked.defaultof<_>
+    
+    let isIncrementalBuild: bool = false
 
     let result = CompilerImports.EncodeSignatureData(
         tcConfig,
