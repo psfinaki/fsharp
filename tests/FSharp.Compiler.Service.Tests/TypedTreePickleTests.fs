@@ -149,6 +149,7 @@ let EncodeSignatureData() =
             entity_typars = LazyWithContext.NotLazy Typars.Empty
             entity_attribs = Attribs.Empty
             entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_tcaug = TyconAugmentation.Create()
     }
     
     let ccuData : CcuData = 
