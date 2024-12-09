@@ -11,10 +11,13 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
 
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 open Xunit
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open System.Collections
 
 //[<Fact>]
 let PickleModuleOrNamespace() =
@@ -132,7 +135,7 @@ let EncodeSignatureData() =
         resolver,
         currentDir,
         ReduceMemoryFlag.No,
-        currentDir,
+        "",
         false,
         false,
         CopyFSharpCoreFlag.No,
@@ -143,6 +146,11 @@ let EncodeSignatureData() =
 
     let tcConfig = TcConfig.Create(builder, false)
 
+    let modul_type = ModuleOrNamespaceType(
+        ModuleOrNamespaceKind.Namespace false,
+        QueueList.Empty,
+        QueueList.Empty)
+
     let contents = Entity.NewUnlinked()
     let contents = {
         contents with 
@@ -150,6 +158,7 @@ let EncodeSignatureData() =
             entity_attribs = Attribs.Empty
             entity_tycon_repr = TyconRepresentation.TNoRepr
             entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_modul_type = MaybeLazy.Strict(modul_type)
     }
     
     let ccuData : CcuData = 
