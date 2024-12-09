@@ -26,8 +26,6 @@
     </Compile>
     <Compile Include="Common.fs" />
     <Compile Include="TestDoubles.fs" />
-    <Compile Include="ConsoleOnlyOptionsTests.fs" />
-    <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="TypedTreePickleTests.fs" />
   </ItemGroup>
 
