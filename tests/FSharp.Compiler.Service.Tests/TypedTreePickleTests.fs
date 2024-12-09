@@ -143,12 +143,44 @@ let EncodeSignatureData() =
 
     let tcConfig = TcConfig.Create(builder, false)
 
+    let contents = Entity.NewUnlinked()
+    let contents = {
+        contents with 
+            entity_typars = LazyWithContext.NotLazy Typars.Empty
+            entity_attribs = Attribs.Empty
+            entity_tycon_repr = TyconRepresentation.TNoRepr
+    }
+    
+    let ccuData : CcuData = 
+        {
+            IsFSharp = true
+            UsesFSharp20PlusQuotations = false
+            InvalidateEvent = (Event<_>()).Publish
+            IsProviderGenerated = false
+            ImportProvidedType = Unchecked.defaultof<_>
+            TryGetILModuleDef = (fun () -> None)
+            FileName = None
+            Stamp = Unchecked.defaultof<_>
+            QualifiedName = None
+            SourceCodeDirectory = Unchecked.defaultof<_>
+            ILScopeRef = ILScopeRef.Local
+            Contents = contents
+            MemberSignatureEquality = Unchecked.defaultof<_>
+            TypeForwarders = CcuTypeForwarderTable.Empty
+            XmlDocumentationInfo = None
+        }
+
+    let ccuThunk = CcuThunk.Create(
+        "test",
+        ccuData)
+
+
 
     let result = CompilerImports.EncodeSignatureData(
         tcConfig,
         Unchecked.defaultof<_>,
         Unchecked.defaultof<_>,
-        Unchecked.defaultof<_>,
+        ccuThunk,
         Unchecked.defaultof<_>,
         Unchecked.defaultof<_>)
 
