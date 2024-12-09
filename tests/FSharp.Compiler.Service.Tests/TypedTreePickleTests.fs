@@ -55,7 +55,10 @@ let Test3() =
     
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
     let tcGlobals, _ = 
-        TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes) 
+        TcImports.BuildFrameworkTcImports(
+            foundationalTcConfigP,
+            sysRes,
+            otherRes) 
         |> Async.RunImmediate
 
     let ccuThunk: CcuThunk = Unchecked.defaultof<_>
