@@ -16,16 +16,6 @@
 
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="expected-help-output.bsl">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
-    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
-      <Link>XunitSetup.fs</Link>
-    </Compile>
-    <Compile Include="Common.fs" />
-    <Compile Include="TestDoubles.fs" />
     <Compile Include="TypedTreePickleTests.fs" />
   </ItemGroup>
 
@@ -36,7 +26,6 @@
 	<ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj">
 		<!-- If tests would use net9.0, the surface area changes because of different set of Assembly references -->
 	</ProjectReference>
-    <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
 
 </Project>

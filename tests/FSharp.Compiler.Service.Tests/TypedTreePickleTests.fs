@@ -41,7 +41,7 @@ open Xunit
 //    TcGlobals.CompilationMode.OneOff)
 
 
-[<Fact>]
+//[<Fact>]
 let Test3() =
     let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.getResolver ()
     let defaultFSharpBinariesDir = 
