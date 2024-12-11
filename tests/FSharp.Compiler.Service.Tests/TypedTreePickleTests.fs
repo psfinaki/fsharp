@@ -198,8 +198,9 @@ let Test3() =
 
 //    Assert.True(true)
 
+
 [<Fact>]
-let EncodeSignatureData() =
+let EncodeSignatureData1() =
     let resolver = SimulatedMSBuildReferenceResolver.getResolver()
     let currentDir = Directory.GetCurrentDirectory()
 
@@ -255,7 +256,7 @@ let EncodeSignatureData() =
         }
 
     let ccuThunk = CcuThunk.Create(
-        "test",
+        "testd",
         ccuData)
 
     let sysRes, otherRes, _ =
@@ -282,6 +283,94 @@ let EncodeSignatureData() =
     
     let actual = System.Text.Encoding.Default.GetString(bytes)
     let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$\u000e\u0005�\u0010U"
+    
+    Assert.Contains(expected, actual)
+
+
+[<Fact>]
+let EncodeSignatureData2() =
+    let resolver = SimulatedMSBuildReferenceResolver.getResolver()
+    let currentDir = Directory.GetCurrentDirectory()
+
+    let builder = TcConfigBuilder.CreateNew(
+        resolver,
+        currentDir,
+        ReduceMemoryFlag.No,
+        "",
+        false,
+        false,
+        CopyFSharpCoreFlag.No,
+        (fun _ -> None),
+        None,
+        Range.range0,
+        compilationMode = CompilationMode.OneOff
+        )
+
+    let tcConfig = TcConfig.Create(builder, false)
+
+    let modul_type = ModuleOrNamespaceType(
+        ModuleOrNamespaceKind.ModuleOrType,
+        QueueList.Empty,
+        QueueList.Empty)
+
+    let contents = Entity.NewUnlinked()
+    let contents = {
+        contents with 
+            entity_typars = LazyWithContext.NotLazy Typars.Empty
+            entity_attribs = Attribs.Empty
+            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_modul_type = MaybeLazy.Strict(modul_type)
+            entity_logical_name = "test"
+    }
+    
+    let ccuData : CcuData = 
+        {
+            IsFSharp = true
+            UsesFSharp20PlusQuotations = false
+            InvalidateEvent = (Event<_>()).Publish
+            IsProviderGenerated = false
+            ImportProvidedType = Unchecked.defaultof<_>
+            TryGetILModuleDef = (fun () -> None)
+            FileName = None
+            Stamp = Unchecked.defaultof<_>
+            QualifiedName = None
+            SourceCodeDirectory = Unchecked.defaultof<_>
+            ILScopeRef = ILScopeRef.Local
+            Contents = contents
+            MemberSignatureEquality = Unchecked.defaultof<_>
+            TypeForwarders = CcuTypeForwarderTable.Empty
+            XmlDocumentationInfo = None
+        }
+
+    let ccuThunk = CcuThunk.Create(
+        "testd",
+        ccuData)
+
+    let sysRes, otherRes, _ =
+        TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+    
+    let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
+    let tcGlobals, _ = 
+        TcImports.BuildFrameworkTcImports(
+            foundationalTcConfigP,
+            sysRes,
+            otherRes) 
+        |> Async.RunImmediate
+
+    let result = CompilerImports.EncodeSignatureData(
+        tcConfig,
+        tcGlobals,
+        Unchecked.defaultof<_>,
+        ccuThunk,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>)
+
+    let (_, resources) = result
+    let bytes = resources.Head.GetBytes().ReadAllBytes()
+    
+    let actual = System.Text.Encoding.Default.GetString(bytes)
+    let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$6\u0005 � �"
     
     Assert.Contains(expected, actual)
 
