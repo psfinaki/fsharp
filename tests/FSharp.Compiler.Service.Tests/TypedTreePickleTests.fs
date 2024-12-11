@@ -161,7 +161,7 @@ let EncodeSignatureData5() =
     let v =  
         { Val.NewUnlinked() with
             val_logical_name = "test"
-            val_type = TType.TType_measure (Measure.Inv Measure.One)
+            val_type = TType.TType_tuple (TupInfo.Const true, TTypes.Empty)
         }
 
     let modul_type = ModuleOrNamespaceType(
@@ -170,6 +170,6 @@ let EncodeSignatureData5() =
         QueueList.Empty)
 
     let result = magicFunction modul_type
-    let expected = "c`d`df)I-.a/����/�c```\b\u0006\u0011� \u0002\r0�\ba�$�\u00020\u001fL�� T30Ch"
+    let expected = "c`d`df)I-.a/����/�c```\b\u0006\u0011� \u0002\r0�\ba�$�\u00020\u001fLp �f`��"
 
     Assert.Contains(expected, result)
