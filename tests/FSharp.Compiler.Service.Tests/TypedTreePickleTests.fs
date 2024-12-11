@@ -133,7 +133,6 @@ let pickleCcuInfo() =
     let resolver = SimulatedMSBuildReferenceResolver.getResolver()
     let currentDir = Directory.GetCurrentDirectory()
 
-    let builder = TestDoubles.getArbitraryTcConfigBuilder()
     let builder = TcConfigBuilder.CreateNew(
         resolver,
         currentDir,
@@ -172,7 +171,8 @@ let pickleCcuInfo() =
         Table = Table<_>.Create "test"
     }
 
-    let table = NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
+    let table1 = NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
+    let table2 = NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), id , "ovals")
 
     let st = 
         {
@@ -181,8 +181,8 @@ let pickleCcuInfo() =
             oscope = Unchecked.defaultof<_>
             occus = Unchecked.defaultof<_>
             oentities = oentities
-            otypars = table
-            ovals = Unchecked.defaultof<_>
+            otypars = table1
+            ovals = table2
             oanoninfos = Unchecked.defaultof<_>
             ostrings = Table<_>.Create ""
             opubpaths = Unchecked.defaultof<_>
@@ -194,7 +194,7 @@ let pickleCcuInfo() =
             oInMem = Unchecked.defaultof<_>
         }
 
-    let _result = TypedTreePickle.pickleCcuInfo minfo st
+    TypedTreePickle.pickleCcuInfo minfo st
 
     Assert.True(true)
 
