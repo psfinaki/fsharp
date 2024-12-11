@@ -23,7 +23,7 @@ open Internal.Utilities.Library.Extras
 
 open Xunit
 
-let private magicFunction (modul_type: ModuleOrNamespaceType) =
+let private magicFunction (contents: Entity) =
     let resolver = SimulatedMSBuildReferenceResolver.getResolver()
     let currentDir = Directory.GetCurrentDirectory()
 
@@ -42,16 +42,6 @@ let private magicFunction (modul_type: ModuleOrNamespaceType) =
         )
 
     let tcConfig = TcConfig.Create(builder, false)
-
-    let contents = {
-        Entity.NewUnlinked() with 
-            entity_typars = LazyWithContext.NotLazy Typars.Empty
-            entity_attribs = Attribs.Empty
-            entity_tycon_repr = TyconRepresentation.TNoRepr
-            entity_tycon_tcaug = TyconAugmentation.Create()
-            entity_modul_type = MaybeLazy.Strict(modul_type)
-            entity_logical_name = "test"
-    }
     
     let ccuData : CcuData = 
         {
@@ -108,7 +98,17 @@ let EncodeSignatureData1() =
         QueueList.Empty,
         QueueList.Empty)
 
-    let result = magicFunction modul_type
+    let contents = {
+        Entity.NewUnlinked() with 
+            entity_typars = LazyWithContext.NotLazy Typars.Empty
+            entity_attribs = Attribs.Empty
+            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_modul_type = MaybeLazy.Strict(modul_type)
+            entity_logical_name = "test"
+    }
+
+    let result = magicFunction contents
     let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$\u000e\u0005�\u0010U"
     
     Assert.Contains(expected, result)
@@ -120,7 +120,17 @@ let EncodeSignatureData2() =
         QueueList.Empty,
         QueueList.Empty)
 
-    let result = magicFunction modul_type
+    let contents = {
+        Entity.NewUnlinked() with 
+            entity_typars = LazyWithContext.NotLazy Typars.Empty
+            entity_attribs = Attribs.Empty
+            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_modul_type = MaybeLazy.Strict(modul_type)
+            entity_logical_name = "test"
+    }
+
+    let result = magicFunction contents
     let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$6\u0005 � �"
     
     Assert.Contains(expected, result)
@@ -132,7 +142,17 @@ let EncodeSignatureData3() =
         QueueList.Empty,
         QueueList.Empty)
 
-    let result = magicFunction modul_type
+    let contents = {
+        Entity.NewUnlinked() with 
+            entity_typars = LazyWithContext.NotLazy Typars.Empty
+            entity_attribs = Attribs.Empty
+            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_modul_type = MaybeLazy.Strict(modul_type)
+            entity_logical_name = "test"
+    }
+
+    let result = magicFunction contents
     let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$6\u0005`i�*"
     
     Assert.Contains(expected, result)
@@ -150,7 +170,17 @@ let EncodeSignatureData4() =
         QueueList.ofList [v],
         QueueList.Empty)
 
-    let result = magicFunction modul_type
+    let contents = {
+        Entity.NewUnlinked() with 
+            entity_typars = LazyWithContext.NotLazy Typars.Empty
+            entity_attribs = Attribs.Empty
+            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_modul_type = MaybeLazy.Strict(modul_type)
+            entity_logical_name = "test"
+    }
+
+    let result = magicFunction contents
     let expected = "c`d`df)I-.a/����/�c```\b\u0006\u0011� \u0002\r0�\ba�$�\u00020\u001fL�� T30Ch"
     
     Assert.Contains(expected, result)
@@ -168,7 +198,17 @@ let EncodeSignatureData5() =
         QueueList.ofList [v],
         QueueList.Empty)
 
-    let result = magicFunction modul_type
+    let contents = {
+        Entity.NewUnlinked() with 
+            entity_typars = LazyWithContext.NotLazy Typars.Empty
+            entity_attribs = Attribs.Empty
+            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_modul_type = MaybeLazy.Strict(modul_type)
+            entity_logical_name = "test"
+    }
+
+    let result = magicFunction contents
     let expected = "c`d`df)I-.a/����/�c```\b\u0006\u0011� \u0002\r0�\ba�$�\u00020\u001fLp �f`��"
 
     Assert.Contains(expected, result)
