@@ -43,9 +43,8 @@ let private magicFunction (modul_type: ModuleOrNamespaceType) =
 
     let tcConfig = TcConfig.Create(builder, false)
 
-    let contents = Entity.NewUnlinked()
     let contents = {
-        contents with 
+        Entity.NewUnlinked() with 
             entity_typars = LazyWithContext.NotLazy Typars.Empty
             entity_attribs = Attribs.Empty
             entity_tycon_repr = TyconRepresentation.TNoRepr
