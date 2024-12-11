@@ -63,7 +63,7 @@ let private magicFunction (contents: Entity) =
         }
 
     let ccuThunk = CcuThunk.Create(
-        "testd",
+        "",
         ccuData)
 
     let sysRes, otherRes, _ =
