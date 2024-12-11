@@ -140,7 +140,11 @@ let EncodeSignatureData3() =
 
 [<Fact>]
 let EncodeSignatureData4() =
-    let v = Val.NewUnlinked()
+    let v =  
+        { Val.NewUnlinked() with
+            val_logical_name = "test"
+            val_type = TType.TType_measure Measure.One
+        }
 
     let modul_type = ModuleOrNamespaceType(
         ModuleOrNamespaceKind.FSharpModuleWithSuffix,
@@ -148,6 +152,6 @@ let EncodeSignatureData4() =
         QueueList.Empty)
 
     let result = magicFunction modul_type
-    let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$6\u0005`i�*"
+    let expected = "c`d`df)I-.a/����/�c```\b\u0006\u0011� \u0002\r0�\ba�$�\u00020\u001fL�� T30Ch"
     
     Assert.Contains(expected, result)
