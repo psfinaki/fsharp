@@ -91,7 +91,7 @@ let private magicFunction (modul_type: ModuleOrNamespaceType) =
     let result = CompilerImports.EncodeSignatureData(
         tcConfig,
         tcGlobals,
-        Unchecked.defaultof<_>,
+        Remap.Empty,
         ccuThunk,
         Unchecked.defaultof<_>,
         Unchecked.defaultof<_>)
@@ -129,20 +129,22 @@ let EncodeSignatureData2() =
 [<Fact>]
 let EncodeSignatureData3() =
     let modul_type = ModuleOrNamespaceType(
-        ModuleOrNamespaceKind.Namespace true,
+        ModuleOrNamespaceKind.FSharpModuleWithSuffix,
         QueueList.Empty,
         QueueList.Empty)
 
     let result = magicFunction modul_type
-    let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$\u000e\u0005�\u0010U"
+    let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$6\u0005`i�*"
     
     Assert.Contains(expected, result)
 
 [<Fact>]
 let EncodeSignatureData4() =
+    let v = Val.NewUnlinked()
+
     let modul_type = ModuleOrNamespaceType(
         ModuleOrNamespaceKind.FSharpModuleWithSuffix,
-        QueueList.Empty,
+        QueueList.ofList [v],
         QueueList.Empty)
 
     let result = magicFunction modul_type
