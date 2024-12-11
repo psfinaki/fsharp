@@ -113,7 +113,7 @@ type NodeOutTable<'Data, 'Node> =
     member x.Size = x.Table.Size
 
     // inline this to get known-type-information through to the HashMultiMap constructor
-    static member inline Create (stampF, nameF, rangeF, derefF, nm) =
+    static member Create (stampF, nameF, rangeF, derefF, nm) =
         { NodeStamp = stampF
           NodeName = nameF
           GetRange = rangeF

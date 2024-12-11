@@ -47,6 +47,13 @@ type NodeOutTable<'Data, 'Node> =
       Name: string
       Table: Table<Stamp> }
 
+    static member Create: 
+        stampF: ('a -> Stamp) * 
+        nameF: ('a -> string) * 
+        rangeF: ('a -> range) * 
+        derefF: ('a -> 'b) * 
+        nm: string -> NodeOutTable<'b, 'a>
+
 /// The type of state written to by picklers
 type WriterState =
     { 

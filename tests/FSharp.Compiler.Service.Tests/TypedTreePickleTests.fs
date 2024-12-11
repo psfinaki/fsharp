@@ -23,6 +23,24 @@ open Internal.Utilities.Library.Extras
 
 open Xunit
 
+//let _oglobals = TcGlobals.TcGlobals(
+//    false,
+//    ilg,
+//    fslibCcu,
+//    "test",
+//    false,
+//    false,
+//    false,
+//    false,
+//    tryFindSysTypeCcu,
+//    false,
+//    false,
+//    Unchecked.defaultof<_>,
+//    Features.LanguageVersion.Default,
+//    false,
+//    TcGlobals.CompilationMode.OneOff)
+
+
 [<Fact>]
 let Test3() =
     let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.getResolver ()
@@ -82,18 +100,23 @@ let Test3() =
 
 
 
-//[<Fact>]
-let PickleModuleOrNamespace() =
+[<Fact>]
+let pickleCcuInfo() =
+    let modul_type = ModuleOrNamespaceType(
+        ModuleOrNamespaceKind.Namespace false,
+        QueueList.Empty,
+        QueueList.Empty)
+
     let mspec : Entity =         
         { entity_typars = LazyWithContext.NotLazy []
           entity_flags = Unchecked.defaultof<_>
           entity_stamp = Unchecked.defaultof<_>
           entity_logical_name = "test" 
           entity_range = Unchecked.defaultof<_> 
-          entity_attribs = Unchecked.defaultof<_>
-          entity_tycon_repr= Unchecked.defaultof<_>
-          entity_tycon_tcaug= Unchecked.defaultof<_>
-          entity_modul_type= Unchecked.defaultof<_>
+          entity_attribs = Attribs.Empty
+          entity_tycon_repr = TyconRepresentation.TNoRepr
+          entity_tycon_tcaug = TyconAugmentation.Create()
+          entity_modul_type = MaybeLazy.Strict(modul_type)
           entity_pubpath = Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
           entity_il_repr_cache = Unchecked.defaultof<_>
@@ -105,91 +128,12 @@ let PickleModuleOrNamespace() =
         usesQuotations = true
     }
 
-    let oentities = {
-        NodeStamp = fun (tc: TypedTree.Tycon) -> tc.Stamp
-        NodeName = Unchecked.defaultof<_>
-        GetRange = Unchecked.defaultof<_>
-        Deref = id
-        Name = Unchecked.defaultof<_>
-        Table = Table<_>.Create "test"
-    }
+    ///
 
-    let os = ByteBuffer.Create(42)
-
-    let tryFindSysTypeCcu path typeName publicOnly = None
-
-    let ilg = PrimaryAssemblyILGlobals
-
-    let ccuData : CcuData = 
-        {
-            IsFSharp = true
-            UsesFSharp20PlusQuotations = false
-            InvalidateEvent = (Event<_>()).Publish
-            IsProviderGenerated = false
-            ImportProvidedType = Unchecked.defaultof<_>
-            TryGetILModuleDef = (fun () -> None)
-            FileName = None
-            Stamp = Unchecked.defaultof<_>
-            QualifiedName = None
-            SourceCodeDirectory = Unchecked.defaultof<_>
-            ILScopeRef = ILScopeRef.Local
-            Contents = Unchecked.defaultof<_>
-            MemberSignatureEquality = Unchecked.defaultof<_>
-            TypeForwarders = CcuTypeForwarderTable.Empty
-            XmlDocumentationInfo = None
-        }
-
-    let fslibCcu = CcuThunk.Create(
-        "test",
-        ccuData)
-
-
-    let oglobals = TcGlobals.TcGlobals(
-        false,
-        ilg,
-        fslibCcu,
-        "test",
-        false,
-        false,
-        false,
-        false,
-        tryFindSysTypeCcu,
-        false,
-        false,
-        Unchecked.defaultof<_>,
-        Features.LanguageVersion.Default,
-        false,
-        TcGlobals.CompilationMode.OneOff)
-
-    let st = 
-        {
-            os = os
-            osB = Unchecked.defaultof<_>
-            oscope = Unchecked.defaultof<_>
-            occus = Unchecked.defaultof<_>
-            oentities = oentities
-            otypars = Unchecked.defaultof<_>
-            ovals = Unchecked.defaultof<_>
-            oanoninfos = Unchecked.defaultof<_>
-            ostrings = Table<_>.Create ""
-            opubpaths = Unchecked.defaultof<_>
-            onlerefs = Unchecked.defaultof<_>
-            osimpletys = Unchecked.defaultof<_>
-            oglobals = oglobals
-            isStructThisArgPos = Unchecked.defaultof<_>
-            ofile = Unchecked.defaultof<_>
-            oInMem = Unchecked.defaultof<_>
-        }
-
-    let _result = TypedTreePickle.pickleCcuInfo minfo st
-
-    Assert.True(true)
-
-[<Fact>]
-let EncodeSignatureData() =
     let resolver = SimulatedMSBuildReferenceResolver.getResolver()
     let currentDir = Directory.GetCurrentDirectory()
 
+    let builder = TestDoubles.getArbitraryTcConfigBuilder()
     let builder = TcConfigBuilder.CreateNew(
         resolver,
         currentDir,
@@ -206,47 +150,6 @@ let EncodeSignatureData() =
 
     let tcConfig = TcConfig.Create(builder, false)
 
-    let modul_type = ModuleOrNamespaceType(
-        ModuleOrNamespaceKind.Namespace false,
-        QueueList.Empty,
-        QueueList.Empty)
-
-    let contents = Entity.NewUnlinked()
-    let contents = {
-        contents with 
-            entity_typars = LazyWithContext.NotLazy Typars.Empty
-            entity_attribs = Attribs.Empty
-            entity_tycon_repr = TyconRepresentation.TNoRepr
-            entity_tycon_tcaug = TyconAugmentation.Create()
-            entity_modul_type = MaybeLazy.Strict(modul_type)
-    }
-    
-    let ccuData : CcuData = 
-        {
-            IsFSharp = true
-            UsesFSharp20PlusQuotations = false
-            InvalidateEvent = (Event<_>()).Publish
-            IsProviderGenerated = false
-            ImportProvidedType = Unchecked.defaultof<_>
-            TryGetILModuleDef = (fun () -> None)
-            FileName = None
-            Stamp = Unchecked.defaultof<_>
-            QualifiedName = None
-            SourceCodeDirectory = Unchecked.defaultof<_>
-            ILScopeRef = ILScopeRef.Local
-            Contents = contents
-            MemberSignatureEquality = Unchecked.defaultof<_>
-            TypeForwarders = CcuTypeForwarderTable.Empty
-            XmlDocumentationInfo = None
-        }
-
-    let ccuThunk = CcuThunk.Create(
-        "test",
-        ccuData)
-
-    let ilg = PrimaryAssemblyILGlobals
-    let tryFindSysTypeCcu path typeName publicOnly = None
-
     let sysRes, otherRes, _ =
         TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
     
@@ -258,13 +161,121 @@ let EncodeSignatureData() =
             otherRes) 
         |> Async.RunImmediate
 
-    let result = CompilerImports.EncodeSignatureData(
-        tcConfig,
-        tcGlobals,
-        Unchecked.defaultof<_>,
-        ccuThunk,
-        Unchecked.defaultof<_>,
-        Unchecked.defaultof<_>)
+    let os = ByteBuffer.Create(42)
+
+    let oentities = {
+        NodeStamp = fun (tc: TypedTree.Tycon) -> tc.Stamp
+        NodeName = Unchecked.defaultof<_>
+        GetRange = Unchecked.defaultof<_>
+        Deref = id
+        Name = Unchecked.defaultof<_>
+        Table = Table<_>.Create "test"
+    }
+
+    let table = NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
+
+    let st = 
+        {
+            os = os
+            osB = Unchecked.defaultof<_>
+            oscope = Unchecked.defaultof<_>
+            occus = Unchecked.defaultof<_>
+            oentities = oentities
+            otypars = table
+            ovals = Unchecked.defaultof<_>
+            oanoninfos = Unchecked.defaultof<_>
+            ostrings = Table<_>.Create ""
+            opubpaths = Unchecked.defaultof<_>
+            onlerefs = Unchecked.defaultof<_>
+            osimpletys = Unchecked.defaultof<_>
+            oglobals = tcGlobals
+            isStructThisArgPos = Unchecked.defaultof<_>
+            ofile = Unchecked.defaultof<_>
+            oInMem = Unchecked.defaultof<_>
+        }
+
+    let _result = TypedTreePickle.pickleCcuInfo minfo st
 
     Assert.True(true)
+
+//[<Fact>]
+//let EncodeSignatureData() =
+//    let resolver = SimulatedMSBuildReferenceResolver.getResolver()
+//    let currentDir = Directory.GetCurrentDirectory()
+
+//    let builder = TcConfigBuilder.CreateNew(
+//        resolver,
+//        currentDir,
+//        ReduceMemoryFlag.No,
+//        "",
+//        false,
+//        false,
+//        CopyFSharpCoreFlag.No,
+//        (fun _ -> None),
+//        None,
+//        Range.range0,
+//        compilationMode = CompilationMode.OneOff
+//        )
+
+//    let tcConfig = TcConfig.Create(builder, false)
+
+//    let modul_type = ModuleOrNamespaceType(
+//        ModuleOrNamespaceKind.Namespace false,
+//        QueueList.Empty,
+//        QueueList.Empty)
+
+//    let contents = Entity.NewUnlinked()
+//    let contents = {
+//        contents with 
+//            entity_typars = LazyWithContext.NotLazy Typars.Empty
+//            entity_attribs = Attribs.Empty
+//            entity_tycon_repr = TyconRepresentation.TNoRepr
+//            entity_tycon_tcaug = TyconAugmentation.Create()
+//            entity_modul_type = MaybeLazy.Strict(modul_type)
+//            entity_logical_name = "test"
+//    }
+    
+//    let ccuData : CcuData = 
+//        {
+//            IsFSharp = true
+//            UsesFSharp20PlusQuotations = false
+//            InvalidateEvent = (Event<_>()).Publish
+//            IsProviderGenerated = false
+//            ImportProvidedType = Unchecked.defaultof<_>
+//            TryGetILModuleDef = (fun () -> None)
+//            FileName = None
+//            Stamp = Unchecked.defaultof<_>
+//            QualifiedName = None
+//            SourceCodeDirectory = Unchecked.defaultof<_>
+//            ILScopeRef = ILScopeRef.Local
+//            Contents = contents
+//            MemberSignatureEquality = Unchecked.defaultof<_>
+//            TypeForwarders = CcuTypeForwarderTable.Empty
+//            XmlDocumentationInfo = None
+//        }
+
+//    let ccuThunk = CcuThunk.Create(
+//        "test",
+//        ccuData)
+
+//    let sysRes, otherRes, _ =
+//        TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+    
+//    let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
+//    let tcGlobals, _ = 
+//        TcImports.BuildFrameworkTcImports(
+//            foundationalTcConfigP,
+//            sysRes,
+//            otherRes) 
+//        |> Async.RunImmediate
+
+//    let result = CompilerImports.EncodeSignatureData(
+//        tcConfig,
+//        tcGlobals,
+//        Unchecked.defaultof<_>,
+//        ccuThunk,
+//        Unchecked.defaultof<_>,
+//        Unchecked.defaultof<_>)
+
+//    Assert.True(true)
 

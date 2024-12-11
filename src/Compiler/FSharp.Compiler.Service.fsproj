@@ -558,8 +558,6 @@
     <Compile Include="Interactive\fsihelp.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
-    <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
-    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
   </ItemGroup>
 
   <ItemGroup>
@@ -584,11 +582,6 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Driver\parallel-optimization.md" />
-    <None Include="Driver\parallel-optimization.drawio.svg" />
   </ItemGroup>
 
 </Project>
