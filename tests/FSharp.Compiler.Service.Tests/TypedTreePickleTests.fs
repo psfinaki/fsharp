@@ -114,10 +114,8 @@ let EncodeSignatureData1() =
     
     Assert.Contains(expected, result)
 
-
 [<Fact>]
 let EncodeSignatureData2() =
-
     let modul_type = ModuleOrNamespaceType(
         ModuleOrNamespaceKind.ModuleOrType,
         QueueList.Empty,
@@ -128,3 +126,26 @@ let EncodeSignatureData2() =
     
     Assert.Contains(expected, result)
 
+[<Fact>]
+let EncodeSignatureData3() =
+    let modul_type = ModuleOrNamespaceType(
+        ModuleOrNamespaceKind.Namespace true,
+        QueueList.Empty,
+        QueueList.Empty)
+
+    let result = magicFunction modul_type
+    let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$\u000e\u0005�\u0010U"
+    
+    Assert.Contains(expected, result)
+
+[<Fact>]
+let EncodeSignatureData4() =
+    let modul_type = ModuleOrNamespaceType(
+        ModuleOrNamespaceKind.FSharpModuleWithSuffix,
+        QueueList.Empty,
+        QueueList.Empty)
+
+    let result = magicFunction modul_type
+    let expected = "c`d``f)I-.a/����/�c```p\u0006\u0011� \u0002\r0�\bf�$6\u0005`i�*"
+    
+    Assert.Contains(expected, result)
