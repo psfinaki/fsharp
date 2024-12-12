@@ -8,15 +8,11 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.IO
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTreePickle
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -102,7 +98,7 @@ let EncodeSignatureData1() =
         Entity.NewUnlinked() with 
             entity_typars = LazyWithContext.NotLazy Typars.Empty
             entity_attribs = Attribs.Empty
-            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_repr = TNoRepr
             entity_tycon_tcaug = TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Strict(modul_type)
             entity_logical_name = "test"
@@ -116,7 +112,7 @@ let EncodeSignatureData1() =
 [<Fact>]
 let EncodeSignatureData2() =
     let modul_type = ModuleOrNamespaceType(
-        ModuleOrNamespaceKind.ModuleOrType,
+        ModuleOrType,
         QueueList.Empty,
         QueueList.Empty)
 
@@ -124,7 +120,7 @@ let EncodeSignatureData2() =
         Entity.NewUnlinked() with 
             entity_typars = LazyWithContext.NotLazy Typars.Empty
             entity_attribs = Attribs.Empty
-            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_repr = TNoRepr
             entity_tycon_tcaug = TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Strict(modul_type)
             entity_logical_name = "test"
@@ -138,7 +134,7 @@ let EncodeSignatureData2() =
 [<Fact>]
 let EncodeSignatureData3() =
     let modul_type = ModuleOrNamespaceType(
-        ModuleOrNamespaceKind.FSharpModuleWithSuffix,
+        FSharpModuleWithSuffix,
         QueueList.Empty,
         QueueList.Empty)
 
@@ -146,7 +142,7 @@ let EncodeSignatureData3() =
         Entity.NewUnlinked() with 
             entity_typars = LazyWithContext.NotLazy Typars.Empty
             entity_attribs = Attribs.Empty
-            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_repr = TNoRepr
             entity_tycon_tcaug = TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Strict(modul_type)
             entity_logical_name = "test"
@@ -162,11 +158,11 @@ let EncodeSignatureData4() =
     let v =  
         { Val.NewUnlinked() with
             val_logical_name = "test"
-            val_type = TType.TType_measure Measure.One
+            val_type = TType_measure Measure.One
         }
 
     let modul_type = ModuleOrNamespaceType(
-        ModuleOrNamespaceKind.FSharpModuleWithSuffix,
+        FSharpModuleWithSuffix,
         QueueList.ofList [v],
         QueueList.Empty)
 
@@ -174,7 +170,7 @@ let EncodeSignatureData4() =
         Entity.NewUnlinked() with 
             entity_typars = LazyWithContext.NotLazy Typars.Empty
             entity_attribs = Attribs.Empty
-            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_repr = TNoRepr
             entity_tycon_tcaug = TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Strict(modul_type)
             entity_logical_name = "test"
@@ -190,11 +186,11 @@ let EncodeSignatureData5() =
     let v =  
         { Val.NewUnlinked() with
             val_logical_name = "test"
-            val_type = TType.TType_tuple (TupInfo.Const true, TTypes.Empty)
+            val_type = TType_tuple (TupInfo.Const true, TTypes.Empty)
         }
 
     let modul_type = ModuleOrNamespaceType(
-        ModuleOrNamespaceKind.FSharpModuleWithSuffix,
+        FSharpModuleWithSuffix,
         QueueList.ofList [v],
         QueueList.Empty)
 
@@ -202,7 +198,7 @@ let EncodeSignatureData5() =
         Entity.NewUnlinked() with 
             entity_typars = LazyWithContext.NotLazy Typars.Empty
             entity_attribs = Attribs.Empty
-            entity_tycon_repr = TyconRepresentation.TNoRepr
+            entity_tycon_repr = TNoRepr
             entity_tycon_tcaug = TyconAugmentation.Create()
             entity_modul_type = MaybeLazy.Strict(modul_type)
             entity_logical_name = "test"
