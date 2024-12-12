@@ -292,6 +292,9 @@ let WriteOptimizationData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: 
         Optimizer.p_CcuOptimizationInfo
         modulInfo
 
+let WriteTypecheckingData() : ILResource =
+    failwith ""
+
 let EncodeSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) =
     if tcConfig.GenerateSignatureData then
         let resource1, resource2 =
@@ -337,8 +340,12 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
     else
         []
 
-let EncodeTypecheckingData () =
-    true
+let EncodeTypecheckingData () : ILResource list =
+    if true then
+        let resource = WriteTypecheckingData()
+        [ resource ]
+    else
+        [ ]
 
 exception AssemblyNotResolved of originalName: string * range: range
 

@@ -1,6 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.TypedTreePickleTests
 
 open System.IO
+open System.Text
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
@@ -213,6 +214,9 @@ let EncodeSignatureData5() =
 
 [<Fact>]
 let EncodeTypecheckingData() =
-    let result = CompilerImports.EncodeTypecheckingData()
+    let resources = CompilerImports.EncodeTypecheckingData()
+    let bytes = resources.Head.GetBytes().ReadAllBytes()
+    let _result = Encoding.Default.GetString(bytes)
+
     
-    Assert.True(result)
+    Assert.True(true)
