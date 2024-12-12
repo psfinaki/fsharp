@@ -208,3 +208,11 @@ let EncodeSignatureData5() =
     let expected = "c`d`df)I-.a/����/�c```\b\u0006\u0011� \u0002\r0�\ba�$�\u00020\u001fLp �f`��"
 
     Assert.Contains(expected, result)
+
+/////////////////////////////////
+
+[<Fact>]
+let EncodeTypecheckingData() =
+    let result = CompilerImports.EncodeTypecheckingData()
+    
+    Assert.True(result)

@@ -72,8 +72,7 @@ val EncodeOptimizationData:
         ILResource list
 
 val EncodeTypecheckingData:
-    fileName: string ->
-        bool
+    unit -> bool
 
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode =

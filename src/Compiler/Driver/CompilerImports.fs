@@ -337,7 +337,7 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
     else
         []
 
-let EncodeTypecheckingData (fileName: string) =
+let EncodeTypecheckingData () =
     true
 
 exception AssemblyNotResolved of originalName: string * range: range
