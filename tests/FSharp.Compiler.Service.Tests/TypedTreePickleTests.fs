@@ -96,13 +96,18 @@ let EncodeTypecheckingData() =
 
     ///
 
+
+    let implFile: CheckedImplFile = Unchecked.defaultof<_>
+
+    ///
+
     let resources = CompilerImports.EncodeTypecheckingData(
         tcConfig,
         tcGlobals,
         ccuThunk,
         Unchecked.defaultof<_>,
         Unchecked.defaultof<_>,
-        Unchecked.defaultof<_>)
+        implFile)
 
     let bytes = resources.Head.GetBytes().ReadAllBytes()
     let _result = Encoding.Default.GetString(bytes)
