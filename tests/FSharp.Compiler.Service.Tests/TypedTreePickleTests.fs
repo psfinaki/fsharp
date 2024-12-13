@@ -9,8 +9,10 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Driver
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -44,11 +46,11 @@ let EncodeTypecheckingData() =
 
     ///
 
-    let sysRes, otherRes, _ =
+    let sysRes, otherRes, knownUnresolved =
         TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
     
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
-    let tcGlobals, _ = 
+    let tcGlobals, frameworkTcImports = 
         TcImports.BuildFrameworkTcImports(
             foundationalTcConfigP,
             sysRes,
@@ -97,9 +99,37 @@ let EncodeTypecheckingData() =
 
     ///
 
+    let tcImports =
+        TcImports.BuildNonFrameworkTcImports(
+            foundationalTcConfigP,
+            frameworkTcImports, 
+            otherRes, 
+            knownUnresolved, 
+            new DependencyProvider())
+        |> Async.RunImmediate
 
-    //let implFile = 
-    //    FSharp.Compiler.Driver.TypeCheck
+    let tcEnv0, openDecls0 =
+        ParseAndCheckInputs.GetInitialTcEnv(
+            "blah",
+            rangeStartup,
+            tcConfig, 
+            tcImports,
+            tcGlobals)
+
+    let _, _, implFiles, _ = 
+        TypeCheck(
+            CompilationThreadToken(),
+            tcConfig,
+            tcImports,
+            tcGlobals,
+            DiagnosticsLogger.AssertFalseDiagnosticsLogger,
+            "testblah",
+            tcEnv0,
+            openDecls0,
+            [],
+            DiagnosticsLogger.QuitProcessExiter)
+
+    let implFile = implFiles[0]
 
     ///
 
