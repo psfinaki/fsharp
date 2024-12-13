@@ -274,18 +274,6 @@ type public FSharpCheckFileResults =
     /// <param name="names">The keywords at the location where the information is being requested.</param>
     member GetKeywordTooltip: names: string list -> ToolTipText
 
-    /// <summary>Compute a formatted tooltip for the given location</summary>
-    ///
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    /// <param name="width">The optional width that the layout gets squashed to.</param>
-    member GetToolTip:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list * tokenTag: int * ?width: int ->
-            ToolTipText
-
     /// <summary>Compute a formatted tooltip for the given symbol at position</summary>
     ///
     /// <param name="symbol">The symbol.</param>
@@ -295,48 +283,6 @@ type public FSharpCheckFileResults =
     member GetDescription:
         symbol: FSharpSymbol * inst: (FSharpGenericParameter * FSharpType) list * displayFullName: bool * range: range ->
             ToolTipText
-
-    /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
-    ///
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetF1Keyword: line: int * colAtEndOfNames: int * lineText: string * names: string list -> string option
-
-    /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.</summary>
-    ///
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetMethods: line: int * colAtEndOfNames: int * lineText: string * names: string list option -> MethodGroup
-
-    /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.  The resulting method overloads are returned as symbols.</summary>
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetMethodsAsSymbols:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse list option
-
-    /// <summary>Resolve the names at the given location to a use of symbol.</summary>
-    ///
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetSymbolUseAtLocation:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse option
-
-    /// <summary>Similar to GetSymbolUseAtLocation, but returns all found symbols if there are multiple.</summary>
-    ///
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetSymbolUsesAtLocation:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse list
 
     /// <summary>Get the locations of format specifiers</summary>
     [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
