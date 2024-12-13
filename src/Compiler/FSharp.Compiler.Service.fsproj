@@ -523,12 +523,6 @@
     <Compile Include="Service\ServiceParsedInputOps.fs" />
     <Compile Include="Service\ServiceAssemblyContent.fsi" />
     <Compile Include="Service\ServiceAssemblyContent.fs" />
-    <Compile Include="Service\ServiceXmlDocParser.fsi" />
-    <Compile Include="Service\ServiceXmlDocParser.fs" />
-    <Compile Include="Service\ExternalSymbol.fsi" />
-    <Compile Include="Service\ExternalSymbol.fs" />
-    <Compile Include="Service\QuickParse.fsi" />
-    <Compile Include="Service\QuickParse.fs" />
     <Compile Include="Service\FSharpCheckerResults.fsi" />
     <Compile Include="Service\FSharpCheckerResults.fs" />
     <Compile Include="Service\FSharpProjectSnapshot.fs" />

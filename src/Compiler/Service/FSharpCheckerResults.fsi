@@ -269,62 +269,6 @@ type public FSharpCheckFileResults =
     /// in the documentation for compiler service.
     member DependencyFiles: string[]
 
-    /// <summary>Get the items for a declaration list</summary>
-    ///
-    /// <param name="parsedFileResults">
-    ///    If this is present, it is used to filter declarations based on location in the
-    ///    parse tree, specifically at 'open' declarations, 'inherit' of class or interface
-    ///    'record field' locations and r.h.s. of 'range' operator a..b
-    /// </param>
-    /// <param name="line">The line number where the completion is happening</param>
-    /// <param name="partialName">
-    ///    Partial long name. QuickParse.GetPartialLongNameEx can be used to get it.
-    /// </param>
-    /// <param name="lineText">
-    ///    The text of the line where the completion is happening. This is only used to make a couple
-    ///    of adhoc corrections to completion accuracy (e.g. checking for "..")
-    /// </param>
-    /// <param name="getAllEntities">
-    ///    Function that returns all entities from current and referenced assemblies.
-    /// </param>
-    /// <param name="completionContextAtPos">
-    ///    Completion context for a particular position computed in advance.
-    /// </param>
-    member GetDeclarationListInfo:
-        parsedFileResults: FSharpParseFileResults option *
-        line: int *
-        lineText: string *
-        partialName: PartialLongName *
-        ?getAllEntities: (unit -> AssemblySymbol list) *
-        ?completionContextAtPos: (pos * CompletionContext option) ->
-            DeclarationListInfo
-
-    /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
-    ///
-    /// <param name="parsedFileResults">
-    ///    If this is present, it is used to filter declarations based on location in the
-    ///    parse tree, specifically at 'open' declarations, 'inherit' of class or interface
-    ///    'record field' locations and r.h.s. of 'range' operator a..b
-    /// </param>
-    /// <param name="line">The line number where the completion is happening</param>
-    /// <param name="partialName">
-    ///    Partial long name. QuickParse.GetPartialLongNameEx can be used to get it.
-    /// </param>
-    /// <param name="lineText">
-    ///    The text of the line where the completion is happening. This is only used to make a couple
-    ///    of adhoc corrections to completion accuracy (e.g. checking for "..")
-    /// </param>
-    /// <param name="getAllEntities">
-    ///    Function that returns all entities from current and referenced assemblies.
-    /// </param>
-    member GetDeclarationListSymbols:
-        parsedFileResults: FSharpParseFileResults option *
-        line: int *
-        lineText: string *
-        partialName: PartialLongName *
-        ?getAllEntities: (unit -> AssemblySymbol list) ->
-            FSharpSymbolUse list list
-
     /// <summary>Compute a formatted tooltip for the given keywords</summary>
     ///
     /// <param name="names">The keywords at the location where the information is being requested.</param>
@@ -375,16 +319,6 @@ type public FSharpCheckFileResults =
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     member GetMethodsAsSymbols:
         line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse list option
-
-    /// <summary>Resolve the names at the given location to the declaration location of the corresponding construct.</summary>
-    ///
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    /// <param name="preferFlag">If not given, then get the location of the symbol. If false, then prefer the location of the corresponding symbol in the implementation of the file (rather than the signature if present). If true, prefer the location of the corresponding symbol in the signature of the file (rather than the implementation).</param>
-    member GetDeclarationLocation:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list * ?preferFlag: bool -> FindDeclResult
 
     /// <summary>Resolve the names at the given location to a use of symbol.</summary>
     ///
