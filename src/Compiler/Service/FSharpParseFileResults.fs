@@ -227,9 +227,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 | FuncIdent range -> Some range
                 | _ -> None)
 
-    member _.GetAllArgumentsForFunctionApplicationAtPosition pos =
-        SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
-
     member _.TryRangeOfParenEnclosingOpEqualsGreaterUsage opGreaterEqualPos =
         let (|Ident|_|) ofName =
             function
@@ -329,8 +326,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 Some equalsRange.StartRange
 
             | _ -> None)
-
-    member _.FindParameterLocations pos = ParameterLocations.Find(pos, input)
 
     member _.IsPositionContainedInACurriedParameter pos =
         (pos, input)

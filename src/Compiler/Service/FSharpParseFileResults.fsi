@@ -42,9 +42,6 @@ type public FSharpParseFileResults =
     /// Attempts to find the range of a function or method that is being applied. Also accounts for functions in pipelines.
     member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> range option
 
-    /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
-    member GetAllArgumentsForFunctionApplicationAtPosition: pos: pos -> range list option
-
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
     /// '!' in a dereference operation of that expression, like:
@@ -58,9 +55,6 @@ type public FSharpParseFileResults =
     /// Gets the range of where a return type hint could be placed for a function binding. This will be right in front of the equals sign.
     /// Returns None if type annotation is present.
     member TryRangeOfReturnTypeHint: symbolUseStart: pos * ?skipLambdas: bool -> range option
-
-    /// Notable parse info for ParameterInfo at a given location
-    member FindParameterLocations: pos: pos -> ParameterLocations option
 
     /// Determines if the given position is contained within a curried parameter in a binding.
     member IsPositionContainedInACurriedParameter: pos: pos -> bool
