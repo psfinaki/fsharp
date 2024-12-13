@@ -251,66 +251,6 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member _.Range = range
 
-    member this.IsPrivateToFileAndSignatureFile =
-
-        let couldBeParameter, declarationLocation =
-            match this.Symbol with
-            | :? FSharpParameter as p -> true, Some p.DeclarationLocation
-            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember -> true, Some m.DeclarationLocation
-            | _ -> false, None
-
-        let thisIsSignature = SourceFileImpl.IsSignatureFile this.Range.FileName
-
-        let signatureLocation = this.Symbol.SignatureLocation
-
-        couldBeParameter
-        && (thisIsSignature
-            || (signatureLocation.IsSome && signatureLocation <> declarationLocation))
-
-    member this.IsPrivateToFile =
-
-        let isPrivate =
-            match this.Symbol with
-            | _ when this.IsPrivateToFileAndSignatureFile -> false
-            | :? FSharpMemberOrFunctionOrValue as m when not m.IsModuleValueOrMember ->
-                // local binding or parameter
-                true
-            | :? FSharpMemberOrFunctionOrValue as m ->
-                let fileSignatureLocation =
-                    m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation)
-
-                let fileDeclarationLocation =
-                    m.DeclaringEntity |> Option.map (fun e -> e.DeclarationLocation)
-
-                let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
-
-                fileHasSignatureFile && not m.HasSignatureFile || m.Accessibility.IsPrivate
-            | :? FSharpEntity as m -> m.Accessibility.IsPrivate
-            | :? FSharpParameter -> true
-            | :? FSharpGenericParameter -> true
-            | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
-            | :? FSharpField as m -> m.Accessibility.IsPrivate
-            | :? FSharpActivePatternCase as m -> m.Accessibility.IsPrivate
-            | _ -> false
-
-        let declarationLocation =
-            match this.Symbol.SignatureLocation with
-            | Some x -> Some x
-            | _ ->
-                match this.Symbol.DeclarationLocation with
-                | Some x -> Some x
-                | _ -> this.Symbol.ImplementationLocation
-
-        let declaredInTheFile =
-            match declarationLocation with
-            | Some declRange -> declRange.FileName = this.Range.FileName
-            | _ -> false
-
-        isPrivate && declaredInTheFile
-
-    override _.ToString() =
-        sprintf "%O, %O, %O" symbol itemOcc range
-
 /// This type is used to describe what was found during the name resolution.
 /// (Depending on the kind of the items, we may stop processing or continue to find better items)
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -612,60 +552,6 @@ type internal TypeCheckInfo
         with
         | Some(ty, nenv, ad, m) -> dive ty nenv.DisplayEnv ad m plid false plid.IsEmpty
         | _ -> None
-
-    /// Looks at the exact expression types at the position to the left of the
-    /// residue then the source when it was typechecked.
-    let GetPreciseCompletionListFromExprTypings (parseResults: FSharpParseFileResults, endOfExprPos, filterCtors) =
-
-        let thereWereSomeQuals, quals = GetExprTypingForPosition(endOfExprPos)
-
-        match quals with
-        | [||] ->
-            if thereWereSomeQuals then
-                ExprTypingsResult.NoneBecauseThereWereTypeErrors
-            else
-                ExprTypingsResult.None
-        | _ ->
-            let bestQual, textChanged =
-                let input = parseResults.ParseTree
-
-                match ParsedInput.GetRangeOfExprLeftOfDot(endOfExprPos, input) with // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
-                | Some(exprRange) ->
-                    // We have an up-to-date sync parse, and know the exact range of the prior expression.
-                    // The quals all already have the same ending position, so find one with a matching starting position, if it exists.
-                    // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
-                    // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
-                    let qual =
-                        quals
-                        |> Array.tryFind (fun (_, _, _, r) ->
-                            ignore (r) // for breakpoint
-                            posEq exprRange.Start r.Start)
-
-                    qual, false
-                | None ->
-                    // TODO In theory I think we should never get to this code path; it would be nice to add an assert.
-                    // In practice, we do get here in some weird cases like "2.0 .. 3.0" and hitting Ctrl-Space in between the two dots of the range operator.
-                    // I wasn't able to track down what was happening in those weird cases, not worth worrying about, it doesn't manifest as a product bug or anything.
-                    None, false
-
-            match bestQual with
-            | Some bestQual ->
-                let ty, nenv, ad, m = bestQual
-
-                let targets =
-                    ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
-
-                let items = ResolveCompletionsInType ncenv nenv targets m ad false ty
-                let items = items |> List.map ItemWithNoInst
-                let items = items |> RemoveDuplicateItems g
-                let items = items |> RemoveExplicitlySuppressed g
-                let items = items |> FilterItemsForCtors filterCtors
-                ExprTypingsResult.Some((items, nenv.DisplayEnv, m), ty)
-            | None ->
-                if textChanged then
-                    ExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged
-                else
-                    ExprTypingsResult.None
 
     /// Find items in the best naming environment.
     let GetEnvironmentLookupResolutions (nenv, ad, m, plid, filterCtors, showObsolete) =
@@ -1037,16 +923,6 @@ type internal TypeCheckInfo
     member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
-    /// Get the auto-complete items at a location
-    member _.GetDeclarations(parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities) =
-        let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
-        failwith "whatever"
-
-    /// Get the symbols for auto-complete items at a location
-    member _.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities) =
-        let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
-        failwith "whatever"
-
     /// Get the "reference resolution" tooltip for at a location
     member _.GetReferenceResolutionStructuredToolTipText(line, col, width) =
 
@@ -1346,8 +1222,7 @@ module internal ParseAndCheckFile =
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
         let conditionalDefines =
-            SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive
-            @ options.ConditionalDefines
+            [ "blah" ]
 
         // Note: we don't really attempt to intern strings across a large scope.
         let lexResourceManager = LexResourceManager()
@@ -1803,22 +1678,6 @@ type FSharpCheckFileResults
         match details with
         | None -> None
         | Some(scope, _builderOpt) -> Some scope.TcImports
-
-    /// Intellisense autocompletions
-    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos) =
-        let getAllEntities = defaultArg getAllEntities (fun () -> [])
-
-        match details with
-        | None -> DeclarationListInfo.Empty
-        | Some(scope, _builderOpt) ->
-            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, completionContextAtPos, getAllEntities)
-
-    member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
-        let getAllEntities = defaultArg getAllEntities (fun () -> [])
-
-        match details with
-        | None -> []
-        | Some(scope, _builderOpt) -> scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities)
 
     member _.GetKeywordTooltip(names: string list) =
         ToolTipText.ToolTipText

@@ -515,8 +515,6 @@
     <Compile Include="Service\ServiceParamInfoLocations.fs" />
     <Compile Include="Service\FSharpParseFileResults.fsi" />
     <Compile Include="Service\FSharpParseFileResults.fs" />
-    <Compile Include="Service\ServiceParsedInputOps.fsi" />
-    <Compile Include="Service\ServiceParsedInputOps.fs" />
     <Compile Include="Service\FSharpCheckerResults.fsi" />
     <Compile Include="Service\FSharpCheckerResults.fs" />
     <Compile Include="Service\FSharpProjectSnapshot.fs" />

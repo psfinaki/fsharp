@@ -183,13 +183,6 @@ type public FSharpSymbolUse =
     /// The range of text representing the reference to the symbol
     member Range: range
 
-    /// Indicates if the FSharpSymbolUse is private to the implementation & signature file.
-    /// This is true for function and method parameters.
-    member IsPrivateToFileAndSignatureFile: bool
-
-    /// Indicates if the FSharpSymbolUse is declared as private
-    member IsPrivateToFile: bool
-
     // For internal use only
     internal new:
         denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurrence * range: range ->

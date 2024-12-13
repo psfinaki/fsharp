@@ -502,9 +502,6 @@ type public CompilerEnvironment =
     /// are not associated with a project.
     static member DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
 
-    /// Return the compilation defines that should be used when editing the given file.
-    static member GetConditionalDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
-
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     static member IsCheckerSupportedSubcategory: string -> bool
 

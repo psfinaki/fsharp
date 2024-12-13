@@ -710,11 +710,6 @@ type CompilerEnvironment() =
         let references, _ = fxResolver.GetDefaultReferences(useFsiAuxLib = false)
         references
 
-    /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
-    static member GetConditionalDefinesForEditing(parsingOptions: FSharpParsingOptions) =
-        SourceFileImpl.GetImplicitConditionalDefinesForEditing(parsingOptions.IsInteractive)
-        @ parsingOptions.ConditionalDefines
-
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     static member IsCheckerSupportedSubcategory(subcategory: string) =
         // Beware: This code logic is duplicated in DocumentTask.cs in the language service
