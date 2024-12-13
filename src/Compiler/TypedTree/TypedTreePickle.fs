@@ -2904,9 +2904,22 @@ let _ = fill_u_Vals (u_list u_Val)
 let pickleModuleOrNamespace mspec st = p_entity_spec mspec st
 
 let pickleCcuInfo (minfo: PickledCcuInfo) st =
-    p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations, ()) st
+    p_tup4 
+        pickleModuleOrNamespace 
+        p_string 
+        p_bool 
+        (p_space 3) 
+        (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations, ()) 
+        st
 
 let pickleCheckedImplFile (file: CheckedImplFile) (st: WriterState) =
+    p_tup2
+        p_bool
+        p_bool
+        (file.HasExplicitEntryPoint,
+         file.IsScript)
+        st
+        
     ()
 
 let unpickleModuleOrNamespace st = u_entity_spec st

@@ -158,7 +158,7 @@ let EncodeTypecheckingData() =
 
     let bytes = resources.Head.GetBytes().ReadAllBytes()
     let zero = (char)0
-    let expected = $"c`�\u0002{zero}"
+    let expected = $"c`�{zero}&\u0006\u0006{zero}"
     let result = Encoding.Default.GetString(bytes)
 
     
