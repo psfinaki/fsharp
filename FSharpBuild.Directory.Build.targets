@@ -29,7 +29,7 @@
   <Target Name="NoneSubstituteTextFiles"
           Inputs="@(NoneSubstituteText)"
           Outputs="@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
-          BeforeTargets="AssignTargetPaths;BeforeBuild;GenerateFSharpTextResources">
+          BeforeTargets="AssignTargetPaths;BeforeBuild">
 
     <ItemGroup>
         <NoneSubstituteText Update="@(NoneSubstituteText)">
