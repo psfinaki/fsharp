@@ -494,8 +494,6 @@
     <Compile Include="Service\SemanticClassification.fs" />
     <Compile Include="Service\ItemKey.fsi" />
     <Compile Include="Service\ItemKey.fs" />
-    <Compile Include="Service\SemanticClassificationKey.fsi" />
-    <Compile Include="Service\SemanticClassificationKey.fs" />
     <Compile Include="Service\FSharpSource.fsi" />
     <Compile Include="Service\FSharpSource.fs" />
     <Compile Include="Service\IncrementalBuild.fsi" />

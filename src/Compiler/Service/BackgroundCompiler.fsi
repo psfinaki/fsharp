@@ -116,14 +116,6 @@ type internal IBackgroundCompiler =
         userOpName: string ->
             Async<FSharpProjectSnapshot * FSharpDiagnostic list>
 
-    abstract GetSemanticClassificationForFile:
-        fileName: string * snapshot: FSharpProjectSnapshot * userOpName: string ->
-            Async<FSharp.Compiler.EditorServices.SemanticClassificationView option>
-
-    abstract GetSemanticClassificationForFile:
-        fileName: string * options: FSharpProjectOptions * userOpName: string ->
-            Async<FSharp.Compiler.EditorServices.SemanticClassificationView option>
-
     abstract InvalidateConfiguration: options: FSharpProjectOptions * userOpName: string -> unit
 
     abstract InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * userOpName: string -> unit

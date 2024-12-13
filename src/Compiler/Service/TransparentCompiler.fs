@@ -1914,36 +1914,6 @@ type internal TransparentCompiler
                 return tcInfo.sink |> List.tryHead |> Option.map (fun sink -> sink, bootstrapInfo)
         }
 
-    let ComputeSemanticClassification (fileName: string, projectSnapshot: ProjectSnapshot) =
-        caches.SemanticClassification.Get(
-            projectSnapshot.FileKey fileName,
-            async {
-                use _ =
-                    Activity.start "ComputeSemanticClassification" [| Activity.Tags.fileName, fileName |> Path.GetFileName |> (!!) |]
-
-                let! sinkOpt = tryGetSink fileName projectSnapshot
-
-                return
-                    sinkOpt
-                    |> Option.bind (fun (sink, bootstrapInfo) ->
-                        let sResolutions = sink.GetResolutions()
-
-                        let semanticClassification =
-                            sResolutions.GetSemanticClassification(
-                                bootstrapInfo.TcGlobals,
-                                bootstrapInfo.TcImports.GetImportMap(),
-                                sink.GetFormatSpecifierLocations(),
-                                None
-                            )
-
-                        let sckBuilder = SemanticClassificationKeyStoreBuilder()
-                        sckBuilder.WriteAll semanticClassification
-
-                        sckBuilder.TryBuildAndReset())
-                    |> Option.map (fun sck -> sck.GetView())
-            }
-        )
-
     let ComputeItemKeyStore (fileName: string, projectSnapshot: ProjectSnapshot) =
         caches.ItemKeyStore.Get(
             projectSnapshot.FileKey fileName,
@@ -2418,26 +2388,6 @@ type internal TransparentCompiler
                         ))
 
                 return snapshot, (diags @ diagnostics.Diagnostics)
-            }
-
-        member this.GetSemanticClassificationForFile(fileName: string, snapshot: FSharpProjectSnapshot, userOpName: string) =
-            async {
-                ignore userOpName
-                return! ComputeSemanticClassification(fileName, snapshot.ProjectSnapshot)
-            }
-
-        member this.GetSemanticClassificationForFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<EditorServices.SemanticClassificationView option> =
-            async {
-                ignore userOpName
-
-                let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
-
-                return! ComputeSemanticClassification(fileName, snapshot.ProjectSnapshot)
             }
 
         member this.InvalidateConfiguration(options: FSharpProjectOptions, userOpName: string) : unit =

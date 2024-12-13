@@ -138,14 +138,6 @@ type internal IBackgroundCompiler =
         userOpName: string ->
             Async<FSharpProjectSnapshot * FSharpDiagnostic list>
 
-    abstract member GetSemanticClassificationForFile:
-        fileName: string * options: FSharpProjectOptions * userOpName: string ->
-            Async<FSharp.Compiler.EditorServices.SemanticClassificationView option>
-
-    abstract member GetSemanticClassificationForFile:
-        fileName: string * snapshot: FSharpProjectSnapshot * userOpName: string ->
-            Async<FSharp.Compiler.EditorServices.SemanticClassificationView option>
-
     abstract member InvalidateConfiguration: options: FSharpProjectOptions * userOpName: string -> unit
 
     abstract InvalidateConfiguration: projectSnapshot: FSharpProjectSnapshot * userOpName: string -> unit
@@ -1136,13 +1128,7 @@ type internal BackgroundCompiler
 
             match builderOpt with
             | None -> return None
-            | Some builder ->
-                let! checkResults = builder.GetFullCheckResultsAfterFileInProject fileName
-                let! scopt = checkResults.GetOrComputeSemanticClassificationIfEnabled()
-
-                match scopt with
-                | None -> return None
-                | Some sc -> return Some(sc.GetView())
+            | Some builder -> return None
         }
 
     /// Try to get recent approximate type check results for a file.
@@ -1648,22 +1634,6 @@ type internal BackgroundCompiler
                 let! snapshot = FSharpProjectSnapshot.FromOptions(options, documentSource)
                 return snapshot, diagnostics
             }
-
-        member _.GetSemanticClassificationForFile
-            (
-                fileName: string,
-                options: FSharpProjectOptions,
-                userOpName: string
-            ) : Async<EditorServices.SemanticClassificationView option> =
-            self.GetSemanticClassificationForFile(fileName, options, userOpName)
-
-        member _.GetSemanticClassificationForFile
-            (
-                fileName: string,
-                snapshot: FSharpProjectSnapshot,
-                userOpName: string
-            ) : Async<EditorServices.SemanticClassificationView option> =
-            self.GetSemanticClassificationForFile(fileName, snapshot.ToOptions(), userOpName)
 
         member _.InvalidateConfiguration(options: FSharpProjectOptions, userOpName: string) : unit =
             self.InvalidateConfiguration(options, userOpName)

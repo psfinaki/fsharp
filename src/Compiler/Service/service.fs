@@ -490,16 +490,6 @@ type FSharpChecker
                 return Seq.empty
         }
 
-    member _.GetBackgroundSemanticClassificationForFile(fileName: string, options: FSharpProjectOptions, ?userOpName) =
-        let userOpName = defaultArg userOpName "Unknown"
-
-        backgroundCompiler.GetSemanticClassificationForFile(fileName, options, userOpName)
-
-    member _.GetBackgroundSemanticClassificationForFile(fileName: string, snapshot: FSharpProjectSnapshot, ?userOpName) =
-        let userOpName = defaultArg userOpName "Unknown"
-
-        backgroundCompiler.GetSemanticClassificationForFile(fileName, snapshot, userOpName)
-
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member _.GetProjectOptionsFromScript
         (

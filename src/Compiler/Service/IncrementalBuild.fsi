@@ -95,9 +95,6 @@ type internal TcInfoExtras =
 
         /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
         itemKeyStore: ItemKeyStore option
-
-        /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-        semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
     member TcSymbolUses: TcSymbolUses
@@ -135,12 +132,6 @@ type internal PartialCheckResults =
     ///
     /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
     member GetOrComputeItemKeyStoreIfEnabled: unit -> Async<ItemKeyStore option>
-
-    /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
-    /// Only use when it's absolutely necessary to get rich information on a file.
-    ///
-    /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
-    member GetOrComputeSemanticClassificationIfEnabled: unit -> Async<SemanticClassificationKeyStore option>
 
     member TimeStamp: DateTime
 

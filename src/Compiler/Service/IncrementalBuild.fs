@@ -221,9 +221,6 @@ type TcInfoExtras =
 
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option
-
-      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassificationKeyStore: SemanticClassificationKeyStore option
     }
 
     member x.TcSymbolUses =
@@ -345,13 +342,7 @@ type BoundModel private (
                         if preventDuplicates.Add struct(r.Start, r.End) then
                             builder.Write(cnr.Range, cnr.Item))
                     
-                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
-                    
-                    let sckBuilder = SemanticClassificationKeyStoreBuilder()
-                    sckBuilder.WriteAll semanticClassification
-                    
-                    let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
-                    res
+                    None, None
                 else
                     None, None
             return
@@ -362,7 +353,6 @@ type BoundModel private (
                     tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
                     tcOpenDeclarations = sink.GetOpenDeclarations()
                     itemKeyStore = itemKeyStore
-                    semanticClassificationKeyStore = semanticClassification
                 }
         } |> GraphNode
 
@@ -613,12 +603,6 @@ type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime, projectTi
         async {
             let! info = boundModel.GetOrComputeTcInfoExtras()
             return info.itemKeyStore
-        }
-
-    member _.GetOrComputeSemanticClassificationIfEnabled() =
-        async {
-            let! info = boundModel.GetOrComputeTcInfoExtras()
-            return info.semanticClassificationKeyStore
         }
 
 [<AutoOpen>]

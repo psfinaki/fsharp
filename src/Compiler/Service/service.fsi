@@ -372,31 +372,6 @@ type public FSharpChecker =
             Async<range seq>
 
     /// <summary>
-    /// <para>Get semantic classification for a file.</para>
-    /// <para>All files are read from the FileSystem API, including the file being checked.</para>
-    /// <para>Can cause a second type-check when `enablePartialTypeChecking` is true on the FSharpChecker.</para>
-    /// </summary>
-    ///
-    /// <param name="fileName">The file name for the file.</param>
-    /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetBackgroundSemanticClassificationForFile:
-        fileName: string * options: FSharpProjectOptions * ?userOpName: string ->
-            Async<SemanticClassificationView option>
-
-    /// <summary>
-    /// <para>Get semantic classification for a file.</para>
-    /// </summary>
-    ///
-    /// <param name="fileName">The file name for the file.</param>
-    /// <param name="snapshot">The project snapshot for which we want to get the semantic classification.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    [<Experimental("This FCS API is experimental and subject to change.")>]
-    member GetBackgroundSemanticClassificationForFile:
-        fileName: string * snapshot: FSharpProjectSnapshot * ?userOpName: string ->
-            Async<SemanticClassificationView option>
-
-    /// <summary>
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API.
     /// The output file must be given by a -o flag.
     /// The first argument is ignored and can just be "fsc.exe".

@@ -131,9 +131,6 @@ type internal CompilerCaches =
 
     member ProjectExtras: AsyncMemoizeDisabled<obj, obj, obj>
 
-    member SemanticClassification:
-        AsyncMemoize<(string * FSharpProjectIdentifier), string, SemanticClassificationView option>
-
     member SizeFactor: int
 
     member TcIntermediate: AsyncMemoize<(string * FSharpProjectIdentifier), (string * int), TcIntermediate>
