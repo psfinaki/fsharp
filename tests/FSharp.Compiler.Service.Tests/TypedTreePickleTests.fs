@@ -9,6 +9,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.Driver
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -97,7 +98,8 @@ let EncodeTypecheckingData() =
     ///
 
 
-    let implFile: CheckedImplFile = Unchecked.defaultof<_>
+    //let implFile = 
+    //    FSharp.Compiler.Driver.TypeCheck
 
     ///
 
@@ -107,7 +109,7 @@ let EncodeTypecheckingData() =
         ccuThunk,
         Unchecked.defaultof<_>,
         Unchecked.defaultof<_>,
-        implFile)
+        Unchecked.defaultof<_>)
 
     let bytes = resources.Head.GetBytes().ReadAllBytes()
     let _result = Encoding.Default.GetString(bytes)
