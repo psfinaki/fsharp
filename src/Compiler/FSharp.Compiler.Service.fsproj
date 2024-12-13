@@ -550,16 +550,8 @@
     <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
     <Compile Include="Interactive\FSharpInteractiveServer.fs" />
     <Compile Include="Interactive\ControlledExecution.fs" />
-    <Compile Include="Interactive\fsihelp.fsi" />
-    <Compile Include="Interactive\fsihelp.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="default.win32manifest">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">

@@ -3742,9 +3742,7 @@ type FsiInteractionProcessor
             match status with
             | Completed(Some compStatus) ->
                 match compStatus.ReflectionValue with
-                | :? FSharp.Quotations.Expr as qex ->
-                    let s = FsiHelp.Logic.Quoted.h qex
-                    fsiConsoleOutput.uprintf "%s" s
+                | :? FSharp.Quotations.Expr as qex -> ()
                 | _ -> ()
             | _ -> ()
         | _ -> ()
