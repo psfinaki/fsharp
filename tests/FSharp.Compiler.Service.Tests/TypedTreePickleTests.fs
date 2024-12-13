@@ -115,6 +115,21 @@ let EncodeTypecheckingData() =
             tcConfig, 
             tcImports,
             tcGlobals)
+            
+    let logger = DiagnosticsLogger.AssertFalseDiagnosticsLogger
+    
+    File.WriteAllText("testblah.fs", "printfn \"blah\"")
+    let sourceFiles = ["testblah.fs"]
+
+    let inputs =
+        ParseAndCheckInputs.ParseInputFiles(
+            tcConfig, 
+            Lexhelp.LexResourceManager(), 
+            sourceFiles, 
+            logger, 
+            false)
+    
+    let inputs = inputs |> List.map fst
 
     let _, _, implFiles, _ = 
         TypeCheck(
@@ -122,11 +137,11 @@ let EncodeTypecheckingData() =
             tcConfig,
             tcImports,
             tcGlobals,
-            DiagnosticsLogger.AssertFalseDiagnosticsLogger,
+            logger,
             "testblah",
             tcEnv0,
             openDecls0,
-            [],
+            inputs,
             DiagnosticsLogger.QuitProcessExiter)
 
     let implFile = implFiles[0]
@@ -139,10 +154,12 @@ let EncodeTypecheckingData() =
         ccuThunk,
         Unchecked.defaultof<_>,
         Unchecked.defaultof<_>,
-        Unchecked.defaultof<_>)
+        implFile)
 
     let bytes = resources.Head.GetBytes().ReadAllBytes()
-    let _result = Encoding.Default.GetString(bytes)
+    let zero = (char)0
+    let expected = $"c`�\u0002{zero}"
+    let result = Encoding.Default.GetString(bytes)
 
     
-    Assert.True(true)
+    Assert.Equal(expected, result)
