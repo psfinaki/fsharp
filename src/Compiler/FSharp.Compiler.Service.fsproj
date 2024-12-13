@@ -499,8 +499,6 @@
     <Compile Include="Service\ServiceCompilerDiagnostics.fsi" />
     <Compile Include="Service\ServiceCompilerDiagnostics.fs" />
     <Compile Include="Service\ServiceConstants.fs" />
-    <Compile Include="Service\ServiceDeclarationLists.fsi" />
-    <Compile Include="Service\ServiceDeclarationLists.fs" />
     <Compile Include="Service\ServiceLexing.fsi" />
     <Compile Include="Service\ServiceLexing.fs" />
     <Compile Include="Service\ServiceParseTreeWalk.fsi" />

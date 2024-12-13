@@ -262,21 +262,6 @@ type public FSharpCheckFileResults =
     /// in the documentation for compiler service.
     member DependencyFiles: string[]
 
-    /// <summary>Compute a formatted tooltip for the given keywords</summary>
-    ///
-    /// <param name="names">The keywords at the location where the information is being requested.</param>
-    member GetKeywordTooltip: names: string list -> ToolTipText
-
-    /// <summary>Compute a formatted tooltip for the given symbol at position</summary>
-    ///
-    /// <param name="symbol">The symbol.</param>
-    /// <param name="inst">Generic arguments.</param>
-    /// <param name="displayFullName">Display the symbol full name.</param>
-    /// <param name="range">The position.</param>
-    member GetDescription:
-        symbol: FSharpSymbol * inst: (FSharpGenericParameter * FSharpType) list * displayFullName: bool * range: range ->
-            ToolTipText
-
     /// <summary>Get the locations of format specifiers</summary>
     [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
     member GetFormatSpecifierLocations: unit -> range[]

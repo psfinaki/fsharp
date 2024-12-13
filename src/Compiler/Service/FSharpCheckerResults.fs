@@ -28,7 +28,6 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.EditorServices.DeclarationListHelpers
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
@@ -296,17 +295,6 @@ type internal TypeCheckInfo
         implFileOpt: CheckedImplFile option,
         openDeclarations: OpenDeclaration[]
     ) =
-
-    // These strings are potentially large and the editor may choose to hold them for a while.
-    // Use this cache to fold together data tip text results that are the same.
-    // Is not keyed on 'Names' collection because this is invariant for the current position in
-    // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
-    // being available against a stale scope.
-    let getToolTipTextCache =
-        AgedLookup<AnyCallerThreadToken, int * int * string * int option, ToolTipText>(
-            getToolTipTextSize,
-            areSimilar = (fun (x, y) -> x = y)
-        )
 
     let amap = tcImports.GetImportMap()
     let infoReader = InfoReader(g, amap)
@@ -595,28 +583,6 @@ type internal TypeCheckInfo
         | Item.Types(_, ty :: _) when isInterfaceTy g ty -> true
         | _ -> false
 
-    /// Is the item suitable for completion in a pattern
-    let IsPatternCandidate (item: CompletionItem) =
-        match item.Item with
-        | Item.Value v -> v.LiteralValue.IsSome
-        | Item.ILField field -> field.LiteralValue.IsSome
-        | Item.ActivePatternCase _
-        | Item.ExnCase _
-        | Item.ModuleOrNamespaces _
-        | Item.Types _
-        | Item.UnionCase _ -> true
-        | _ -> false
-
-    /// Is the item suitable for completion in a type application or type annotation
-    let IsTypeCandidate (item: CompletionItem) =
-        match item.Item with
-        | Item.ModuleOrNamespaces _
-        | Item.Types _
-        | Item.TypeVar _
-        | Item.UnqualifiedType _
-        | Item.ExnCase _ -> true
-        | _ -> false
-
     /// Return only items with the specified name, modulo "Attribute" for type completions
     let FilterDeclItemsByResidue (getItem: 'a -> Item) residue (items: 'a list) =
         let attributedResidue = residue + "Attribute"
@@ -692,98 +658,7 @@ type internal TypeCheckInfo
 
     let DefaultCompletionItem item = failwith "whatever"
 
-    let CompletionItemSuggestedName displayName =
-        {
-            ItemWithInst = ItemWithNoInst(Item.NewDef(Ident(displayName, range0)))
-            MinorPriority = 0
-            Type = None
-            Kind = CompletionItemKind.SuggestedName
-            IsOwnMember = false
-            Unresolved = None
-            CustomInsertText = ValueNone
-            CustomDisplayText = ValueNone
-        }
-
     let getItem (x: ItemWithInst) = x.Item
-
-    let getItem2 (x: CompletionItem) = x.Item
-
-    /// Checks whether the suggested name is unused.
-    /// In the future we could use an increasing numeric suffix for conflict resolution
-    let CreateCompletionItemForSuggestedPatternName (pos: pos) name =
-        if String.IsNullOrWhiteSpace name then
-            None
-        else
-            let name = String.lowerCaseFirstChar !!name
-
-            let unused =
-                sResolutions.CapturedNameResolutions
-                |> ResizeArray.forall (fun r ->
-                    match r.Item with
-                    | Item.Value vref when r.Pos.Line = pos.Line -> vref.DisplayName <> name
-                    | _ -> true)
-
-            if unused then
-                Some(CompletionItemSuggestedName name)
-            else
-                None
-
-    /// Suggest name based on type
-    let SuggestNameBasedOnType (g: TcGlobals) pos ty =
-        match stripTyparEqns ty with
-        | TType_app(tyconRef = tcref) when tcref.IsTypeAbbrev && (tcref.IsLocalRef || not (ccuEq g.fslibCcu tcref.nlr.Ccu)) ->
-            // Respect user-defined aliases
-            CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
-        | ty ->
-            if isNumericType g ty then
-                CreateCompletionItemForSuggestedPatternName pos "num"
-            else
-                match tryTcrefOfAppTy g ty with
-                | ValueSome tcref when not (tyconRefEq g g.system_Object_tcref tcref) ->
-                    CreateCompletionItemForSuggestedPatternName pos tcref.DisplayName
-                | _ -> None
-
-    /// Suggest names based on field name and type, add them to the list
-    let SuggestNameForUnionCaseFieldPattern g caseIdPos fieldPatternPos (uci: UnionCaseInfo) indexOrName isTheOnlyField completions =
-        let field =
-            match indexOrName with
-            | Choice1Of2 index ->
-                match uci.UnionCase.RecdFieldsArray, index with
-                | [| field |], None ->
-                    // Index is None when parentheses were not used, i.e. `| Some v ->` - suggest a name only when the case has a single field
-                    Some field
-                | [| _ |], Some _ when not isTheOnlyField ->
-                    // When completing `| Some (a| , b)`, we're binding the first tuple element, not the sole case field
-                    None
-                | _, None -> None
-                | arr, Some index -> arr |> Array.tryItem index
-            | Choice2Of2 name -> uci.UnionCase.RecdFieldsArray |> Array.tryFind (fun x -> x.DisplayName = name)
-
-        field
-        |> Option.map (fun field ->
-            let ty =
-                // If the field type is generic, suggest a name based on the solution
-                if isTyparTy g field.FormalType then
-                    sResolutions.CapturedNameResolutions
-                    |> ResizeArray.tryPick (fun r ->
-                        match r.Item with
-                        | Item.Value vref when r.Pos = fieldPatternPos -> Some vref.Type
-                        | _ -> None)
-                    |> Option.defaultValue field.FormalType
-                else
-                    field.FormalType
-
-            let fieldName =
-                // If the field has not been given an explicit name, do not suggest the generated one
-                if field.rfield_name_generated then
-                    ""
-                else
-                    field.DisplayName
-
-            completions
-            |> List.prependIfSome (SuggestNameBasedOnType g caseIdPos ty)
-            |> List.prependIfSome (CreateCompletionItemForSuggestedPatternName caseIdPos fieldName))
-        |> Option.defaultValue completions
 
     /// Gets all field identifiers of a union case that can be referred to in a pattern.
     let GetUnionCaseFields caseIdRange alreadyReferencedFields =
@@ -803,73 +678,6 @@ type internal TypeCheckInfo
                         |> Some)
                 |> Some
             | _ -> None)
-
-    let GetCompletionsForUnionCaseField pos indexOrName caseIdRange isTheOnlyField declaredItems =
-        let declaredItems =
-            declaredItems
-            |> Option.bind (FilterRelevantItemsBy getItem2 None IsPatternCandidate)
-
-        // When the user types `fun (Case (x| )) ->`, we do not yet know whether the intention is to use positional or named arguments,
-        // so let's show options for both.
-        let fields indexOrName isTheOnlyField (uci: UnionCaseInfo) =
-            match indexOrName, isTheOnlyField with
-            | Choice1Of2(Some 0), true ->
-                uci.UnionCase.RecdFields
-                |> List.mapi (fun index _ -> Item.UnionCaseField(uci, index) |> ItemWithNoInst |> DefaultCompletionItem)
-            | _ -> []
-
-        sResolutions.CapturedNameResolutions
-        |> ResizeArray.tryPick (fun r ->
-            match r.Item with
-            | Item.UnionCase(uci, _) when equals r.Range caseIdRange ->
-                let list =
-                    declaredItems
-                    |> Option.map p13
-                    |> Option.defaultValue []
-                    |> List.append (fields indexOrName isTheOnlyField uci)
-
-                Some(SuggestNameForUnionCaseFieldPattern g caseIdRange.End pos uci indexOrName isTheOnlyField list, r.DisplayEnv, r.Range)
-            | _ -> None)
-        |> Option.orElse declaredItems
-
-    let GetCompletionsForRecordField pos referencedFields declaredItems =
-        declaredItems
-        |> Option.map (fun (items: CompletionItem list, denv, range) ->
-            let fields =
-                // Try to find a name resolution for any of the referenced fields, and through it access all available fields of the record
-                referencedFields
-                |> List.tryPick (fun (_, fieldRange) ->
-                    sResolutions.CapturedNameResolutions
-                    |> ResizeArray.tryPick (fun cnr ->
-                        match cnr.Item with
-                        | Item.RecdField info when equals cnr.Range fieldRange ->
-                            info.TyconRef.AllFieldAsRefList
-                            |> List.choose (fun field ->
-                                if
-                                    referencedFields
-                                    |> List.exists (fun (fieldName, _) -> fieldName = field.DisplayName)
-                                then
-                                    None
-                                else
-                                    FreshenRecdFieldRef ncenv field.Range field |> Item.RecdField |> Some)
-                            |> Some
-                        | _ -> None))
-                |> Option.defaultWith (fun () ->
-                    // Fall back to showing all record field names in scope
-                    let (nenv, _), _ = GetBestEnvForPos pos
-                    getRecordFieldsInScope nenv)
-                |> List.map (ItemWithNoInst >> DefaultCompletionItem)
-
-            let items =
-                items
-                |> List.filter (fun item ->
-                    match item.Item with
-                    | Item.ModuleOrNamespaces _ -> true
-                    | Item.Types(_, ty :: _) -> isRecdTy g ty
-                    | _ -> false)
-                |> List.append fields
-
-            items, denv, range)
 
     let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range) =
         items |> List.map DefaultCompletionItem, denv, m
@@ -922,88 +730,6 @@ type internal TypeCheckInfo
     /// Determines if a long ident is resolvable at a specific point.
     member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
-
-    /// Get the "reference resolution" tooltip for at a location
-    member _.GetReferenceResolutionStructuredToolTipText(line, col, width) =
-
-        let pos = mkPos line col
-
-        let isPosMatch (pos, ar: AssemblyReference) : bool =
-            let isRangeMatch = (rangeContainsPos ar.Range pos)
-
-            let isNotSpecialRange =
-                not (equals ar.Range rangeStartup)
-                && not (equals ar.Range range0)
-                && not (equals ar.Range rangeCmdArgs)
-
-            let isMatch = isRangeMatch && isNotSpecialRange
-            isMatch
-
-        let dataTipOfReferences () =
-            let matches =
-                match loadClosure with
-                | None -> []
-                | Some(loadClosure) ->
-                    loadClosure.References
-                    |> List.collect snd
-                    |> List.filter (fun ar -> isPosMatch (pos, ar.originalReference))
-
-            match matches with
-            | resolved :: _ // Take the first seen
-            | [ resolved ] ->
-                let tip =
-                    wordL (TaggedText.tagStringLiteral ((resolved.prepareToolTip ()).TrimEnd([| '\n' |])))
-
-                let tip = PrintUtilities.squashToWidth width tip
-
-                let tip = LayoutRender.toArray tip
-                ToolTipText.ToolTipText [ ToolTipElement.Single(tip, FSharpXmlDoc.None) ]
-
-            | [] ->
-                let matches =
-                    match loadClosure with
-                    | None -> None
-                    | Some(loadClosure) ->
-                        loadClosure.PackageReferences
-                        |> Array.tryFind (fun (m, _) -> rangeContainsPos m pos)
-
-                match matches with
-                | None -> emptyToolTip
-                | Some(_, lines) ->
-                    let lines =
-                        lines
-                        |> List.filter (fun line -> not (line.StartsWithOrdinal("//")) && not (String.IsNullOrEmpty line))
-
-                    ToolTipText.ToolTipText
-                        [
-                            for line in lines ->
-                                let tip = wordL (TaggedText.tagStringLiteral line)
-                                let tip = PrintUtilities.squashToWidth width tip
-                                let tip = LayoutRender.toArray tip
-                                ToolTipElement.Single(tip, FSharpXmlDoc.None)
-                        ]
-
-        DiagnosticsScope.Protect range0 dataTipOfReferences (fun err ->
-            Trace.TraceInformation(sprintf "FCS: recovering from error in GetReferenceResolutionStructuredToolTipText: '%s'" err)
-            ToolTipText [ ToolTipElement.CompositionError err ])
-
-    member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, m: range) =
-        let (nenv, accessorDomain), _ = GetBestEnvForPos m.Start
-        let denv = nenv.DisplayEnv
-
-        let item = symbol.Item
-        let inst = inst |> List.map (fun (typar, t) -> typar.TypeParameter, t.Type)
-
-        let itemWithInst =
-            {
-                ItemWithInst.Item = item
-                ItemWithInst.TyparInstantiation = inst
-            }
-
-        let toolTipElement =
-            FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst (Some symbol) None
-
-        ToolTipText [ toolTipElement ]
 
     member _.PartialAssemblySignatureForFile =
         FSharpAssemblySignature(g, thisCcu, ccuSigForFile, tcImports, None, ccuSigForFile)
@@ -1678,22 +1404,6 @@ type FSharpCheckFileResults
         match details with
         | None -> None
         | Some(scope, _builderOpt) -> Some scope.TcImports
-
-    member _.GetKeywordTooltip(names: string list) =
-        ToolTipText.ToolTipText
-            [
-                for kw in names do
-                    match Tokenization.FSharpKeywords.KeywordsDescriptionLookup kw with
-                    | None -> ()
-                    | Some kwDescription ->
-                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
-                        yield ToolTipElement.Single(kwText, FSharpXmlDoc.FromXmlText(Xml.XmlDoc([| kwDescription |], range.Zero)))
-            ]
-
-    member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, range: range) =
-        match details with
-        | None -> emptyToolTip
-        | Some(scope, _builderOpt) -> scope.GetDescription(symbol, inst, displayFullName, range)
 
     member info.GetFormatSpecifierLocations() =
         info.GetFormatSpecifierLocationsAndArity() |> Array.map fst
