@@ -76,7 +76,8 @@ val EncodeTypecheckingData:
     tcGlobals: TcGlobals *
     generatedCcu: CcuThunk *
     outfile: string *
-    isIncrementalBuild: bool ->
+    isIncrementalBuild: bool * 
+    checkedImplFile: CheckedImplFile ->
         ILResource list
 
 [<RequireQualifiedAccess>]

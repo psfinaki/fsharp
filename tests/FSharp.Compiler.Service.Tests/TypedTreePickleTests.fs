@@ -219,6 +219,7 @@ let EncodeTypecheckingData() =
         Unchecked.defaultof<_>,
         Unchecked.defaultof<_>,
         Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
         Unchecked.defaultof<_>)
 
     let bytes = resources.Head.GetBytes().ReadAllBytes()

@@ -132,8 +132,7 @@ val internal p_ty: pickler<TType>
 val internal pickleCcuInfo: pickler<PickledCcuInfo>
 
 /// Serialize a file
-val internal pickleFile:
-    file: string -> bool
+val internal pickleCheckedImplFile: pickler<CheckedImplFile>
 
 /// Serialize an arbitrary object using the given pickler
 val pickleObjWithDanglingCcus:

@@ -202,7 +202,14 @@ let GetSignatureData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) : Pi
 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo memA memB
 
-let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, fileName, inMem) =
+let WriteSignatureData (
+    tcConfig: TcConfig,
+    tcGlobals, 
+    exportRemapping, 
+    ccu: CcuThunk, 
+    fileName, 
+    inMem) =
+    
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping ccu.Contents
 
     if tcConfig.dumpSignatureData then
@@ -254,7 +261,13 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
             usesQuotations = ccu.UsesFSharp20PlusQuotations
         }
 
-let GetOptimizationData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
+let GetOptimizationData (
+    file, 
+    ilScopeRef, 
+    ilModule, 
+    byteReaderA, 
+    byteReaderB) =
+    
     let memA = byteReaderA ()
 
     let memB =
@@ -262,12 +275,31 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
          | None -> ByteMemory.Empty.AsReadOnly()
          | Some br -> br ())
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo memA memB
+    unpickleObjWithDanglingCcus
+        file 
+        ilScopeRef 
+        ilModule 
+        Optimizer.u_CcuOptimizationInfo 
+        memA 
+        memB
 
-let EncodeSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) =
+let EncodeSignatureData (
+    tcConfig: TcConfig, 
+    tcGlobals, 
+    exportRemapping, 
+    generatedCcu, 
+    outfile,
+    isIncrementalBuild) =
+    
     if tcConfig.GenerateSignatureData then
         let resource1, resource2 =
-            WriteSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
+            WriteSignatureData(
+                tcConfig, 
+                tcGlobals,
+                exportRemapping, 
+                generatedCcu,
+                outfile, 
+                isIncrementalBuild)
 
         let resources =
             [
@@ -312,7 +344,14 @@ let WriteOptimizationData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: 
         Optimizer.p_CcuOptimizationInfo
         modulInfo
 
-let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) =
+let EncodeOptimizationData (
+    tcGlobals, 
+    tcConfig: TcConfig, 
+    outfile, 
+    exportRemapping, 
+    data, 
+    isIncrementalBuild) =
+    
     if tcConfig.GenerateOptimizationData then
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
 
@@ -323,7 +362,13 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
                 data
 
         let r1, r2 =
-            WriteOptimizationData(tcConfig, tcGlobals, outfile, isIncrementalBuild, ccu, optData)
+            WriteOptimizationData(
+                tcConfig, 
+                tcGlobals, 
+                outfile,
+                isIncrementalBuild, 
+                ccu, 
+                optData)
 
         let resources =
             [
@@ -337,7 +382,14 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
     else
         []
 
-let WriteTypecheckingData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: CcuThunk) =
+let WriteTypecheckingData (
+    tcConfig: TcConfig, 
+    tcGlobals, 
+    fileName, 
+    inMem, 
+    ccu: CcuThunk,
+    checkedImplFile: CheckedImplFile) =
+    
     let rName = "blah"
     let rNameB = "blahB"
 
@@ -349,14 +401,26 @@ let WriteTypecheckingData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: 
         ccu
         (rName + ccu.AssemblyName)
         (rNameB + ccu.AssemblyName)
-        Optimizer.p_CcuOptimizationInfo
-        Unchecked.defaultof<_>
+        pickleCheckedImplFile
+        checkedImplFile
 
-let EncodeTypecheckingData (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild) =
+let EncodeTypecheckingData (
+    tcConfig: TcConfig, 
+    tcGlobals, 
+    generatedCcu, 
+    outfile, 
+    isIncrementalBuild,
+    checkedImplFile) =
     
     if true then
         let r1, r2 =
-            WriteTypecheckingData(tcConfig, tcGlobals, outfile, isIncrementalBuild, generatedCcu)
+            WriteTypecheckingData(
+                tcConfig, 
+                tcGlobals, 
+                outfile, 
+                isIncrementalBuild, 
+                generatedCcu,
+                checkedImplFile)
 
         let resources =
             [
