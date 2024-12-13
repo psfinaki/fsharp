@@ -547,9 +547,6 @@
     <Compile Include="Service\ServiceStructure.fs" />
     <Compile Include="Service\ServiceAnalysis.fsi" />
     <Compile Include="Service\ServiceAnalysis.fs" />
-    <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
-    <Compile Include="Interactive\FSharpInteractiveServer.fs" />
-    <Compile Include="Interactive\ControlledExecution.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
   </ItemGroup>

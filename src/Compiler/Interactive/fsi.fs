@@ -49,7 +49,6 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
-open FSharp.Compiler.Interactive
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
@@ -3105,7 +3104,7 @@ type internal FsiInterruptControllerKillerThreadRequest =
     | PrintInterruptRequest
 
 type internal FsiInterruptController
-    (fsiOptions: FsiCommandLineOptions, controlledExecution: ControlledExecution, fsiConsoleOutput: FsiConsoleOutput) =
+    (fsiOptions: FsiCommandLineOptions, fsiConsoleOutput: FsiConsoleOutput) =
 
     let mutable stdinInterruptState = StdinNormal
     let CTRL_C = 0
@@ -3139,8 +3138,6 @@ type internal FsiInterruptController
 
     member _.EventHandlers = ctrlEventHandlers
 
-    member _.ControlledExecution() = controlledExecution
-
     member controller.InstallKillThread() =
         // Compute how long to pause before a ThreadAbort is actually executed.
         // A somewhat arbitrary choice.
@@ -3169,8 +3166,7 @@ type internal FsiInterruptController
                                     fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread ())
 
                                 killThreadRequest <- NoRequest
-                                controlledExecution.TryAbort()
-
+                                ()
                             ()),
                         Name = "ControlCAbortThread"
                     )
@@ -4069,33 +4065,16 @@ type FsiInteractionProcessor
         try
             let mutable result = Unchecked.defaultof<'a * FsiInteractionStepStatus>
 
-            fsiInterruptController
-                .ControlledExecution()
-                .Run(fun () ->
-                    if progress then
-                        fprintfn fsiConsoleOutput.Out "In mainThreadProcessAction..."
-
-                    fsiInterruptController.InterruptAllowed <- InterruptCanRaiseException
-                    let res = action ctok istate
-                    fsiInterruptController.ClearInterruptRequest()
-                    fsiInterruptController.InterruptAllowed <- InterruptIgnored
-                    result <- res)
-
             result
         with
         | :? ThreadAbortException ->
             fsiInterruptController.ClearInterruptRequest()
             fsiInterruptController.InterruptAllowed <- InterruptIgnored
-            fsiInterruptController.ControlledExecution().ResetAbort()
             (istate, CtrlC)
 
-        | :? TargetInvocationException as e when
-            (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException"
-            || (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "OperationCanceledException"
-            ->
+        | :? TargetInvocationException ->
             fsiInterruptController.ClearInterruptRequest()
             fsiInterruptController.InterruptAllowed <- InterruptIgnored
-            fsiInterruptController.ControlledExecution().ResetAbort()
             (istate, CtrlC)
 
         | e ->
@@ -4495,17 +4474,13 @@ let internal DriveFsiEventLoop
             try
                 fsi.EventLoopRun()
             with
-            | :? TargetInvocationException as e when
-                (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException"
-                ->
+            | :? TargetInvocationException ->
                 // If this TAE handler kicks it's almost certainly too late to save the
                 // state of the process - the state of the message loop may have been corrupted
-                fsiInterruptController.ControlledExecution().ResetAbort()
                 true
             | :? ThreadAbortException ->
                 // If this TAE handler kicks it's almost certainly too late to save the
                 // state of the process - the state of the message loop may have been corrupted
-                fsiInterruptController.ControlledExecution().ResetAbort()
                 true
             | e ->
                 stopProcessingRecovery e range0
@@ -4729,10 +4704,8 @@ type FsiEvaluationSession
             resolveAssemblyRef
         )
 
-    let controlledExecution = ControlledExecution(fsiOptions.Interact)
-
     let fsiInterruptController =
-        FsiInterruptController(fsiOptions, controlledExecution, fsiConsoleOutput)
+        FsiInterruptController(fsiOptions, fsiConsoleOutput)
 
     let uninstallMagicAssemblyResolution =
         MagicAssemblyResolution.Install(tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput)
