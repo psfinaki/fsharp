@@ -509,8 +509,6 @@
     <Compile Include="Service\SynExpr.fs" />
     <Compile Include="Service\SynPat.fsi" />
     <Compile Include="Service\SynPat.fs" />
-    <Compile Include="Service\ServiceNavigation.fsi" />
-    <Compile Include="Service\ServiceNavigation.fs" />
     <Compile Include="Service\FSharpParseFileResults.fsi" />
     <Compile Include="Service\FSharpParseFileResults.fs" />
     <Compile Include="Service\FSharpCheckerResults.fsi" />

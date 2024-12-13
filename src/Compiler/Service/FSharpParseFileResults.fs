@@ -393,18 +393,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 true
             | _ -> false)
 
-    /// Get declared items and the selected item at the specified location
-    member _.GetNavigationItemsImpl() =
-        DiagnosticsScope.Protect
-            range0
-            (fun () ->
-                match input with
-                | ParsedInput.ImplFile _ as p -> Navigation.getNavigation p
-                | ParsedInput.SigFile _ -> Navigation.empty)
-            (fun err ->
-                Trace.TraceInformation(sprintf "FCS: recovering from error in GetNavigationItemsImpl: '%s'" err)
-                Navigation.empty)
-
     member _.ValidateBreakpointLocationImpl pos =
         let isMatchRange m =
             rangeContainsPos m pos || m.StartLine = pos.Line
@@ -884,11 +872,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     member _.DependencyFiles = dependencyFiles
 
     member _.FileName = input.FileName
-
-    // Get items for the navigation drop down bar
-    member scope.GetNavigationItems() =
-        // This does not need to be run on the background thread
-        scope.GetNavigationItemsImpl()
 
     member scope.ValidateBreakpointLocation pos =
         // This does not need to be run on the background thread

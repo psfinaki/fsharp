@@ -74,9 +74,6 @@ type public FSharpParseFileResults =
     /// Name of the file for which this information were created
     member FileName: string
 
-    /// Get declared items and the selected item at the specified location
-    member GetNavigationItems: unit -> NavigationItems
-
     /// Return the inner-most range associated with a possible breakpoint location
     member ValidateBreakpointLocation: pos: pos -> range option
 
