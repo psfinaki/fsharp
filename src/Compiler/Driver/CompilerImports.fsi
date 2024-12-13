@@ -72,7 +72,12 @@ val EncodeOptimizationData:
         ILResource list
 
 val EncodeTypecheckingData:
-    unit -> ILResource list
+    tcConfig: TcConfig *
+    tcGlobals: TcGlobals *
+    generatedCcu: CcuThunk *
+    outfile: string *
+    isIncrementalBuild: bool ->
+        ILResource list
 
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode =

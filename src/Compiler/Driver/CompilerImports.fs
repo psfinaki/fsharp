@@ -264,6 +264,26 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo memA memB
 
+let EncodeSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) =
+    if tcConfig.GenerateSignatureData then
+        let resource1, resource2 =
+            WriteSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
+
+        let resources =
+            [
+                resource1
+                match resource2 with
+                | None -> ()
+                | Some r -> r
+            ]
+
+        let sigAttr =
+            mkSignatureDataVersionAttr tcGlobals (parseILVersion FSharpBinaryMetadataFormatRevision)
+
+        [ sigAttr ], resources
+    else
+        [], []
+
 let WriteOptimizationData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: CcuThunk, modulInfo) =
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
@@ -292,29 +312,6 @@ let WriteOptimizationData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: 
         Optimizer.p_CcuOptimizationInfo
         modulInfo
 
-let WriteTypecheckingData() : ILResource =
-    failwith ""
-
-let EncodeSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) =
-    if tcConfig.GenerateSignatureData then
-        let resource1, resource2 =
-            WriteSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
-
-        let resources =
-            [
-                resource1
-                match resource2 with
-                | None -> ()
-                | Some r -> r
-            ]
-
-        let sigAttr =
-            mkSignatureDataVersionAttr tcGlobals (parseILVersion FSharpBinaryMetadataFormatRevision)
-
-        [ sigAttr ], resources
-    else
-        [], []
-
 let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) =
     if tcConfig.GenerateOptimizationData then
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
@@ -340,10 +337,36 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
     else
         []
 
-let EncodeTypecheckingData () : ILResource list =
+let WriteTypecheckingData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: CcuThunk) =
+    let rName = "blah"
+    let rNameB = "blahB"
+
+    PickleToResource
+        inMem
+        fileName
+        tcGlobals
+        tcConfig.compressMetadata
+        ccu
+        (rName + ccu.AssemblyName)
+        (rNameB + ccu.AssemblyName)
+        Optimizer.p_CcuOptimizationInfo
+        Unchecked.defaultof<_>
+
+let EncodeTypecheckingData (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild) =
+    
     if true then
-        let resource = WriteTypecheckingData()
-        [ resource ]
+        let r1, r2 =
+            WriteTypecheckingData(tcConfig, tcGlobals, outfile, isIncrementalBuild, generatedCcu)
+
+        let resources =
+            [
+                r1
+                match r2 with
+                | None -> ()
+                | Some r -> r
+            ]
+
+        resources
     else
         [ ]
 

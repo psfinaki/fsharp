@@ -214,7 +214,13 @@ let EncodeSignatureData5() =
 
 [<Fact>]
 let EncodeTypecheckingData() =
-    let resources = CompilerImports.EncodeTypecheckingData()
+    let resources = CompilerImports.EncodeTypecheckingData(
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>,
+        Unchecked.defaultof<_>)
+
     let bytes = resources.Head.GetBytes().ReadAllBytes()
     let _result = Encoding.Default.GetString(bytes)
 
