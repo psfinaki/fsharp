@@ -496,74 +496,6 @@ type internal TypeCheckInfo
         //
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(_, ItemOccurrence.InvalidUse, _, _, _, _) :: _, _ -> NameResResult.Empty
-
-        | CNR(Item.Types(_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
-            let targets =
-                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
-
-            let items = ResolveCompletionsInType ncenv nenv targets m ad true ty
-            let items = List.map ItemWithNoInst items
-            ReturnItemsOfType items g denv m filterCtors
-
-        // Exact resolution via 'T.$
-        | CNR(Item.TypeVar(_, tp), _, denv, nenv, ad, m) :: _, Some _ ->
-            let targets =
-                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
-
-            let items = ResolveCompletionsInType ncenv nenv targets m ad true (mkTyparTy tp)
-            let items = List.map ItemWithNoInst items
-            ReturnItemsOfType items g denv m filterCtors
-
-        // Value reference from the name resolution. Primarily to disallow "let x.$ = 1"
-        // In most of the cases, value references can be obtained from expression typings or from environment,
-        // so we wouldn't have to handle values here. However, if we have something like:
-        //   let varA = "string"
-        //   let varA = if b then 0 else varA.
-        // then the expression typings get confused (thinking 'varA:int'), so we use name resolution even for usual values.
-
-        | CNR(Item.Value(vref), occurrence, denv, nenv, ad, m) :: _, Some _ ->
-            if occurrence = ItemOccurrence.Binding || occurrence = ItemOccurrence.Pattern then
-                // Return empty list to stop further lookup - for value declarations
-                NameResResult.Cancel(denv, m)
-            else
-                // If we have any valid items for the value, then return completions for its type now.
-                // Adjust the type in case this is the 'this' pointer stored in a reference cell.
-                let ty = StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType)
-                // patch accessibility domain to remove protected members if accessing NormalVal
-                let ad =
-                    match vref.BaseOrThisInfo, ad with
-                    | ValBaseOrThisInfo.NormalVal, AccessibleFrom(paths, Some tcref) ->
-                        let thisTy = generalizedTyconRef g tcref
-                        // check that type of value is the same or subtype of tcref
-                        // yes - allow access to protected members
-                        // no - strip ability to access protected members
-                        if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy Import.CanCoerce ty then
-                            ad
-                        else
-                            AccessibleFrom(paths, None)
-                    | _ -> ad
-
-                let targets =
-                    ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
-
-                let items = ResolveCompletionsInType ncenv nenv targets m ad false ty
-                let items = List.map ItemWithNoInst items
-                ReturnItemsOfType items g denv m filterCtors
-
-        // No residue, so the items are the full resolution of the name
-        | CNR(_, _, denv, _, _, m) :: _, None ->
-            let items =
-                cnrs
-                |> List.map (fun cnr -> cnr.ItemWithInst)
-                // "into" is special magic syntax, not an identifier or a library call.  It is part of capturedNameResolutions as an
-                // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
-                |> List.filter (fun item ->
-                    match item.Item with
-                    | Item.CustomOperation(CustomOperations.Into, _, _) -> false
-                    | _ -> true)
-
-            ReturnItemsOfType items g denv m filterCtors
         | _, _ -> NameResResult.Empty
 
     let TryGetTypeFromNameResolution (line, colAtEndOfNames, membersByResidue, resolveOverloads) =
@@ -575,12 +507,6 @@ type internal TypeCheckInfo
             |> List.rev
 
         match items, membersByResidue with
-        | CNR(Item.Types(_, ty :: _), _, _, _, _, _) :: _, Some _ -> Some ty
-        | CNR(Item.Value(vref), occurrence, _, _, _, _) :: _, Some _ ->
-            if (occurrence = ItemOccurrence.Binding || occurrence = ItemOccurrence.Pattern) then
-                None
-            else
-                Some(StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
         | _, _ -> None
 
     /// Build a CompletionItem
@@ -668,30 +594,6 @@ type internal TypeCheckInfo
 
         let result =
             match cnrs with
-            | CNR(Item.CtorGroup(_, (ctor :: _ as ctors)), _, denv, nenv, ad, m) :: _ ->
-                let props =
-                    ResolveCompletionsInType
-                        ncenv
-                        nenv
-                        ResolveCompletionTargets.SettablePropertiesAndFields
-                        m
-                        ad
-                        false
-                        ctor.ApparentEnclosingType
-
-                let parameters = CollectParameters ctors amap m
-                let items = props @ parameters
-                Some(denv, m, items)
-            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) :: _ ->
-                let props =
-                    methods
-                    |> List.collect (fun meth ->
-                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
-                        ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy)
-
-                let parameters = CollectParameters methods amap m
-                let items = props @ parameters
-                Some(denv, m, items)
             | _ -> None
 
         match result with
@@ -2377,9 +2279,6 @@ type internal TypeCheckInfo
     member _.GetFormatSpecifierLocationsAndArity() =
         sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: range option) : SemanticClassificationItem[] =
-        sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
-
     /// The resolutions in the file
     member _.ScopeResolutions = sResolutions
 
@@ -3131,11 +3030,6 @@ type FSharpCheckFileResults
         match details with
         | None -> [||]
         | Some(scope, _builderOpt) -> scope.GetFormatSpecifierLocationsAndArity()
-
-    member _.GetSemanticClassification(range: range option) =
-        match details with
-        | None -> [||]
-        | Some(scope, _builderOpt) -> scope.GetSemanticClassification(range)
 
     member _.PartialAssemblySignature =
         match details with

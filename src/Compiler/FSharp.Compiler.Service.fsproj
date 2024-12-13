@@ -490,8 +490,6 @@
     <Compile Include="Symbols\SymbolPatterns.fs" />
 
     <!-- the incremental builder and service . -->
-    <Compile Include="Service\SemanticClassification.fsi" />
-    <Compile Include="Service\SemanticClassification.fs" />
     <Compile Include="Service\ItemKey.fsi" />
     <Compile Include="Service\ItemKey.fs" />
     <Compile Include="Service\FSharpSource.fsi" />
