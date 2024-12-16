@@ -9,6 +9,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.IO
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -96,12 +97,60 @@ let private magicFunction (contents: Entity) =
 
 [<Fact>]
 let GetSignatureData1() =
+    let bytes = [|
+        (byte)0;  // ccus
+        (byte)0;  // n tycons
+        (byte)0;  // n typars
+        (byte)0;  // n vals
+        (byte)1;  // string table
+        (byte)0;
+        (byte)0;  // pubpath table
+        (byte)0;  // n lerefe table
+        (byte)0;  // simple type tables
+        (byte)29; // phase1bytes
+        (byte)0;
+        (byte)0;  // tyar_spec
+        (byte)0;  // logical name
+        (byte)0;  // some opt data
+        (byte)0;  // range
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;  // more opt data
+        (byte)0;
+        (byte)0;
+        (byte)0;  // attributes
+        (byte)0;  // tycon
+        (byte)0;  // ty
+        (byte)0;  // tcaug
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;  // unused
+        (byte)0;  // kind
+        (byte)0;  // entity flags
+        (byte)0;
+        (byte)0;  // more opt data
+    |]
+
+    let byteReaderA () = 
+        ByteMemory.FromArray(bytes).AsReadOnly()
+
+    let byteReaderB = 
+        Some (fun () -> ByteMemory.Empty.AsReadOnly())
+
     let t = 
         GetSignatureData(
             "",
             Unchecked.defaultof<_>,
             Unchecked.defaultof<_>,
-            Unchecked.defaultof<_>,
-            Unchecked.defaultof<_>)
+            byteReaderA,
+            byteReaderB)
 
     Assert.True(true)

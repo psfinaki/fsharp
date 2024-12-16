@@ -303,7 +303,9 @@ let u_byteB st =
 
 type unpickler<'T> = ReaderState -> 'T
 
-let u_bool st = let b = u_byte st in (b = 1)
+let u_bool st = 
+    let b = u_byte st
+    b = 1
 
 /// Unpickle an uncompressed integer from the main stream
 let prim_u_int32 st =
@@ -812,7 +814,14 @@ let check (ilscope: ILScopeRef) (inMap: NodeInTable<_,_>) =
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
         // then be printed indicating the name of the item.
 
-let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) (phase1bytesB: ReadOnlyByteMemory) =
+let unpickleObjWithDanglingCcus 
+    file 
+    viewedScope 
+    (ilModule: ILModuleDef option) 
+    u 
+    (phase2bytes: ReadOnlyByteMemory) 
+    (phase1bytesB: ReadOnlyByteMemory) =
+    
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
          isB = ByteStream.FromBytes (ByteMemory.FromArray([| |]).AsReadOnly(), 0, 0) 
@@ -1316,12 +1325,24 @@ let p_dummy_range : range pickler   = fun _x _st -> ()
 let p_ident (x: Ident) st = p_tup2 p_string p_range (x.idText, x.idRange) st
 let p_xmldoc (doc: XmlDoc) st = p_array p_string doc.UnprocessedLines st
 
-let u_pos st = let a = u_int st in let b = u_int st in mkPos a b
-let u_range st = let a = u_string st in let b = u_pos st in let c = u_pos st in mkRange a b c
+let u_pos st = 
+    let a = u_int st
+    let b = u_int st 
+    mkPos a b
+
+let u_range st = 
+    let a = u_string st
+    let b = u_pos st
+    let c = u_pos st
+    mkRange a b c
 
 // Most ranges (e.g. on optimization expressions) can be elided from stored data
 let u_dummy_range : range unpickler = fun _st -> range0
-let u_ident st = let a = u_string st in let b = u_range st in ident(a, b)
+let u_ident st = 
+    let a = u_string st 
+    let b = u_range st
+    ident(a, b)
+
 let u_xmldoc st = XmlDoc (u_array u_string st, range0)
 
 let p_local_item_ref ctxt tab st = p_osgn_ref ctxt tab st
