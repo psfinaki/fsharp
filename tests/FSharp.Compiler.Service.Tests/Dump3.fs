@@ -99,7 +99,7 @@ let private magicFunction (contents: Entity) =
 let GetSignatureData1() =
     let bytes = [|
         (byte)0;  // ccus
-        (byte)0;  // n tycons
+        (byte)1;  // n tycons
         (byte)0;  // n typars
         (byte)0;  // n vals
         (byte)1;  // string table
@@ -107,7 +107,7 @@ let GetSignatureData1() =
         (byte)0;  // pubpath table
         (byte)0;  // n lerefe table
         (byte)0;  // simple type tables
-        (byte)61; // phase1bytes
+        (byte)62; // phase1bytes
         (byte)0;
         (byte)0;  // tyar_spec
         (byte)0;  // logical name
@@ -169,6 +169,7 @@ let GetSignatureData1() =
         (byte)0;
         (byte)0;
         (byte)3;  // exception representation
+        (byte)0;  // extra space
     |]
 
     let byteReaderA () = 
