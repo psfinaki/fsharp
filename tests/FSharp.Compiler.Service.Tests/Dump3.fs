@@ -137,7 +137,7 @@ let GetSignatureData1() =
         (byte)0;  // entity flags
         (byte)0;
         (byte)0;  // more opt data
-        (byte)0;  // 
+        (byte)0;
         (byte)0;
         (byte)0;
         (byte)0;
