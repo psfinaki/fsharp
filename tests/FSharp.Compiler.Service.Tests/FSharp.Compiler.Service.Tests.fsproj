@@ -18,6 +18,7 @@
     <Compile Include="Dump.fs" />
     <Compile Include="Dump2.fs" />
     <Compile Include="Dump3.fs" />
+    <Compile Include="Dump4.fs" />
     <Compile Include="TypedTreePickleTests.fs" />
   </ItemGroup>
 
