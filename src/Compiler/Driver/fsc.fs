@@ -33,7 +33,6 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
-open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
@@ -615,11 +614,11 @@ let main1
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
     let sysRes, otherRes, knownUnresolved =
-        TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+        CompilerImports.TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
 
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
-        TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
+        CompilerImports.TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
         |> Async.RunImmediate
 
     let ilSourceDocs =
@@ -668,7 +667,7 @@ let main1
     ReportTime tcConfig "Import non-system references"
 
     let tcImports =
-        TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
+        CompilerImports.TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> Async.RunImmediate
 
     // register tcImports to be disposed in future
@@ -719,7 +718,7 @@ let main1
 let main2
     (Args(ctok,
           tcGlobals,
-          tcImports: TcImports,
+          tcImports: CompilerImports.TcImports,
           frameworkTcImports,
           generatedCcu: CcuThunk,
           typedImplFiles,
@@ -825,7 +824,7 @@ let main3
     (Args(ctok,
           tcConfig,
           tcImports,
-          frameworkTcImports: TcImports,
+          frameworkTcImports: CompilerImports.TcImports,
           tcGlobals,
           diagnosticsLogger: DiagnosticsLogger,
           generatedCcu: CcuThunk,
@@ -845,7 +844,7 @@ let main3
 
     let sigDataAttributes, sigDataResources =
         try
-            EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
+            CompilerImports.EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
         with e ->
             errorRecoveryNoRange e
             exiter.Exit 1
@@ -884,7 +883,7 @@ let main3
         // Encode the optimization data
         ReportTime tcConfig ("Encoding OptData")
 
-        optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+        optimizedImpls, CompilerImports.EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     if tcGlobals.langVersion.SupportsFeature LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage then
         match optimizedImpls with
@@ -1110,7 +1109,7 @@ let main6
     dynamicAssemblyCreator
     (Args(ctok,
           tcConfig,
-          tcImports: TcImports,
+          tcImports: CompilerImports.TcImports,
           tcGlobals: TcGlobals,
           diagnosticsLogger: DiagnosticsLogger,
           ilxMainModule,

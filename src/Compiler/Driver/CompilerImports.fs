@@ -192,7 +192,13 @@ let PickleToResource inMem file (g: TcGlobals) compress scope rName rNameB p x =
 
     resource, resourceB
 
-let GetSignatureData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) : PickledDataWithReferences<PickledCcuInfo> =
+let GetSignatureData (
+    file,
+    ilScopeRef,
+    ilModule,
+    byteReaderA,
+    byteReaderB) : PickledDataWithReferences<PickledCcuInfo> =
+    
     let memA = byteReaderA ()
 
     let memB =
@@ -200,7 +206,13 @@ let GetSignatureData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) : Pi
          | None -> ByteMemory.Empty.AsReadOnly()
          | Some br -> br ())
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo memA memB
+    unpickleObjWithDanglingCcus
+        file
+        ilScopeRef
+        ilModule
+        unpickleCcuInfo
+        memA
+        memB
 
 let WriteSignatureData (
     tcConfig: TcConfig,
