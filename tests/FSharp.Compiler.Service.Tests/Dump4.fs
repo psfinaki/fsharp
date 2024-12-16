@@ -25,7 +25,7 @@ open Internal.Utilities.Library.Extras
 
 open Xunit
 
-let private toSignatureData code : (TcConfig * TcGlobals * CcuThunk) =
+let private toSignatureData (code: string) : (TcConfig * TcGlobals * CcuThunk) =
     // tcConfig
     
     let resolver = SimulatedMSBuildReferenceResolver.getResolver()
@@ -81,7 +81,20 @@ let private toSignatureData code : (TcConfig * TcGlobals * CcuThunk) =
             tcConfig, 
             tcImports,
             tcGlobals)
-   
+    
+    File.WriteAllText("testblah.fs", code)
+    let sourceFiles = ["testblah.fs"]
+
+    let inputs =
+        ParseAndCheckInputs.ParseInputFiles(
+            tcConfig, 
+            Lexhelp.LexResourceManager(), 
+            sourceFiles, 
+            logger, 
+            false)
+    
+    let inputs = inputs |> List.map fst
+
     let tcState, _, _, _ = 
         TypeCheck(
             CompilationThreadToken(),
@@ -92,7 +105,7 @@ let private toSignatureData code : (TcConfig * TcGlobals * CcuThunk) =
             "testblah",
             tcEnv0,
             openDecls0,
-            [],
+            inputs,
             DiagnosticsLogger.QuitProcessExiter)
 
     let ccuThunk = tcState.Ccu
