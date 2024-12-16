@@ -130,12 +130,14 @@ let private encodeSignatureData (tcConfig, tcGlobals, ccuThunk) : byte array =
 let private decodeSignatureData (bytes: byte array) =
     let byteReaderA () = ByteMemory.FromArray(bytes).AsReadOnly()
 
-    CompilerImports.GetSignatureData(
+    let data = CompilerImports.GetSignatureData(
         "",
-        Unchecked.defaultof<_>,
+        ILScopeRef.Local,
         None,
         byteReaderA,
         None)
+
+    data
 
 
 let private fromSignatureData (data: PickledDataWithReferences<PickledCcuInfo>) : string =
@@ -145,7 +147,17 @@ let private fromSignatureData (data: PickledDataWithReferences<PickledCcuInfo>) 
 
 [<Fact>]
 let Signatures() =
-    let originalCode = "printfn \"hello world\""
+    let originalCode = """
+module BlahModule1 =
+
+    let blahFunction1() = 41
+
+module BlahModule2 =
+
+    let blahFunction2() = 42
+
+System.Console.WriteLine(183)
+"""
 
     let signatureData = toSignatureData originalCode
 
