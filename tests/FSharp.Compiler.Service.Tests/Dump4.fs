@@ -96,8 +96,8 @@ let private toSignatureData code : (TcConfig * TcGlobals * CcuThunk) =
 
     failwith ""
 
-let private encodeSignatureData (tcConfig, tcGlobals, ccuThunk) =
-    CompilerImports.EncodeSignatureData(
+let private encodeSignatureData (tcConfig, tcGlobals, ccuThunk) : (unit -> ReadOnlyByteMemory) =
+    let _r = CompilerImports.EncodeSignatureData(
         tcConfig,
         tcGlobals,
         Remap.Empty,
@@ -105,15 +105,20 @@ let private encodeSignatureData (tcConfig, tcGlobals, ccuThunk) =
         "",
         false)
 
-//let private decodeSignatureData = 
-//    CompilerImports.GetSignatureData(
-//        "",
-//        Unchecked.defaultof<_>,
-//        None,
-//        byteReaderA,
-//        byteReaderB)
+    failwith ""
 
-let private fromSignatureData = id
+let private decodeSignatureData byteReaderA = 
+    CompilerImports.GetSignatureData(
+        "",
+        Unchecked.defaultof<_>,
+        None,
+        byteReaderA,
+        None)
+
+let private fromSignatureData (data: PickledDataWithReferences<PickledCcuInfo>) : string =
+    failwith ""
+
+
 
 [<Fact>]
 let Signatures() =
@@ -123,9 +128,8 @@ let Signatures() =
 
     let encodedSignatureData = encodeSignatureData signatureData
 
-    //let decodedSignatureData = decodeSignatureData encodedSignatureData
+    let decodedSignatureData = decodeSignatureData encodedSignatureData
 
-    //let resultingCode = fromSignatureData decodedSignatureData
+    let resultingCode = fromSignatureData decodedSignatureData
 
-    Assert.True(true)
-    //Assert.Equal(originalCode, resultingCode)
+    Assert.Equal(originalCode, resultingCode)
