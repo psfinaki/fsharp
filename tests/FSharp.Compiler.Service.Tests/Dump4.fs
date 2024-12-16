@@ -167,4 +167,5 @@ System.Console.WriteLine(183)
 
     let resultingCode = fromSignatureData decodedSignatureData
 
+
     Assert.Equal(originalCode, resultingCode)
