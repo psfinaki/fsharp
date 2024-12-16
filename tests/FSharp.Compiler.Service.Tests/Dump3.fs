@@ -107,7 +107,7 @@ let GetSignatureData1() =
         (byte)0;  // pubpath table
         (byte)0;  // n lerefe table
         (byte)0;  // simple type tables
-        (byte)33; // phase1bytes
+        (byte)57; // phase1bytes
         (byte)0;
         (byte)0;  // tyar_spec
         (byte)0;  // logical name
@@ -137,6 +137,30 @@ let GetSignatureData1() =
         (byte)0;  // entity flags
         (byte)0;
         (byte)0;  // more opt data
+        (byte)0;  // osgn
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;
         (byte)0;
         (byte)0;
         (byte)0;
