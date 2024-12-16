@@ -96,8 +96,8 @@ let private toSignatureData code : (TcConfig * TcGlobals * CcuThunk) =
 
     failwith ""
 
-let private encodeSignatureData (tcConfig, tcGlobals, ccuThunk) : (unit -> ReadOnlyByteMemory) =
-    let _r = CompilerImports.EncodeSignatureData(
+let private encodeSignatureData (tcConfig, tcGlobals, ccuThunk) : byte array =
+    let _, resources = CompilerImports.EncodeSignatureData(
         tcConfig,
         tcGlobals,
         Remap.Empty,
@@ -105,15 +105,22 @@ let private encodeSignatureData (tcConfig, tcGlobals, ccuThunk) : (unit -> ReadO
         "",
         false)
 
-    failwith ""
+    let resource = resources.Head
+    let bytes = resource.GetBytes().ReadAllBytes()
+    bytes
 
-let private decodeSignatureData byteReaderA = 
+
+
+let private decodeSignatureData (bytes: byte array) =
+    let byteReaderA () = ByteMemory.FromArray(bytes).AsReadOnly()
+
     CompilerImports.GetSignatureData(
         "",
         Unchecked.defaultof<_>,
         None,
         byteReaderA,
         None)
+
 
 let private fromSignatureData (data: PickledDataWithReferences<PickledCcuInfo>) : string =
     failwith ""
