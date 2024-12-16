@@ -679,7 +679,6 @@ open System.IO
 open Internal.Utilities
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.DiagnosticsLogger
 

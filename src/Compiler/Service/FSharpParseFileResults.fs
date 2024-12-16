@@ -7,7 +7,6 @@ open System.IO
 open System.Collections.Generic
 open System.Diagnostics
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text

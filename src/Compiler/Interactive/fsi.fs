@@ -45,7 +45,6 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen

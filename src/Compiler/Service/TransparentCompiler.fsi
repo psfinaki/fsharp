@@ -20,7 +20,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.

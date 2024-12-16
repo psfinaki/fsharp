@@ -498,7 +498,6 @@
     <Compile Include="Service\IncrementalBuild.fs" />
     <Compile Include="Service\ServiceCompilerDiagnostics.fsi" />
     <Compile Include="Service\ServiceCompilerDiagnostics.fs" />
-    <Compile Include="Service\ServiceConstants.fs" />
     <Compile Include="Service\ServiceLexing.fsi" />
     <Compile Include="Service\ServiceLexing.fs" />
     <Compile Include="Service\ServiceParseTreeWalk.fsi" />

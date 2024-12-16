@@ -16,7 +16,6 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.NameResolution

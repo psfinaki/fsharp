@@ -38,7 +38,6 @@ open FSharp.Compiler.NameResolution
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.CheckDeclarations
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.TypedTreeOps
