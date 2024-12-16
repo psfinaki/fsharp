@@ -107,7 +107,7 @@ let GetSignatureData1() =
         (byte)0;  // pubpath table
         (byte)0;  // n lerefe table
         (byte)0;  // simple type tables
-        (byte)57; // phase1bytes
+        (byte)60; // phase1bytes
         (byte)0;
         (byte)0;  // tyar_spec
         (byte)0;  // logical name
@@ -163,6 +163,9 @@ let GetSignatureData1() =
         (byte)0;
         (byte)0;
         (byte)0;
+        (byte)0;
+        (byte)0;
+        (byte)0;  // modul type
         (byte)0;
         (byte)0;
     |]
