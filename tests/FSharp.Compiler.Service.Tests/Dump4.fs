@@ -9,9 +9,12 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.IO
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Driver
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTreeOps
@@ -23,78 +26,78 @@ open Internal.Utilities.Library.Extras
 open Xunit
 
 let private toSignatureData code : (TcConfig * TcGlobals * CcuThunk) =
+    // tcConfig
+    
     let resolver = SimulatedMSBuildReferenceResolver.getResolver()
     let currentDir = Directory.GetCurrentDirectory()
 
-    let builder = TcConfigBuilder.CreateNew(
-        resolver,
-        currentDir,
-        ReduceMemoryFlag.No,
-        "",
-        false,
-        false,
-        CopyFSharpCoreFlag.No,
-        (fun _ -> None),
-        None,
-        Range.range0,
-        compressMetadata = false
+    let builder = 
+        TcConfigBuilder.CreateNew(
+            resolver,
+            currentDir,
+            ReduceMemoryFlag.No,
+            "",
+            false,
+            false,
+            CopyFSharpCoreFlag.No,
+            (fun _ -> None),
+            None,
+            Range.range0,
+            compressMetadata = false
         )
 
     let tcConfig = TcConfig.Create(builder, false)
     
-    let sysRes, otherRes, _ =
+    /// tcGlobals
+
+    let sysRes, otherRes, knownUnresolved =
         TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
     
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
-    let tcGlobals, _ = 
+    let tcGlobals, frameworkTcImports = 
         TcImports.BuildFrameworkTcImports(
             foundationalTcConfigP,
             sysRes,
             otherRes) 
         |> Async.RunImmediate
 
-    ///
-    
-    let modul_type = ModuleOrNamespaceType(
-        ModuleOrNamespaceKind.Namespace false,
-        QueueList.Empty,
-        QueueList.Empty)
+    /// ccuThunk
 
-    let contents = {
-        Entity.NewUnlinked() with 
-            entity_typars = LazyWithContext.NotLazy Typars.Empty
-            entity_attribs = Attribs.Empty
-            entity_tycon_repr = TNoRepr
-            entity_tycon_tcaug = TyconAugmentation.Create()
-            entity_modul_type = MaybeLazy.Strict(modul_type)
-            entity_logical_name = "test"
-    }
+    let logger = DiagnosticsLogger.AssertFalseDiagnosticsLogger
 
-    let ccuData : CcuData = 
-        {
-            IsFSharp = true
-            UsesFSharp20PlusQuotations = false
-            InvalidateEvent = (Event<_>()).Publish
-            IsProviderGenerated = false
-            ImportProvidedType = Unchecked.defaultof<_>
-            TryGetILModuleDef = (fun () -> None)
-            FileName = None
-            Stamp = Unchecked.defaultof<_>
-            QualifiedName = None
-            SourceCodeDirectory = Unchecked.defaultof<_>
-            ILScopeRef = ILScopeRef.Local
-            Contents = contents
-            MemberSignatureEquality = Unchecked.defaultof<_>
-            TypeForwarders = CcuTypeForwarderTable.Empty
-            XmlDocumentationInfo = None
-        }
+    let tcImports =
+        TcImports.BuildNonFrameworkTcImports(
+            foundationalTcConfigP,
+            frameworkTcImports, 
+            otherRes, 
+            knownUnresolved, 
+            new DependencyProvider())
+        |> Async.RunImmediate
 
-    let ccuThunk = CcuThunk.Create(
-        "",
-        ccuData)
+    let tcEnv0, openDecls0 =
+        ParseAndCheckInputs.GetInitialTcEnv(
+            "blah",
+            rangeStartup,
+            tcConfig, 
+            tcImports,
+            tcGlobals)
+   
+    let tcState, _, _, _ = 
+        TypeCheck(
+            CompilationThreadToken(),
+            tcConfig,
+            tcImports,
+            tcGlobals,
+            logger,
+            "testblah",
+            tcEnv0,
+            openDecls0,
+            [],
+            DiagnosticsLogger.QuitProcessExiter)
 
+    let ccuThunk = tcState.Ccu
 
-    failwith ""
+    tcConfig, tcGlobals, ccuThunk
 
 let private encodeSignatureData (tcConfig, tcGlobals, ccuThunk) : byte array =
     let _, resources = CompilerImports.EncodeSignatureData(
