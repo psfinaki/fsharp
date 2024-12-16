@@ -96,6 +96,12 @@ let private magicFunction (contents: Entity) =
 
 [<Fact>]
 let GetSignatureData1() =
-
+    let t = 
+        GetSignatureData(
+            "",
+            Unchecked.defaultof<_>,
+            Unchecked.defaultof<_>,
+            Unchecked.defaultof<_>,
+            Unchecked.defaultof<_>)
 
     Assert.True(true)
