@@ -13,6 +13,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTreeOps
 
 open Internal.Utilities.Collections
@@ -183,12 +184,28 @@ let GetSignatureData1() =
     let byteReaderB = 
         Some (fun () -> ByteMemory.Empty.AsReadOnly())
 
-    let t = 
+
+/// 
+    let mspec1 = Entity.NewUnlinked()
+    let mspec2 = Entity.NewUnlinked()
+
+    let expected : PickledDataWithReferences<PickledCcuInfo> = {
+        FixupThunks = [||]
+        RawData = {
+            mspec = mspec1
+            compileTimeWorkingDir = ""
+            usesQuotations = false
+        }
+    }
+
+///
+
+    let result = 
         GetSignatureData(
             "",
             Unchecked.defaultof<_>,
             Unchecked.defaultof<_>,
             byteReaderA,
             byteReaderB)
-
-    Assert.True(true)
+    
+    Assert.Equal(expected.RawData, result.RawData)
