@@ -160,16 +160,21 @@ System.Console.WriteLine(183)
 """
 
     let signatureData = toSignatureData originalCode
-    let one, two, three = signatureData
+    let _, _, three = signatureData
 
     let encodedSignatureData = encodeSignatureData signatureData
 
     let decodedSignatureData = decodeSignatureData encodedSignatureData
 
     //let resultingCode = fromSignatureData decodedSignatureData
+   
+    let contents1 = three.Contents
+    let contents2 = decodedSignatureData.RawData.mspec
+    
+    //let test = contents1 = contents2
 
-    let x = DebugPrint.entityL three.Contents
-    let y = DebugPrint.entityL decodedSignatureData.RawData.mspec
 
+    let x = DebugPrint.entityL contents1
+    let y = DebugPrint.entityL contents2
     Assert.Equal(x.ToString(), y.ToString())
     //Assert.Equal(originalCode, resultingCode)
