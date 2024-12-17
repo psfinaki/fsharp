@@ -9,7 +9,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
 
 /// Represents an identifier in F# code
-[<Struct; NoEquality; NoComparison>]
+[<Struct; NoComparison>]
 type Ident =
     new: text: string * range: range -> Ident
     member idText: string
@@ -1938,7 +1938,7 @@ type ScopedPragma =
     | WarningOff of range: range * warningNumber: int
 
 /// Represents a qualifying name for anonymous module specifications and implementations,
-[<NoEquality; NoComparison>]
+[<NoComparison>]
 type QualifiedNameOfFile =
     | QualifiedNameOfFile of Ident
 

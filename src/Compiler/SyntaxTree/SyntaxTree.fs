@@ -10,7 +10,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
 
-[<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
+[<Struct; NoComparison; DebuggerDisplay("{idText}")>]
 type Ident(text: string, range: range) =
     member _.idText = text
     member _.idRange = range
@@ -1750,7 +1750,7 @@ type ParsedSigFile = ParsedSigFile of hashDirectives: ParsedHashDirective list *
 [<RequireQualifiedAccess>]
 type ScopedPragma = WarningOff of range: range * warningNumber: int
 
-[<NoEquality; NoComparison>]
+[<NoComparison>]
 type QualifiedNameOfFile =
     | QualifiedNameOfFile of Ident
 

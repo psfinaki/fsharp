@@ -2198,6 +2198,10 @@ and p_modul_typ (x: ModuleOrNamespaceType) st =
       (x.ModuleOrNamespaceKind, x.AllValsAndMembers, x.AllEntities)
       st
 
+and p_qualified_name_of_file x st =
+    let (QualifiedNameOfFile ident) = x
+    p_ident ident st
+
 and u_tycon_repr st =
     let tag1 = u_byte st
     match tag1 with
@@ -2530,6 +2534,11 @@ and u_modul_typ st =
           (u_qlist u_Val)
           (u_qlist u_entity_spec) st
     ModuleOrNamespaceType(x1, x3, x5)
+
+
+and u_qualified_name_of_file st = 
+    let ident = u_ident st
+    QualifiedNameOfFile(ident)
 
 
 //---------------------------------------------------------------------------
@@ -2934,11 +2943,13 @@ let pickleCcuInfo (minfo: PickledCcuInfo) st =
         st
 
 let pickleCheckedImplFile (file: CheckedImplFile) (st: WriterState) =
-    p_tup3
+    p_tup4
+        p_qualified_name_of_file
         p_modul_typ
         p_bool
         p_bool
-        (file.Signature,
+        (file.QualifiedNameOfFile,
+         file.Signature,
          file.HasExplicitEntryPoint,
          file.IsScript)
         st
@@ -2946,8 +2957,9 @@ let pickleCheckedImplFile (file: CheckedImplFile) (st: WriterState) =
     ()
 
 let unpickleCheckedImplFile st : CheckedImplFile = 
-    let signature, hasExplicitEntryPoint, isScript =
-        u_tup3
+    let qualifiedNameOfFile, signature, hasExplicitEntryPoint, isScript =
+        u_tup4
+            u_qualified_name_of_file
             u_modul_typ
             u_bool
             u_bool
@@ -2955,7 +2967,7 @@ let unpickleCheckedImplFile st : CheckedImplFile =
     
     let file = 
         CheckedImplFile(
-            Unchecked.defaultof<_>,
+            qualifiedNameOfFile,
             Unchecked.defaultof<_>,
             signature,
             Unchecked.defaultof<_>,
