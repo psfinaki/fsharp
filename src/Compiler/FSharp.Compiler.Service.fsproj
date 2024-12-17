@@ -382,8 +382,6 @@
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
     <Compile Include="Optimize\DetupleArgs.fs" />
-    <Compile Include="Optimize\LowerSequences.fsi" />
-    <Compile Include="Optimize\LowerSequences.fs" />
     <Compile Include="CodeGen\IlxGenSupport.fsi" />
     <Compile Include="CodeGen\IlxGenSupport.fs" />
     <Compile Include="CodeGen\EraseClosures.fsi" />

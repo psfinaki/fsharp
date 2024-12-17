@@ -2947,19 +2947,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
             GenExpr cenv cgbuf eenv altExpr sequel
             true
         | None ->
-
-            let lowering =
-                if compileSequenceExpressions then
-                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap expr
-                else
-                    None
-
-            match lowering with
-            | Some info ->
-                GenSequenceExpr cenv cgbuf eenv info sequel
-                true
-            | None ->
-                false
+            false
 
 and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
     let g = cenv.g
