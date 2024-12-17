@@ -483,12 +483,6 @@
     <Compile Include="Service\IncrementalBuild.fs" />
     <Compile Include="Service\ServiceLexing.fsi" />
     <Compile Include="Service\ServiceLexing.fs" />
-    <Compile Include="Service\ServiceParseTreeWalk.fsi" />
-    <Compile Include="Service\ServiceParseTreeWalk.fs" />
-    <Compile Include="Service\SynExpr.fsi" />
-    <Compile Include="Service\SynExpr.fs" />
-    <Compile Include="Service\SynPat.fsi" />
-    <Compile Include="Service\SynPat.fs" />
     <Compile Include="Service\FSharpParseFileResults.fsi" />
     <Compile Include="Service\FSharpParseFileResults.fs" />
     <Compile Include="Service\FSharpCheckerResults.fsi" />

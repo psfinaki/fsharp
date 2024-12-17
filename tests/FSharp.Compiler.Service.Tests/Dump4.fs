@@ -22,8 +22,10 @@ open FSharp.Compiler.TypedTreeOps
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open Internal.Utilities.TypeHashing
 
 open Xunit
+open FSharp.Compiler.Syntax
 
 let private toSignatureData (code: string) : (TcConfig * TcGlobals * CcuThunk) =
     // tcConfig
@@ -172,6 +174,7 @@ System.Console.WriteLine(183)
     let contents2 = decodedSignatureData.RawData.mspec
     
     //let test = contents1 = contents2
+
 
 
     let x = DebugPrint.entityL contents1
