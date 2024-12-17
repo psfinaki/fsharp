@@ -380,8 +380,6 @@
     <Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
-    <Compile Include="Optimize\DetupleArgs.fsi" />
-    <Compile Include="Optimize\DetupleArgs.fs" />
     <Compile Include="CodeGen\IlxGenSupport.fsi" />
     <Compile Include="CodeGen\IlxGenSupport.fs" />
     <Compile Include="CodeGen\EraseClosures.fsi" />

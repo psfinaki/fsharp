@@ -436,19 +436,6 @@ let ApplyAllOptimizations
     if tcConfig.extraOptimizationIterations > 0 then
         addPhase "ExtraLoop" extraLoop
 
-    let detuple
-        ({
-             File = file
-             PrevPhase = prevPhase
-             PrevFile = _prevFile
-         }: PhaseInputs)
-        : PhaseRes =
-        let file = file |> Detuple.DetupleImplFile ccu tcGlobals
-        file, prevPhase
-
-    if tcConfig.doDetuple then
-        addPhase "Detuple" detuple
-
     let finalSimplify
         ({
              File = file
