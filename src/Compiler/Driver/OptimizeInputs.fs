@@ -407,18 +407,6 @@ let ApplyAllOptimizations
 
     addPhase "firstLoop" firstLoop
 
-    let lowerLocalMutables
-        ({
-             File = file
-             PrevPhase = prevPhase
-             PrevFile = _prevFile
-         }: PhaseInputs)
-        : PhaseRes =
-        let file = LowerLocalMutables.TransformImplFile tcGlobals importMap file
-        file, prevPhase
-
-    addPhase "lowerLocalMutables" lowerLocalMutables
-
     let extraLoop
         ({
              File = file
