@@ -382,10 +382,6 @@
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
     <Compile Include="Optimize\DetupleArgs.fs" />
-    <Compile Include="Optimize\InnerLambdasToTopLevelFuncs.fsi" />
-    <Compile Include="Optimize\InnerLambdasToTopLevelFuncs.fs" />
-    <Compile Include="Optimize\LowerCalls.fsi" />
-    <Compile Include="Optimize\LowerCalls.fs" />
     <Compile Include="Optimize\LowerSequences.fsi" />
     <Compile Include="Optimize\LowerSequences.fs" />
     <Compile Include="Optimize\LowerStateMachines.fsi" />

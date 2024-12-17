@@ -449,34 +449,6 @@ let ApplyAllOptimizations
     if tcConfig.doDetuple then
         addPhase "Detuple" detuple
 
-    let innerLambdasToToplevelFuncs
-        ({
-             File = file
-             PrevPhase = prevPhase
-             PrevFile = _prevFile
-         }: PhaseInputs)
-        : PhaseRes =
-        let file =
-            file
-            |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
-
-        file, prevPhase
-
-    if tcConfig.doTLR then
-        addPhase "InnerLambdasToToplevelFuncs" innerLambdasToToplevelFuncs
-
-    let lowerCalls
-        ({
-             File = file
-             PrevPhase = prevPhase
-             PrevFile = _prevFile
-         }: PhaseInputs)
-        : PhaseRes =
-        let file = LowerCalls.LowerImplFile tcGlobals file
-        file, prevPhase
-
-    addPhase "LowerCalls" lowerCalls
-
     let finalSimplify
         ({
              File = file
