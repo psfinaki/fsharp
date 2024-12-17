@@ -404,7 +404,7 @@ type EntityOptionalData =
     member DebugText: string
 
 /// Represents a type definition, exception definition, module definition or namespace definition.
-[<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
+[<NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type Entity =
     {
 
@@ -3232,7 +3232,7 @@ type AttribKind =
     override ToString: unit -> string
 
 /// Attrib(tyconRef, kind, unnamedArgs, propVal, appliedToAGetterOrSetter, targetsOpt, range)
-[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+[<NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Attrib =
     | Attrib of
         tyconRef: TyconRef *
