@@ -197,8 +197,7 @@ val internal u_ty: unpickler<TType>
 val internal unpickleCcuInfo: ReaderState -> PickledCcuInfo
 
 /// Deserialize a file
-val internal unpickleFile:
-    unit -> bool
+val internal unpickleCheckedImplFile: ReaderState -> CheckedImplFile
 
 /// Deserialize an arbitrary object which may have holes referring to other compilation units
 val internal unpickleObjWithDanglingCcus:

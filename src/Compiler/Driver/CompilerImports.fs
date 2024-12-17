@@ -394,6 +394,24 @@ let EncodeOptimizationData (
     else
         []
 
+let GetTypecheckingData (
+    file,
+    ilScopeRef,
+    ilModule,
+    byteReader) : PickledDataWithReferences<CheckedImplFile> =
+    
+    let memA = byteReader ()
+
+    let memB = ByteMemory.Empty.AsReadOnly()
+
+    unpickleObjWithDanglingCcus
+        file
+        ilScopeRef
+        ilModule
+        unpickleCheckedImplFile
+        memA
+        memB
+
 let WriteTypecheckingData (
     tcConfig: TcConfig, 
     tcGlobals, 

@@ -2943,11 +2943,28 @@ let pickleCheckedImplFile (file: CheckedImplFile) (st: WriterState) =
         
     ()
 
+let unpickleCheckedImplFile st : CheckedImplFile = 
+    let hasExplicitEntryPoint, isScript =
+        u_tup2
+            u_bool
+            u_bool
+            st
+    
+    let file = 
+        CheckedImplFile(
+            Unchecked.defaultof<_>,
+            Unchecked.defaultof<_>,
+            Unchecked.defaultof<_>,
+            Unchecked.defaultof<_>,
+            hasExplicitEntryPoint,
+            isScript,
+            Unchecked.defaultof<_>,
+            Unchecked.defaultof<_>)
+
+    file
+
 let unpickleModuleOrNamespace st = u_entity_spec st
 
 let unpickleCcuInfo st =
     let a, b, c, _space = u_tup4 unpickleModuleOrNamespace u_string u_bool (u_space 3) st
     { mspec=a; compileTimeWorkingDir=b; usesQuotations=c }
-
-let unpickleFile() =
-    true

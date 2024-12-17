@@ -80,6 +80,13 @@ val EncodeOptimizationData:
     isIncrementalBuild: bool ->
         ILResource list
 
+val GetTypecheckingData:
+    file: string *
+    ilScopeRef: ILScopeRef *
+    ilModule: ILModuleDef option *
+    byteReader: (unit -> ReadOnlyByteMemory) ->
+        PickledDataWithReferences<CheckedImplFile>
+
 val EncodeTypecheckingData:
     tcConfig: TcConfig *
     tcGlobals: TcGlobals *
