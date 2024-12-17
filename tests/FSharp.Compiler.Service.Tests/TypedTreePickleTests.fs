@@ -166,6 +166,7 @@ System.Console.WriteLine(183)
     
     Assert.Equal(contents1.IsScript, contents2.IsScript)
     Assert.Equal(contents1.HasExplicitEntryPoint, contents2.HasExplicitEntryPoint)
-    
+    Assert.Equal(contents1.Signature, contents2.Signature)
+
     //let result = contents1 = contents2 
     //Assert.True(result)
