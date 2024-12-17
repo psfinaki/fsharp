@@ -177,7 +177,7 @@ System.Console.WriteLine(183)
 
 
 
-    let x = DebugPrint.entityL contents1
-    let y = DebugPrint.entityL contents2
-    Assert.Equal(x.ToString(), y.ToString())
+    let x = (DebugPrint.entityL contents1).ToString()
+    let y = (DebugPrint.entityL contents2).ToString()
+    Assert.Equal(x, y)
     //Assert.Equal(originalCode, resultingCode)

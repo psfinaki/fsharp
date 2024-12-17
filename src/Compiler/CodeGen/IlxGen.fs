@@ -2937,11 +2937,11 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
         //ProcessDebugPointForExpr cenv cgbuf expr
 
         let lowering =
-            if compileSequenceExpressions then
-                let ilTyForTy ty = GenType cenv expr.Range eenv.tyenv ty
-                LowerComputedCollectionExpressions.LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap ilTyForTy expr
-            else
-                None
+            //if compileSequenceExpressions then
+            //    let ilTyForTy ty = GenType cenv expr.Range eenv.tyenv ty
+            //    LowerComputedCollectionExpressions.LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap ilTyForTy expr
+            //else
+            None
 
         match lowering with
         | Some altExpr ->

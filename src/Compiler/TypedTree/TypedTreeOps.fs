@@ -4038,10 +4038,10 @@ let (|SeqExpr|_|) g expr =
 // DEBUG layout
 //---------------------------------------------------------------------------
 module DebugPrint = 
-    let mutable layoutRanges = false
-    let mutable layoutTypes = false
-    let mutable layoutStamps = false
-    let mutable layoutValReprInfo = false
+    let mutable layoutRanges = true
+    let mutable layoutTypes = true
+    let mutable layoutStamps = true
+    let mutable layoutValReprInfo = true
 
     let braceBarL l = leftL leftBraceBar ^^ l ^^ rightL rightBraceBar
 
