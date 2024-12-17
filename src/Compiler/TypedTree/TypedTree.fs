@@ -627,7 +627,7 @@ type EntityOptionalData =
     override x.ToString() = "EntityOptionalData(...)"
 
 /// Represents a type definition, exception definition, module definition or namespace definition.
-[<NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>] 
+[<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>] 
 type Entity = 
     {
       /// The declared type parameters of the type  
@@ -4597,7 +4597,7 @@ type AttribKind =
     override x.ToString() = sprintf "%+A" x 
 
 /// Attrib(tyconRef, kind, unnamedArgs, propVal, appliedToAGetterOrSetter, targetsOpt, range)
-[<NoComparison; StructuredFormatDisplay("{DebugText}")>]
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Attrib = 
 
     | Attrib of
