@@ -674,8 +674,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         GenILTyAppAux cenv m tyenv (tref, boxity, None) tinst
 
     | TType_ucase(ucref, args) ->
-        let cuspec, idx = GenUnionCaseSpec cenv m tyenv ucref args
-        EraseUnions.GetILTypeForAlternative cuspec idx
+        ILType.Void
 
     | TType_forall(tps, tau) ->
         let tps = DropErasedTypars tps
@@ -3358,13 +3357,9 @@ and GenAllocExn cenv cgbuf eenv (c, args, m) sequel =
     CG.EmitInstr cgbuf (pop args.Length) (Push [ ty ]) (mkNormalNewobj mspec)
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, n, m) =
-    let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv c tyargs
-    CG.EmitInstrs cgbuf (pop n) (Push [ cuspec.DeclaringType ]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx))
-
 and GenAllocUnionCase cenv cgbuf eenv (c, tyargs, args, m) sequel =
     GenExprs cenv cgbuf eenv args
-    GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, args.Length, m)
+    ()
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeUnit) =
@@ -3482,27 +3477,6 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
     | Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr) ->
         CG.EmitDebugPoint cgbuf m
         GenLinearExpr cenv cgbuf eenv innerExpr sequel true contf
-
-    | LinearOpExpr(TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
-        // Process the debug point and see if there's a replacement technique to process this expression
-        if preSteps && GenExprPreSteps cenv cgbuf eenv expr sequel then
-            contf Fake
-        else
-
-            GenExprs cenv cgbuf eenv argsFront
-
-            GenLinearExpr
-                cenv
-                cgbuf
-                eenv
-                argLast
-                Continue
-                true
-                (contf
-                 << (fun Fake ->
-                     GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
-                     GenSequel cenv eenv.cloc cgbuf sequel
-                     Fake))
 
     | _ ->
         GenExpr cenv cgbuf eenv expr sequel
@@ -3792,35 +3766,11 @@ and GenSetExnField cenv cgbuf eenv (e, ecref, fieldNum, e2, m) sequel =
     CG.EmitInstr cgbuf (pop 2) Push0 (mkNormalStfld (mkILFieldSpecInTy (ty, ilFieldName, ftyp)))
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
-and UnionCodeGen (cgbuf: CodeGenBuffer) =
-    { new EraseUnions.ICodeGen<Mark> with
-        member _.CodeLabel m = m.CodeLabel
-
-        member _.GenerateDelayMark() =
-            CG.GenerateDelayMark cgbuf "unionCodeGenMark"
-
-        member _.GenLocal ilTy =
-            cgbuf.AllocLocal([], ilTy, false, true) |> uint16
-
-        member _.SetMarkToHere m = CG.SetMarkToHere cgbuf m
-
-        member _.MkInvalidCastExnNewobj() =
-            mkInvalidCastExnNewobj cgbuf.mgbuf.cenv.g
-
-        member _.EmitInstr x = CG.EmitInstr cgbuf (pop 0) (Push []) x
-
-        member _.EmitInstrs xs =
-            CG.EmitInstrs cgbuf (pop 0) (Push []) xs
-    }
-
 and GenUnionCaseProof cenv cgbuf eenv (e, ucref, tyargs, m) sequel =
     let g = cenv.g
     GenExpr cenv cgbuf eenv e Continue
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
-    let fty = EraseUnions.GetILTypeForAlternative cuspec idx
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
-    EraseUnions.emitCastData g.ilg (UnionCodeGen cgbuf) (false, avoidHelpers, cuspec, idx)
-    CG.EmitInstrs cgbuf (pop 1) (Push [ fty ]) [] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
@@ -3831,7 +3781,6 @@ and GenGetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
-    CG.EmitInstr cgbuf (pop 1) (Push [ fty ]) (EraseUnions.mkLdData (avoidHelpers, cuspec, idx, n))
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
@@ -3842,7 +3791,6 @@ and GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel =
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let fty = actualTypOfIlxUnionField cuspec idx n
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
-    CG.EmitInstr cgbuf (pop 1) (Push [ ILType.Byref fty ]) (EraseUnions.mkLdDataAddr (avoidHelpers, cuspec, idx, n))
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetUnionCaseTag cenv cgbuf eenv (e, tcref, tyargs, m) sequel =
@@ -3850,7 +3798,6 @@ and GenGetUnionCaseTag cenv cgbuf eenv (e, tcref, tyargs, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
     let cuspec = GenUnionSpec cenv m eenv.tyenv tcref tyargs
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore tcref
-    EraseUnions.emitLdDataTag g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec)
     CG.EmitInstrs cgbuf (pop 1) (Push [ g.ilg.typ_Int32 ]) [] // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -3859,10 +3806,8 @@ and GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel =
     GenExpr cenv cgbuf eenv e Continue
     let cuspec, idx = GenUnionCaseSpec cenv m eenv.tyenv ucref tyargs
     let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore ucref.TyconRef
-    EraseUnions.emitCastData g.ilg (UnionCodeGen cgbuf) (false, avoidHelpers, cuspec, idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [ cuspec.DeclaringType ]) [] // push/pop to match the line above
     GenExpr cenv cgbuf eenv e2 Continue
-    CG.EmitInstr cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n))
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 and GenGetRecdFieldAddr cenv cgbuf eenv (e, f, tyargs, m) sequel =
@@ -7404,7 +7349,6 @@ and GenDecisionTreeSwitch
                     | _ -> failwith "error: mixed constructor/const test?")
 
             let avoidHelpers = entityRefInThisAssembly g.compilingFSharpCore hdc.TyconRef
-            EraseUnions.emitDataSwitch g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec, dests)
             CG.EmitInstrs cgbuf (pop 1) Push0 [] // push/pop to match the line above
 
             GenDecisionTreeCases
@@ -7596,14 +7540,6 @@ and GenDecisionTreeTest
         | TTarget(_, BoolExpr b1, _), _ ->
             GenExpr cenv cgbuf eenv e Continue
 
-            match tester with
-            | Some(pops, pushes, i) ->
-                match i with
-                | Choice1Of2(avoidHelpers, cuspec, idx) ->
-                    CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData g.ilg (avoidHelpers, cuspec, idx))
-                | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
-            | _ -> ()
-
             if not b1 then
                 CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Bool ]) (mkLdcInt32 0)
                 CG.EmitInstr cgbuf (pop 1) Push0 AI_ceq
@@ -7694,13 +7630,6 @@ and GenDecisionTreeTest
         | Some(_, _, Choice1Of2(avoidHelpers, cuspec, idx)) ->
             let failure = CG.GenerateDelayMark cgbuf "testFailure"
 
-            GenExpr
-                cenv
-                cgbuf
-                eenv
-                e
-                (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData g.ilg false (avoidHelpers, cuspec, idx, failure.CodeLabel)))
-
             GenDecisionTreeAndTargetsInner
                 cenv
                 cgbuf
@@ -7726,14 +7655,9 @@ and GenDecisionTreeTest
                         sequel
                         contf)
 
-        | Some(pops, pushes, i) ->
+        | Some(pops, pushes, _i) ->
             let failure = CG.GenerateDelayMark cgbuf "testFailure"
             GenExpr cenv cgbuf eenv e Continue
-
-            match i with
-            | Choice1Of2(avoidHelpers, cuspec, idx) ->
-                CG.EmitInstrs cgbuf pops pushes (EraseUnions.mkIsData g.ilg (avoidHelpers, cuspec, idx))
-            | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
 
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp(BI_brfalse, failure.CodeLabel))
 
@@ -11206,146 +11130,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         tdef.WithKind(ilTypeDefKind).WithLayout(tdLayout).WithEncoding(tdEncoding)
 
                     tdef, None
-
-                | TFSharpTyconRepr { fsobjmodel_kind = k } when
-                    (match k with
-                     | TFSharpUnion -> true
-                     | _ -> false)
-                    ->
-                    let alternatives =
-                        tycon.UnionCasesArray
-                        |> Array.mapi (fun i ucspec ->
-                            {
-                                altName = ucspec.CompiledName
-                                altFields = GenUnionCaseRef cenv m eenvinner.tyenv i ucspec.RecdFieldsArray
-                                altCustomAttrs =
-                                    mkILCustomAttrs (
-                                        GenAttrs cenv eenv ucspec.Attribs
-                                        @ [ mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.UnionCase) i ]
-                                    )
-                            })
-
-                    let cuinfo =
-                        {
-                            UnionCasesAccessibility = reprAccess
-                            IsNullPermitted = IsUnionTypeWithNullAsTrueValue g tycon
-                            HelpersAccessibility = reprAccess
-                            HasHelpers = ComputeUnionHasHelpers g tcref
-                            GenerateDebugProxies = generateDebugProxies
-                            DebugDisplayAttributes = ilDebugDisplayAttributes
-                            UnionCases = alternatives
-                            DebugPoint = None
-                            DebugImports = eenv.imports
-                        }
-
-                    let layout =
-                        // Structs with no instance fields get size 1, pack 0
-                        if isStructTy g thisTy then
-                            if
-                                (tycon.AllFieldsArray.Length = 0
-                                 || tycon.AllFieldsArray |> Array.exists (fun f -> not f.IsStatic))
-                                && (alternatives
-                                    |> Array.collect (fun a -> a.FieldDefs)
-                                    |> Array.exists (fun fd -> not fd.ILField.IsStatic))
-                            then
-                                ILTypeDefLayout.Sequential { Size = None; Pack = None }
-                            else
-                                ILTypeDefLayout.Sequential { Size = Some 1; Pack = Some 0us }
-                        else
-                            ILTypeDefLayout.Auto
-
-                    let cattrs =
-                        ilCustomAttrs
-                        @ [
-                            mkCompilationMappingAttr
-                                g
-                                (int (
-                                    if hiddenRepr then
-                                        SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation
-                                    else
-                                        SourceConstructFlags.SumType
-                                ))
-                        ]
-                        |> mkILCustomAttrs
-                        |> storeILCustomAttrs
-
-                    let tdef =
-                        ILTypeDef(
-                            name = ilTypeName,
-                            layout = layout,
-                            attributes = enum 0,
-                            genericParams = ilGenParams,
-                            customAttrs = cattrs,
-                            fields = ilFields,
-                            events = ilEvents,
-                            properties = ilProperties,
-                            methods = mkILMethods ilMethods,
-                            methodImpls = mkILMethodImpls methodImpls,
-                            nestedTypes = emptyILTypeDefs,
-                            implements = InterruptibleLazy.FromValue(ilIntfTys),
-                            extends =
-                                Some(
-                                    if tycon.IsStructOrEnumTycon then
-                                        g.iltyp_ValueType
-                                    else
-                                        g.ilg.typ_Object
-                                ),
-                            additionalFlags = ILTypeDefAdditionalFlags.None,
-                            securityDecls = emptyILSecurityDecls
-                        )
-                            .WithLayout(layout)
-                            .WithSerializable(isSerializable)
-                            .WithSealed(true)
-                            .WithEncoding(ILDefaultPInvokeEncoding.Auto)
-                            .WithAccess(tyconAccess)
-                            // If there are static fields in the union, use the same kind of trigger as
-                            // for class types
-                            .WithInitSemantics(
-                                if ilFields.AsList().IsEmpty then
-                                    ILTypeInit.BeforeField
-                                else
-                                    typeDefTrigger
-                            )
-
-                    let tdef2 =
-                        EraseUnions.mkClassUnionDef
-                            (g.AddMethodGeneratedAttributes,
-                             g.AddPropertyGeneratedAttributes,
-                             g.AddPropertyNeverAttributes,
-                             g.AddFieldGeneratedAttributes,
-                             g.AddFieldNeverAttributes,
-                             g.MkDebuggerTypeProxyAttribute)
-                            g
-                            tref
-                            tdef
-                            cuinfo
-
-                    // Discard the user-supplied (i.e. prim-type.fs) implementations of the get_Empty, get_IsEmpty, get_Value and get_None and Some methods.
-                    // This is because we will replace their implementations by ones that load the unique
-                    // private static field for lists etc.
-                    //
-                    // Also discard the F#-compiler supplied implementation of the Empty, IsEmpty, Value and None properties.
-
-                    let tdefDiscards =
-                        Some(
-                            (fun (md: ILMethodDef) ->
-                                (cuinfo.HasHelpers = SpecialFSharpListHelpers
-                                 && (md.Name = "get_Empty" || md.Name = "Cons" || md.Name = "get_IsEmpty"))
-                                || (cuinfo.HasHelpers = SpecialFSharpOptionHelpers
-                                    && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))
-                                || (cuinfo.HasHelpers = AllHelpers
-                                    && (md.Name.StartsWith("get_Is") && not (tdef2.Methods.FindByName(md.Name).IsEmpty)))),
-
-                            (fun (pd: ILPropertyDef) ->
-                                (cuinfo.HasHelpers = SpecialFSharpListHelpers
-                                 && (pd.Name = "Empty" || pd.Name = "IsEmpty"))
-                                || (cuinfo.HasHelpers = SpecialFSharpOptionHelpers
-                                    && (pd.Name = "Value" || pd.Name = "None"))
-                                || (cuinfo.HasHelpers = AllHelpers
-                                    && (pd.Name.StartsWith("Is") && not (tdef2.Properties.LookupByName(pd.Name).IsEmpty))))
-                        )
-
-                    tdef2, tdefDiscards
 
                 | _ -> failwith "??"
 

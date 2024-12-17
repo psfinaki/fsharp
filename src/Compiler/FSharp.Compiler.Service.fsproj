@@ -384,8 +384,6 @@
     <Compile Include="CodeGen\IlxGenSupport.fs" />
     <Compile Include="CodeGen\EraseClosures.fsi" />
     <Compile Include="CodeGen\EraseClosures.fs" />
-    <Compile Include="CodeGen\EraseUnions.fsi" />
-    <Compile Include="CodeGen\EraseUnions.fs" />
     <Compile Include="CodeGen\IlxGen.fsi" />
     <Compile Include="CodeGen\IlxGen.fs" />
     <Compile Include="Driver\FxResolver.fsi" />
