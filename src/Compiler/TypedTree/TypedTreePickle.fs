@@ -2934,18 +2934,21 @@ let pickleCcuInfo (minfo: PickledCcuInfo) st =
         st
 
 let pickleCheckedImplFile (file: CheckedImplFile) (st: WriterState) =
-    p_tup2
+    p_tup3
+        p_modul_typ
         p_bool
         p_bool
-        (file.HasExplicitEntryPoint,
+        (file.Signature,
+         file.HasExplicitEntryPoint,
          file.IsScript)
         st
         
     ()
 
 let unpickleCheckedImplFile st : CheckedImplFile = 
-    let hasExplicitEntryPoint, isScript =
-        u_tup2
+    let signature, hasExplicitEntryPoint, isScript =
+        u_tup3
+            u_modul_typ
             u_bool
             u_bool
             st
@@ -2954,7 +2957,7 @@ let unpickleCheckedImplFile st : CheckedImplFile =
         CheckedImplFile(
             Unchecked.defaultof<_>,
             Unchecked.defaultof<_>,
-            Unchecked.defaultof<_>,
+            signature,
             Unchecked.defaultof<_>,
             hasExplicitEntryPoint,
             isScript,
