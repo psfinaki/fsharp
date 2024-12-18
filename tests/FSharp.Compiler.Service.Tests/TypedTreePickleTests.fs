@@ -1,7 +1,6 @@
 ﻿module FSharp.Compiler.Service.Tests.TypedTreePickleTests
 
 open System.IO
-open System.Text
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
@@ -11,21 +10,15 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.IO
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Driver
-open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
-open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.Syntax
 
-open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
-open Internal.Utilities.TypeHashing
 
 open Xunit
-open FSharp.Compiler.Syntax
 
 let private toTcData (code: string) =
     // tcConfig
@@ -44,7 +37,7 @@ let private toTcData (code: string) =
             CopyFSharpCoreFlag.No,
             (fun _ -> None),
             None,
-            Range.range0,
+            range0,
             compressMetadata = false
         )
 
