@@ -2198,9 +2198,17 @@ and p_modul_typ (x: ModuleOrNamespaceType) st =
       (x.ModuleOrNamespaceKind, x.AllValsAndMembers, x.AllEntities)
       st
 
-and p_qualified_name_of_file x st =
-    let (QualifiedNameOfFile ident) = x
+and p_qualified_name_of_file qualifiedNameOfFile st =
+    let (QualifiedNameOfFile ident) = qualifiedNameOfFile
     p_ident ident st
+
+and p_pragma pragma st =
+    let (ScopedPragma.WarningOff (range, warningNumber)) = pragma
+    p_range range st
+    p_int warningNumber st
+
+and p_pragmas x st =
+    p_list p_pragma x st
 
 and u_tycon_repr st =
     let tag1 = u_byte st
@@ -2526,7 +2534,6 @@ and u_ValData st =
 
 and u_Val st = u_osgn_decl st.ivals u_ValData st
 
-
 and u_modul_typ st =
     let x1, x3, x5 =
         u_tup3
@@ -2535,10 +2542,17 @@ and u_modul_typ st =
           (u_qlist u_entity_spec) st
     ModuleOrNamespaceType(x1, x3, x5)
 
-
 and u_qualified_name_of_file st = 
     let ident = u_ident st
     QualifiedNameOfFile(ident)
+
+and u_pragma st =
+    let range = u_range st
+    let warningNumber = u_int st
+    ScopedPragma.WarningOff (range, warningNumber)
+
+and u_pragmas st =
+    u_list u_pragma st
 
 
 //---------------------------------------------------------------------------
@@ -2943,12 +2957,14 @@ let pickleCcuInfo (minfo: PickledCcuInfo) st =
         st
 
 let pickleCheckedImplFile (file: CheckedImplFile) (st: WriterState) =
-    p_tup4
+    p_tup5
         p_qualified_name_of_file
+        p_pragmas
         p_modul_typ
         p_bool
         p_bool
         (file.QualifiedNameOfFile,
+         file.Pragmas,
          file.Signature,
          file.HasExplicitEntryPoint,
          file.IsScript)
@@ -2957,9 +2973,10 @@ let pickleCheckedImplFile (file: CheckedImplFile) (st: WriterState) =
     ()
 
 let unpickleCheckedImplFile st : CheckedImplFile = 
-    let qualifiedNameOfFile, signature, hasExplicitEntryPoint, isScript =
-        u_tup4
+    let qualifiedNameOfFile, pragmas, signature, hasExplicitEntryPoint, isScript =
+        u_tup5
             u_qualified_name_of_file
+            u_pragmas
             u_modul_typ
             u_bool
             u_bool
@@ -2968,7 +2985,7 @@ let unpickleCheckedImplFile st : CheckedImplFile =
     let file = 
         CheckedImplFile(
             qualifiedNameOfFile,
-            Unchecked.defaultof<_>,
+            pragmas,
             signature,
             Unchecked.defaultof<_>,
             hasExplicitEntryPoint,
