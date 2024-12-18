@@ -9,6 +9,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CheckBasics
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.DiagnosticsLogger
@@ -53,6 +54,12 @@ val IsReflectedDefinitionsResource: ILResource -> bool
 val GetResourceNameAndSignatureDataFuncs:
     ILResource list -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
+type TcDataForPickling = {
+    TopAttrs: TopAttribs
+    DeclaredImpls: CheckedImplFile list
+    TcEnvAtEndOfLastFile: TcEnv
+}
+
 val GetSignatureData:
     file: string *
     ilScopeRef: ILScopeRef *
@@ -85,7 +92,7 @@ val GetTypecheckingData:
     ilScopeRef: ILScopeRef *
     ilModule: ILModuleDef option *
     byteReader: (unit -> ReadOnlyByteMemory) ->
-        PickledDataWithReferences<CheckedImplFile>
+        PickledDataWithReferences<TcDataForPickling>
 
 val EncodeTypecheckingData:
     tcConfig: TcConfig *
@@ -93,7 +100,7 @@ val EncodeTypecheckingData:
     generatedCcu: CcuThunk *
     outfile: string *
     isIncrementalBuild: bool * 
-    checkedImplFile: CheckedImplFile ->
+    tcData: TcDataForPickling ->
         ILResource list
 
 [<RequireQualifiedAccess>]

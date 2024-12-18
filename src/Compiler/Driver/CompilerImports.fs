@@ -22,6 +22,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
@@ -191,6 +192,12 @@ let PickleToResource inMem file (g: TcGlobals) compress scope rName rNameB p x =
             None
 
     resource, resourceB
+
+type TcDataForPickling = {
+    TopAttrs: TopAttribs
+    DeclaredImpls: CheckedImplFile list
+    TcEnvAtEndOfLastFile: TcEnv
+}
 
 let GetSignatureData (
     file,
@@ -395,22 +402,23 @@ let EncodeOptimizationData (
         []
 
 let GetTypecheckingData (
-    file,
-    ilScopeRef,
-    ilModule,
-    byteReader) : PickledDataWithReferences<CheckedImplFile> =
+    file: string,
+    ilScopeRef: ILScopeRef,
+    ilModule: ILModuleDef option,
+    byteReader: (unit -> ReadOnlyByteMemory)) : PickledDataWithReferences<TcDataForPickling> =
     
     let memA = byteReader ()
-
     let memB = ByteMemory.Empty.AsReadOnly()
 
     unpickleObjWithDanglingCcus
         file
         ilScopeRef
         ilModule
-        unpickleCheckedImplFile
+        Unchecked.defaultof<_>
         memA
         memB
+
+    
 
 let WriteTypecheckingData (
     tcConfig: TcConfig, 
@@ -418,7 +426,7 @@ let WriteTypecheckingData (
     fileName, 
     inMem, 
     ccu: CcuThunk,
-    checkedImplFile: CheckedImplFile) =
+    tcData: CheckedImplFile) =
     
     let rName = "blah"
     let rNameB = "blahB"
@@ -432,7 +440,7 @@ let WriteTypecheckingData (
         (rName + ccu.AssemblyName)
         (rNameB + ccu.AssemblyName)
         pickleCheckedImplFile
-        checkedImplFile
+        tcData
 
 let EncodeTypecheckingData (
     tcConfig: TcConfig, 
@@ -440,7 +448,7 @@ let EncodeTypecheckingData (
     generatedCcu, 
     outfile, 
     isIncrementalBuild,
-    checkedImplFile) =
+    tcData: TcDataForPickling) =
     
     if true then
         let r1, r2 =
@@ -450,7 +458,7 @@ let EncodeTypecheckingData (
                 outfile, 
                 isIncrementalBuild, 
                 generatedCcu,
-                checkedImplFile)
+                tcData.DeclaredImpls.Head)
 
         let resources =
             [

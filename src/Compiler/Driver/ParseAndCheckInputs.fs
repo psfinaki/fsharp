@@ -1960,28 +1960,59 @@ let CheckMultipleInputsUsingGraphMode
         partialResults, tcState)
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
-    // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
-    let results, tcState =
-        match tcConfig.typeCheckingConfig.Mode with
-        | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.compilingFSharpCore) ->
-            CheckMultipleInputsUsingGraphMode(
-                ctok,
-                checkForErrors,
-                tcConfig,
-                tcImports,
-                tcGlobals,
-                prefixPathOpt,
-                tcState,
-                eagerFormat,
-                inputs
-            )
-        | _ -> CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
+    if false then
+        let tcDataForPickling = 
+            CompilerImports.GetTypecheckingData(
+                Unchecked.defaultof<_>,
+                Unchecked.defaultof<_>,
+                Unchecked.defaultof<_>,
+                Unchecked.defaultof<_>)
 
-    let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState =
-        CheckMultipleInputsFinish(results, tcState)
+        let tcData = tcDataForPickling.RawData
 
-    let tcState, declaredImpls, ccuContents =
-        CheckClosedInputSetFinish(implFiles, tcState)
+        tcState,
+        tcData.TopAttrs,
+        tcData.DeclaredImpls,
+        tcData.TcEnvAtEndOfLastFile
 
-    tcState.Ccu.Deref.Contents <- ccuContents
-    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+    else
+        // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
+        let results, tcState =
+            match tcConfig.typeCheckingConfig.Mode with
+            | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.compilingFSharpCore) ->
+                CheckMultipleInputsUsingGraphMode(
+                    ctok,
+                    checkForErrors,
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    prefixPathOpt,
+                    tcState,
+                    eagerFormat,
+                    inputs
+                )
+            | _ -> CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
+
+        let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState =
+            CheckMultipleInputsFinish(results, tcState)
+
+        let tcState, declaredImpls, ccuContents =
+            CheckClosedInputSetFinish(implFiles, tcState)
+
+        tcState.Ccu.Deref.Contents <- ccuContents
+
+        let tcDataForPickling = {
+            TopAttrs = topAttrs
+            DeclaredImpls = declaredImpls
+            TcEnvAtEndOfLastFile = tcEnvAtEndOfLastFile
+        }
+
+        let _ = CompilerImports.EncodeTypecheckingData(
+            tcConfig,
+            tcGlobals,
+            tcState.Ccu,
+            Unchecked.defaultof<_>,
+            Unchecked.defaultof<_>,
+            tcDataForPickling) 
+
+        tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
