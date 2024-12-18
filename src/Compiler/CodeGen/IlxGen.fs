@@ -299,7 +299,7 @@ type cenv =
         amap: ImportMap
 
         /// Environment for EraseClosures functionality
-        ilxPubCloEnv: EraseClosures.cenv
+        ilxPubCloEnv: obj
 
         /// A callback for TcVal in the typechecker.  Used to generalize values when finding witnesses.
         /// It is unfortunate this is needed but it is until we supply witnesses through the compilation.
@@ -659,8 +659,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
 
     | TType_tuple(tupInfo, args) -> GenTypeAux cenv m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
 
-    | TType_fun(dty, returnTy, _) ->
-        EraseClosures.mkILFuncTy cenv.ilxPubCloEnv (GenTypeArgAux cenv m tyenv dty) (GenTypeArgAux cenv m tyenv returnTy)
+    | TType_fun(_dty, _returnTy, _) -> ILType.Void
 
     | TType_anon(anonInfo, tinst) ->
         let tref = anonInfo.ILTypeRef
@@ -676,13 +675,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     | TType_ucase(ucref, args) ->
         ILType.Void
 
-    | TType_forall(tps, tau) ->
-        let tps = DropErasedTypars tps
-
-        if tps.IsEmpty then
-            GenTypeAux cenv m tyenv VoidNotOK ptrsOK tau
-        else
-            EraseClosures.mkILTyFuncTy cenv.ilxPubCloEnv
+    | TType_forall(tps, tau) -> ILType.Void
 
     | TType_var(tp, _) -> mkILTyvarTy tyenv[tp, m]
 
@@ -4577,17 +4570,6 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
 
     CountCallFuncInstructions()
 
-    // Generate the code for an ILX callfunc operation
-    let instrs =
-        EraseClosures.mkCallFunc
-            cenv.ilxPubCloEnv
-            (fun ty -> cgbuf.AllocLocal([], ty, false, true) |> uint16)
-            eenv.tyenv.Count
-            isTailCall
-            ilxClosureApps
-
-    CG.EmitInstrs cgbuf (pop (1 + curriedArgs.Length)) (Push [ ilActualRetTy ]) instrs
-
     // Done compiling indirect call...
     GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -5971,12 +5953,6 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     for fv in cloinfo.cloFreeVars do
         GenGetLocalVal cenv cgbuf eenvouter m fv None
 
-    CG.EmitInstr
-        cgbuf
-        (pop ilCloAllFreeVars.Length)
-        (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv ilCloLambdas ])
-        (I_newobj(cloSpec.Constructor, None))
-
     GenSequel cenv eenvouter.cloc cgbuf sequel
 
 and GenSequenceExpr
@@ -6256,10 +6232,7 @@ and GenClosureTypeDefs
             .WithEncoding(ILDefaultPInvokeEncoding.Auto)
             .WithInitSemantics(ILTypeInit.BeforeField)
 
-    let tdefs =
-        EraseClosures.convIlxClosureDef cenv.ilxPubCloEnv tref.Enclosing tdef cloInfo
-
-    tdefs
+    [tdef]
 
 and GenStaticDelegateClosureTypeDefs
     cenv
@@ -6404,16 +6377,11 @@ and GenClosureAlloc cenv (cgbuf: CodeGenBuffer) eenv (cloinfo, m) =
 
     if cloinfo.cloSpec.UseStaticField then
         let fspec = cloinfo.cloSpec.GetStaticFieldSpec()
-        CG.EmitInstr cgbuf (pop 0) (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv cloinfo.ilCloLambdas ]) (mkNormalLdsfld fspec)
+        ()
     else
         GenWitnessArgsFromWitnessInfos cenv cgbuf eenv m cloinfo.cloWitnessInfos
         GenGetLocalVals cenv cgbuf eenv m cloinfo.cloFreeVars
-
-        CG.EmitInstr
-            cgbuf
-            (pop cloinfo.ilCloAllFreeVars.Length)
-            (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv cloinfo.ilCloLambdas ])
-            (I_newobj(cloinfo.cloSpec.Constructor, None))
+        ()
 
 and GenLambda cenv cgbuf eenv isLocalTypeFunc thisVars expr sequel =
     let cloinfo, m = GenLambdaClosure cenv cgbuf eenv isLocalTypeFunc thisVars expr
@@ -6785,12 +6753,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
 
         GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
         GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
-
-        CG.EmitInstr
-            cgbuf
-            (pop ilCloAllFreeVars.Length)
-            (Push [ EraseClosures.mkTyOfLambdas cenv.ilxPubCloEnv ilCloLambdas ])
-            (I_newobj(ilxCloSpec.Constructor, None))
+        ()
 
     // Push the function pointer to the Invoke method of the delegee
     let ilDelegeeTyOuter = mkILBoxedTy ilDelegeeTypeRef ctxtGenericArgsForDelegee
@@ -10291,7 +10254,7 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
             | Some(InterruptibleLazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
               Some(InterruptibleLazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                 // The type returned by the 'sprintf' call
-                let funcTy = EraseClosures.mkILFuncTy cenv.ilxPubCloEnv ilThisTy g.ilg.typ_String
+                let funcTy = ILType.Void
 
                 // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
                 let newFormatMethSpec =
@@ -10314,13 +10277,7 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
                     mkILMethSpec (sprintfMethSpec.MethodRef, AsObject, [], [ funcTy ])
 
                 // Here's the body of the method. Call printf, then invoke the function it returns
-                let callInstrs =
-                    EraseClosures.mkCallFunc
-                        cenv.ilxPubCloEnv
-                        (fun _ -> 0us)
-                        eenv.tyenv.Count
-                        Normalcall
-                        (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
+                let callInstrs = []
 
                 let ilInstrs =
                     [ // load the hardwired format string
@@ -10798,7 +10755,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                         | Some(InterruptibleLazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
                           Some(InterruptibleLazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                             // The type returned by the 'sprintf' call
-                            let funcTy = EraseClosures.mkILFuncTy cenv.ilxPubCloEnv ilThisTy g.ilg.typ_String
+                            let funcTy = ILType.Void
                             // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
                             let newFormatMethSpec =
                                 mkILMethSpec (
@@ -10819,13 +10776,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                 mkILMethSpec (sprintfMethSpec.MethodRef, AsObject, [], [ funcTy ])
 
                             // Here's the body of the method. Call printf, then invoke the function it returns
-                            let callInstrs =
-                                EraseClosures.mkCallFunc
-                                    cenv.ilxPubCloEnv
-                                    (fun _ -> 0us)
-                                    eenv.tyenv.Count
-                                    Normalcall
-                                    (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
+                            let callInstrs = []
 
                             let ilInstrs =
                                 [ // load the hardwired format string
@@ -11624,13 +11575,7 @@ type IlxAssemblyGenerator(amap: ImportMap, g: TcGlobals, tcVal: ConstraintSolver
     let cenv =
         {
             g = g
-            ilxPubCloEnv =
-                EraseClosures.newIlxPubCloEnv (
-                    g.ilg,
-                    g.AddMethodGeneratedAttributes,
-                    g.AddFieldGeneratedAttributes,
-                    g.AddFieldNeverAttributes
-                )
+            ilxPubCloEnv = obj()
             tcVal = tcVal
             viewCcu = ccu
             ilUnitTy = None
