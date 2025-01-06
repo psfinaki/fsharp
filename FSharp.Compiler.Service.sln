@@ -16,14 +16,6 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.ComponentTe
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E} = {38A23D53-E2BF-4B76-907F-49F41D60C88E}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DD4D4A7E-D519-4409-89DA-16DCA3EF80AA}"
-	ProjectSection(SolutionItems) = preProject
-		Directory.Build.props = Directory.Build.props
-		Directory.Build.targets = Directory.Build.targets
-		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
-		global.json = global.json
-	EndProjectSection
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fslex", "buildtools\fslex\fslex.fsproj", "{E7D145CD-ACE4-492D-B9A1-1B4F8560BB3B}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fsyacc", "buildtools\fsyacc\fsyacc.fsproj", "{D63BBEE6-DA15-44B6-95DC-CCC50737A441}"
