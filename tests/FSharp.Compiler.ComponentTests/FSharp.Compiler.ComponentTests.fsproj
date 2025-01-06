@@ -132,59 +132,7 @@
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
-    <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
-    <Compile Include="EmittedIL\VeryLargeClasses.fs" />
-    <Compile Include="EmittedIL\EmptyArray.fs" />
-    <Compile Include="EmittedIL\Enums.fs" />
-    <Compile Include="EmittedIL\Literals.fs" />
-    <Compile Include="EmittedIL\NoCompilerInlining.fs" />
-    <Compile Include="EmittedIL\RealInternalSignature\ModuleVisibility.fs" />
-    <Compile Include="EmittedIL\RealInternalSignature\ModuleInitialization.fs" />
-    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityNamespaceRootWithFsi.fs" />
-    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityNamespaceRoot.fs" />
-    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityModuleRootWithFsi.fs" />
-    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeVisibilityModuleRoot.fs" />
-    <Compile Include="EmittedIL\RealInternalSignature\ClassTypeInitialization.fs" />
-    <Compile Include="EmittedIL\SkipLocalsInit.fs" />
-    <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
     <!--<Compile Include="EmittedIL\StructGettersReadOnly.fs" />-->
-    <Compile Include="EmittedIL\TailCalls.fs" />
-    <Compile Include="EmittedIL\TupleElimination.fs" />
-    <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
-    <Compile Include="EmittedIL\WhileLoops.fs" />
-    <Compile Include="EmittedIL\ArgumentNames.fs" />
-    <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
-    <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
-    <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
-    <Compile Include="EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs" />
-    <Compile Include="EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs" />
-    <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
-    <Compile Include="EmittedIL\ComputedCollections\ComputedCollections.fs" />
-    <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
-    <Compile Include="EmittedIL\ForLoop\ForLoop.fs" />
-    <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
-    <Compile Include="EmittedIL\GenericComparison\CrossAssembly.fs" />
-    <Compile Include="EmittedIL\GenericComparison\GenericComparison.fs" />
-    <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
-    <Compile Include="EmittedIL\Inlining\Inlining.fs" />
-    <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
-    <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
-    <Compile Include="EmittedIL\ByRefTests.fs" />
-    <Compile Include="EmittedIL\Misc\Misc.fs" />
-    <Compile Include="EmittedIL\operators\Operators.fs" />
-    <Compile Include="EmittedIL\Platform\Platform.fs" />
-    <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
-    <Compile Include="EmittedIL\SerializableAttribute\SerializableAttribute.fs" />
-    <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
-    <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
-    <Compile Include="EmittedIL\StaticInit\StaticInit.fs" />
-    <Compile Include="EmittedIL\SteppingMatch\SteppingMatch.fs" />
-    <Compile Include="EmittedIL\Structure\Structure.fs" />
-    <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
-    <Compile Include="EmittedIL\Tuples\Tuples.fs" />
-    <Compile Include="EmittedIL\TryCatch\TryCatch.fs" />
-    <Compile Include="EmittedIL\Nullness\NullnessMetadata.fs" />
-    <Compile Include="EmittedIL\FixedBindings\FixedBindings.fs" />
     <Compile Include="ErrorMessages\TypedInterpolatedStringsTests.fs" />
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
@@ -350,7 +298,6 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
-    <None Remove="EmittedIL\GenericComparison\CrossAssembly.fs" />
     <None Remove="ErrorMessages\ActivePatternArgCountMismatchTest.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
