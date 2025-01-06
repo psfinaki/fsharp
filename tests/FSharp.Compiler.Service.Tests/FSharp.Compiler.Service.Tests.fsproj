@@ -15,14 +15,6 @@
 
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="expected-help-output.bsl">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-    <Compile Include="SurfaceArea.fs" Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
-    <Compile Include="..\FSharp.Test.Utilities\XunitSetup.fs">
-      <Link>XunitSetup.fs</Link>
-    </Compile>
-    <Compile Include="Common.fs" />
     <Compile Include="TypedTreePickleTests.fs" />
   </ItemGroup>
 
