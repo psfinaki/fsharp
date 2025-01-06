@@ -46,6 +46,15 @@
 
   <ItemGroup>
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="AttributeUsage.fs" />
+    <None Remove="Literals.fs" />
+    <None Remove="Misc.fs" />
+    <None Remove="OnOverridesAndIFaceImpl.fs" />
+    <None Remove="Operators.fs" />
+    <None Remove="SkipLocalsInit.fs" />
+    <None Remove="StringFormatAndInterpolation.fs" />
+    <None Remove="TailCalls.fs" />
+    <None Remove="TupleElimination.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
