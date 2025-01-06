@@ -34,8 +34,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fsyacc", "buildtools\fsyacc
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Build", "src\FSharp.Build\FSharp.Build.fsproj", "{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core", "src\FSharp.Core\FSharp.Core.fsproj", "{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,10 +76,6 @@ Global
 		{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F7A87089-C02E-4EF1-B9AE-6C4EC6407BD1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6A61305F-9C5A-4FC1-869A-2CFFBA45A328}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
