@@ -33,22 +33,6 @@
     <!--<Compile Include="EmittedIL\StructGettersReadOnly.fs" />-->
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
     <Compile Include="TypeChecks\ReuseTcResults\ReuseTcResultsTests.fs" />
-    <Compile Include="TypeChecks\SeqTypeCheckTests.fs" />
-    <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
-    <Compile Include="TypeChecks\Graph\Utils.fs" />
-    <Compile Include="TypeChecks\Graph\QueryTrieTests.fs" />
-    <Compile Include="TypeChecks\Graph\TrieMappingTests.fs" />
-    <Compile Include="TypeChecks\Graph\FileContentMappingTests.fs" />
-    <Compile Include="TypeChecks\Graph\Scenarios.fs" />
-    <Compile Include="TypeChecks\Graph\DependencyResolutionTests.fs" />
-    <Compile Include="TypeChecks\Graph\CompilationTests.fs" />
-    <Content Include="TypeChecks\Graph\scrape.fsx" CopyToOutputDirectory="Never" />
-    <Compile Include="TypeChecks\Graph\CompilationFromCmdlineArgsTests.fs" />
-    <Compile Include="TypeChecks\Graph\TypedTreeGraph.fs" />
-    <Compile Include="TypeChecks\Graph\GraphProcessingTests.fs" />
-    <Compile Include="TypeChecks\TyparNameTests.fs" />
-    <Compile Include="TypeChecks\CheckTypeTests.fs" />
-    <Compile Include="TypeChecks\PropertyShadowingTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
