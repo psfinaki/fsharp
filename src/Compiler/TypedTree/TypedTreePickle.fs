@@ -2189,18 +2189,28 @@ and p_pragma pragma st =
 and p_pragmas x st =
     p_list p_pragma x st
 
-and p_checked_impl_file (file: CheckedImplFile) st =
+and p_checked_impl_file file st =
+    let (CheckedImplFile (
+            qualifiedNameOfFile,
+            pragmas,
+            signature,
+            _contents,
+            hasExplicitEntryPoint,
+            isScript,
+            _anonRecdTypeInto,
+            _namedDebugPointsForInlinedCode)) = file
+
     p_tup5
         p_qualified_name_of_file
         p_pragmas
         p_modul_typ
         p_bool
         p_bool
-        (file.QualifiedNameOfFile,
-         file.Pragmas,
-         file.Signature,
-         file.HasExplicitEntryPoint,
-         file.IsScript)
+        (qualifiedNameOfFile,
+         pragmas,
+         signature,
+         hasExplicitEntryPoint,
+         isScript)
         st
 
 and u_tycon_repr st =
