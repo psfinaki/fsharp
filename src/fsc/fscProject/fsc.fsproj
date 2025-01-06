@@ -3,8 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
   </PropertyGroup>
 

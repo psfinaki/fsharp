@@ -79,7 +79,7 @@
          Right now, it only covers products we ship (FSC and FSI), not NuGet packages. -->
     <When Condition="'$(DotNetBuildSourceOnly)' == 'true' AND '$(DotNetBuildOrchestrator)' == 'true'">
       <PropertyGroup>
-        <FSharpNetCoreProductTargetFramework>$(NetCurrent)</FSharpNetCoreProductTargetFramework>
+        <FSharpNetCoreProductTargetFramework>$(FSharpNetCoreProductDefaultTargetFramework)</FSharpNetCoreProductTargetFramework>
       </PropertyGroup>
     </When>
     <Otherwise>
