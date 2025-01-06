@@ -62,12 +62,6 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(BUILDING_USING_DOTNET)' == 'true'">
-    <!-- CompilerAssert dependencies.
-         Make sure they are getting built with the Utilities. -->
-    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
-  </ItemGroup>
-
 
   <ItemGroup>
     <PackageReference Include="xunit" Version="$(XUnitVersion)" />
