@@ -164,3 +164,4 @@ System.Console.WriteLine(2)
             Assert.Equal<ScopedPragma list>(originalFile.Pragmas, restoredFile.Pragmas)
             Assert.Equal(originalFile.IsScript, restoredFile.IsScript)
             Assert.Equal(originalFile.HasExplicitEntryPoint, restoredFile.HasExplicitEntryPoint)
+

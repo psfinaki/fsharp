@@ -2189,6 +2189,13 @@ and p_pragma pragma st =
 and p_pragmas x st =
     p_list p_pragma x st
 
+and p_named_debug_point_key (x: NamedDebugPointKey) st =
+    p_tup2
+      p_range
+      p_string
+      (x.Range, x.Name)
+      st
+
 and p_checked_impl_file file st =
     let (CheckedImplFile (
             qualifiedNameOfFile,
@@ -2198,19 +2205,21 @@ and p_checked_impl_file file st =
             hasExplicitEntryPoint,
             isScript,
             _anonRecdTypeInto,
-            _namedDebugPointsForInlinedCode)) = file
+            namedDebugPointsForInlinedCode)) = file
 
-    p_tup5
+    p_tup6
         p_qualified_name_of_file
         p_pragmas
         p_modul_typ
         p_bool
         p_bool
+        (p_Map p_named_debug_point_key p_range)
         (qualifiedNameOfFile,
          pragmas,
          signature,
          hasExplicitEntryPoint,
-         isScript)
+         isScript,
+         namedDebugPointsForInlinedCode)
         st
 
 and u_tycon_repr st =
@@ -2558,14 +2567,24 @@ and u_pragma st =
 and u_pragmas st =
     u_list u_pragma st
 
+and u_named_debug_point_key st : NamedDebugPointKey =
+    let range, name =
+        u_tup2
+          u_range
+          u_string
+          st
+
+    { Range = range; Name = name}
+
 and u_checked_impl_file st = 
-    let qualifiedNameOfFile, pragmas, signature, hasExplicitEntryPoint, isScript =
-        u_tup5
+    let qualifiedNameOfFile, pragmas, signature, hasExplicitEntryPoint, isScript, namedDebugPointsForInlinedCode =
+        u_tup6
             u_qualified_name_of_file
             u_pragmas
             u_modul_typ
             u_bool
             u_bool
+            (u_Map u_named_debug_point_key u_range)
             st
 
     CheckedImplFile(
@@ -2578,8 +2597,7 @@ and u_checked_impl_file st =
         isScript,
         // this anon record map can be likely easily built in top of primitives here 
         Unchecked.defaultof<_>,
-        // something about debug points, not sure we care here
-        Unchecked.defaultof<_>)
+        namedDebugPointsForInlinedCode)
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle for F# expressions (for optimization data)
