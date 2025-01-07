@@ -9,7 +9,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
-open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.Driver
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
@@ -33,7 +33,7 @@ type TypedTreePickleTests() =
         CopyFSharpCoreFlag.No,
         (fun _ -> None),
         None,
-        range0,
+        Range.range0,
         compressMetadata = false)
 
     let tcConfig = TcConfig.Create(builder, false)
@@ -60,7 +60,7 @@ type TypedTreePickleTests() =
 
     let tcEnv0, openDecls0 = ParseAndCheckInputs.GetInitialTcEnv(
         "test",
-        rangeStartup,
+        Range.rangeStartup,
         tcConfig, 
         tcImports,
         tcGlobals)
@@ -152,16 +152,34 @@ System.Console.WriteLine(2)
         Assert.Equal(originalFiles.Length, restoredFiles.Length)
 
         for i = 0 to originalFiles.Length - 1 do
-            let originalFile = originalFiles[i]
-            let restoredFile = restoredFiles[i]
+            let (CheckedImplFile (
+                    o_qualifiedNameOfFile,
+                    o_pragmas,
+                    o_signature,
+                    o_contents,
+                    o_hasExplicitEntryPoint,
+                    o_isScript,
+                    o_anonRecdTypeInto,
+                    o_namedDebugPointsForInlinedCode)) = originalFiles[i]
 
-            // doesn't work, need to figure out namespace equivalenc
-            // Assert.Equal(originalFile.Signature, restoredFile.Signature)
+            let (CheckedImplFile (
+                    r_qualifiedNameOfFile,
+                    r_pragmas,
+                    r_signature,
+                    r_contents,
+                    r_hasExplicitEntryPoint,
+                    r_isScript,
+                    r_anonRecdTypeInto,
+                    r_namedDebugPointsForInlinedCode)) = restoredFiles[i]
 
             // doesn't work, no equality for QualifiedNameOfFile
-            // Assert.Equal(originalFile.QualifiedNameOfFile, restoredFile.QualifiedNameOfFile)
+            // Assert.Equal(o_qualifiedNameOfFile, r_qualifiedNameOfFile)
 
-            Assert.Equal<ScopedPragma list>(originalFile.Pragmas, restoredFile.Pragmas)
-            Assert.Equal(originalFile.IsScript, restoredFile.IsScript)
-            Assert.Equal(originalFile.HasExplicitEntryPoint, restoredFile.HasExplicitEntryPoint)
+            Assert.Equal<ScopedPragma list>(o_pragmas, r_pragmas)
 
+            // doesn't work, need to figure out namespace equivalence
+            // Assert.Equal(o_signature, r_signature)
+
+            Assert.Equal(o_hasExplicitEntryPoint, r_hasExplicitEntryPoint)
+            Assert.Equal(o_isScript, r_isScript)
+            Assert.Equal<Map<NamedDebugPointKey, range>>(o_namedDebugPointsForInlinedCode, r_namedDebugPointsForInlinedCode)
