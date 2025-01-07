@@ -32,7 +32,8 @@
     </Compile>
     <!--<Compile Include="EmittedIL\StructGettersReadOnly.fs" />-->
     <!--<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />-->
-    <Compile Include="TypeChecks\ReuseTcResults\ReuseTcResultsTests.fs" />
+    <Compile Include="TypeChecks\ReuseTcResults\Activities.fs" />
+    <Compile Include="TypeChecks\ReuseTcResults\TypeInfo.fs" />
   </ItemGroup>
 
   <ItemGroup>
