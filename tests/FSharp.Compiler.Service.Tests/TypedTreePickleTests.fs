@@ -182,4 +182,5 @@ System.Console.WriteLine(2)
 
             Assert.Equal(o_hasExplicitEntryPoint, r_hasExplicitEntryPoint)
             Assert.Equal(o_isScript, r_isScript)
+            Assert.Equal<StampMap<AnonRecdTypeInfo>>(o_anonRecdTypeInto, r_anonRecdTypeInto)
             Assert.Equal<Map<NamedDebugPointKey, range>>(o_namedDebugPointsForInlinedCode, r_namedDebugPointsForInlinedCode)

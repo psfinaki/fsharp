@@ -288,6 +288,9 @@ let inline  p_tup5 p1 p2 p3 p4 p5 (a, b, c, d, e) (st: WriterState) =
 let inline  p_tup6 p1 p2 p3 p4 p5 p6 (a, b, c, d, e, f) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit)
 
+let inline  p_tup7 p1 p2 p3 p4 p5 p6 p7 (a, b, c, d, e, f, g) (st: WriterState) =
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 g st : unit)
+
 let inline  p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a, b, c, d, e, f, x7, x8, x9) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit)
 
@@ -411,6 +414,9 @@ let inline u_tup5 p1 p2 p3 p4 p5 (st: ReaderState) =
 
 let inline u_tup6 p1 p2 p3 p4 p5 p6 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in (a, b, c, d, e, f)
+
+let inline u_tup7 p1 p2 p3 p4 p5 p6 p7 (st: ReaderState) =
+  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let g = p7 st in (a, b, c, d, e, f, g)
 
 let inline u_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in  (a, b, c, d, e, f, x7, x8)
@@ -1296,6 +1302,9 @@ let p_Map pk pv x st =
 let p_qlist pv = p_wrap QueueList.toList (p_list pv)
 let p_namemap p = p_Map p_string p
 
+let p_stamp = p_int64
+let p_stamp_map pv = p_Map p_stamp pv 
+
 let u_Map_core uk uv n st =
     Map.ofSeq (seq { for _ in 1..n -> (uk st, uv st) })
 
@@ -1305,6 +1314,9 @@ let u_Map uk uv st =
 
 let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
+
+let u_stamp = u_int64
+let u_stamp_map uv = u_Map u_stamp uv 
 
 let p_pos (x: pos) st = p_tup2 p_int p_int (x.Line, x.Column) st
 
@@ -2199,6 +2211,10 @@ and p_named_debug_point_key (x: NamedDebugPointKey) st =
       (x.Range, x.Name)
       st
 
+and p_named_debug_points = p_Map p_named_debug_point_key p_range
+
+and p_anon_recd_types = p_stamp_map p_anonInfo
+
 and p_checked_impl_file file st =
     let (CheckedImplFile (
             qualifiedNameOfFile,
@@ -2207,21 +2223,23 @@ and p_checked_impl_file file st =
             _contents,
             hasExplicitEntryPoint,
             isScript,
-            _anonRecdTypeInto,
+            anonRecdTypeInfo,
             namedDebugPointsForInlinedCode)) = file
 
-    p_tup6
+    p_tup7
         p_qualified_name_of_file
         p_pragmas
         p_modul_typ
         p_bool
         p_bool
-        (p_Map p_named_debug_point_key p_range)
+        p_anon_recd_types
+        p_named_debug_points
         (qualifiedNameOfFile,
          pragmas,
          signature,
          hasExplicitEntryPoint,
          isScript,
+         anonRecdTypeInfo,
          namedDebugPointsForInlinedCode)
         st
 
@@ -2583,15 +2601,20 @@ and u_named_debug_point_key st : NamedDebugPointKey =
 
     { Range = range; Name = name}
 
+and u_named_debug_points = u_Map u_named_debug_point_key u_range
+
+and u_anon_recd_types = u_stamp_map u_anonInfo
+
 and u_checked_impl_file st = 
-    let qualifiedNameOfFile, pragmas, signature, hasExplicitEntryPoint, isScript, namedDebugPointsForInlinedCode =
-        u_tup6
+    let qualifiedNameOfFile, pragmas, signature, hasExplicitEntryPoint, isScript, anonRecdTypeInfo, namedDebugPointsForInlinedCode =
+        u_tup7
             u_qualified_name_of_file
             u_pragmas
             u_modul_typ
             u_bool
             u_bool
-            (u_Map u_named_debug_point_key u_range)
+            u_anon_recd_types
+            u_named_debug_points
             st
 
     CheckedImplFile(
@@ -2602,8 +2625,7 @@ and u_checked_impl_file st =
         Unchecked.defaultof<_>,
         hasExplicitEntryPoint,
         isScript,
-        // this anon record map can be likely easily built in top of primitives here 
-        Unchecked.defaultof<_>,
+        anonRecdTypeInfo,
         namedDebugPointsForInlinedCode)
 
 //---------------------------------------------------------------------------
