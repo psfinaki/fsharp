@@ -2183,8 +2183,11 @@ and p_qualified_name_of_file qualifiedNameOfFile st =
 
 and p_pragma pragma st =
     let (ScopedPragma.WarningOff (range, warningNumber)) = pragma
-    p_range range st
-    p_int warningNumber st
+    p_tup2
+        p_range
+        p_int
+        (range, warningNumber)
+        st
 
 and p_pragmas x st =
     p_list p_pragma x st
@@ -2560,8 +2563,12 @@ and u_qualified_name_of_file st =
     QualifiedNameOfFile(ident)
 
 and u_pragma st =
-    let range = u_range st
-    let warningNumber = u_int st
+    let range, warningNumber =
+        u_tup2
+            u_range
+            u_int
+            st
+
     ScopedPragma.WarningOff (range, warningNumber)
 
 and u_pragmas st =
