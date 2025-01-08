@@ -555,9 +555,6 @@
     <Compile Include="Service\ServiceAnalysis.fs" />
     <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
     <Compile Include="Interactive\FSharpInteractiveServer.fs" />
-    <Compile Include="Interactive\ControlledExecution.fs" />
-    <Compile Include="Interactive\fsihelp.fsi" />
-    <Compile Include="Interactive\fsihelp.fs" />
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
   </ItemGroup>
