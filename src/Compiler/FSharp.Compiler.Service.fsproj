@@ -107,9 +107,6 @@
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
-    <EmbeddedText Include="Interactive\FSIstrings.txt">
-      <Link>FSIstrings.txt</Link>
-    </EmbeddedText>
     <EmbeddedResource Include="FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
@@ -553,8 +550,6 @@
     <Compile Include="Service\ServiceStructure.fs" />
     <Compile Include="Service\ServiceAnalysis.fsi" />
     <Compile Include="Service\ServiceAnalysis.fs" />
-    <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
-    <Compile Include="Interactive\FSharpInteractiveServer.fs" />
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
   </ItemGroup>
