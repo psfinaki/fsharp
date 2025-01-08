@@ -3,12 +3,17 @@ module internal FSharp.Compiler.ReuseTcResults
 open System.Collections.Generic
 open System.IO
 
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.GraphChecking
 open FSharp.Compiler.IO
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TypedTree
+open CompilerImports
+open FSharp.Compiler.AbstractIL.IL
 
 type TcData =
     {
@@ -113,7 +118,7 @@ type CachingDriver(tcConfig: TcConfig) =
 
     let getThisCompilationReferences = Seq.map formatAssemblyReference >> Seq.toArray
 
-    member _.TryReuseTcResults inputs =
+    member _.CanReuseTcResults inputs =
         let prevTcDataOpt = readPrevTcData ()
 
         let thisTcData =
@@ -129,14 +134,55 @@ type CachingDriver(tcConfig: TcConfig) =
 
             if prevTcData = thisTcData then
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheHit []
-
-                () // do nothing, yet
+                true
             else
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
-
-                writeThisTcData thisTcData
+                false
 
         | None ->
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
+            false
 
-            writeThisTcData thisTcData
+    member _.ReuseTcResults inputs (tcInitialState: TcState) =
+        let byteReaderA () = ByteMemory.Empty.AsReadOnly()
+        let byteReaderB = None
+
+        let tcInfo =
+            GetTypecheckingData(
+                "", // assembly.FileName,
+                ILScopeRef.Local, // assembly.ILScopeRef,
+                None, //assembly.RawMetadata.TryGetILModuleDef(),
+                byteReaderA,
+                byteReaderB
+            )
+
+        let rawData = tcInfo.RawData
+
+        let topAttrs : TopAttribs =
+            {
+                mainMethodAttrs = rawData.MainMethodAttrs
+                netModuleAttrs = rawData.NetModuleAttrs
+                assemblyAttrs = rawData.AssemblyAttrs
+            }
+
+        // need to understand if anything can be used here, pickling state is hard
+        tcInitialState,
+        topAttrs,
+        rawData.DeclaredImpls,
+        // this is quite definitely wrong, need to figure out what to do with the environment
+        tcInitialState.TcEnvFromImpls
+
+    member _.CacheTcResults(tcState: TcState, topAttrs: TopAttribs, declaredImpls, tcEnvAtEndOfLastFile, tcGlobals, outfile) =
+        let tcInfo =
+            {
+                MainMethodAttrs = topAttrs.mainMethodAttrs
+                NetModuleAttrs = topAttrs.netModuleAttrs
+                AssemblyAttrs = topAttrs.assemblyAttrs
+                DeclaredImpls = declaredImpls
+            }
+
+        // will need to pass results further somewhere
+        let _typecheckingDataResources =
+            EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)        
+
+        ()

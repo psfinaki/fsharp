@@ -55,6 +55,8 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
 open FSharp.Compiler.CheckExpressionsOps
 
+open ReuseTcResults
+
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
 //----------------------------------------------------------------------------
@@ -163,39 +165,9 @@ let TypeCheck
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
-        if false then
-            // I don't know yet if this is the right thing even
-            let assembly = (tcImports.DllTable.TryFind tcConfig.primaryAssembly.Name).Value
-
-            // these should be restored from raw resources probably
-            let byteReaderA () = ByteMemory.Empty.AsReadOnly()
-            let byteReaderB = None
-
-            let tcInfo =
-                GetTypecheckingData(
-                    assembly.FileName,
-                    assembly.ILScopeRef,
-                    assembly.RawMetadata.TryGetILModuleDef(),
-                    byteReaderA,
-                    byteReaderB
-                )
-
-            let rawData = tcInfo.RawData
-
-            let topAttrs =
-                {
-                    mainMethodAttrs = rawData.MainMethodAttrs
-                    netModuleAttrs = rawData.NetModuleAttrs
-                    assemblyAttrs = rawData.AssemblyAttrs
-                }
-
-            // need to understand if anything can be used here, pickling state is hard
-            tcInitialState,
-            topAttrs,
-            rawData.DeclaredImpls,
-            // this is quite definitely wrong, need to figure out what to do with the environment
-            tcInitialState.TcEnvFromImpls
-
+        let cachingDriver = CachingDriver(tcConfig)
+        if cachingDriver.CanReuseTcResults(inputs) then
+            cachingDriver.ReuseTcResults inputs tcInitialState
         else
             let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
                 CheckClosedInputSet(
@@ -210,22 +182,11 @@ let TypeCheck
                     inputs
                 )
 
-            if false then
-                let tcInfo =
-                    {
-                        MainMethodAttrs = topAttrs.mainMethodAttrs
-                        NetModuleAttrs = topAttrs.netModuleAttrs
-                        AssemblyAttrs = topAttrs.assemblyAttrs
-                        DeclaredImpls = declaredImpls
-                    }
-
-                // will need to pass results further somewhere
-                let _typecheckingDataResources =
-                    EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
-
-                ()
-
-            tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+            let results = tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+            
+            cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, tcGlobals, outfile)
+            
+            results
     with exn ->
         errorRecovery exn rangeStartup
         exiter.Exit 1
