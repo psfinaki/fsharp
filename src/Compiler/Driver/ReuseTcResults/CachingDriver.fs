@@ -172,7 +172,17 @@ type CachingDriver(tcConfig: TcConfig) =
         // this is quite definitely wrong, need to figure out what to do with the environment
         tcInitialState.TcEnvFromImpls
 
-    member _.CacheTcResults(tcState: TcState, topAttrs: TopAttribs, declaredImpls, tcEnvAtEndOfLastFile, tcGlobals, outfile) =
+    member _.CacheTcResults(tcState: TcState, topAttrs: TopAttribs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
+        let thisTcData =
+            {
+                CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
+                Graph = getThisCompilationGraph inputs
+                References = getThisCompilationReferences tcConfig.referencedDLLs
+            }
+
+        writeThisTcData thisTcData 
+
+        ///
         let tcInfo =
             {
                 MainMethodAttrs = topAttrs.mainMethodAttrs

@@ -184,7 +184,7 @@ let TypeCheck
 
             let results = tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
             
-            cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, tcGlobals, outfile)
+            cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
             
             results
     with exn ->
