@@ -144,7 +144,11 @@ type CachingDriver(tcConfig: TcConfig) =
             false
 
     member _.ReuseTcResults inputs (tcInitialState: TcState) =
-        let byteReaderA () = ByteMemory.Empty.AsReadOnly()
+
+        let bytes = File.ReadAllBytes("tc")
+        let memory = ByteMemory.FromArray(bytes)
+        let byteReaderA () = ReadOnlyByteMemory(memory)
+
         let byteReaderB = None
 
         let tcInfo =
@@ -192,7 +196,10 @@ type CachingDriver(tcConfig: TcConfig) =
             }
 
         // will need to pass results further somewhere
-        let _typecheckingDataResources =
+        let typecheckingDataResources =
             EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)        
+
+        let resource = typecheckingDataResources[0].GetBytes().ToArray()
+        File.WriteAllBytes("tc", resource)
 
         ()

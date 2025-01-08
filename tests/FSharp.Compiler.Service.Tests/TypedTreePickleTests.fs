@@ -104,27 +104,11 @@ type TypedTreePickleTests() =
     let PickleAndUnpickleTcData() =
         // prepare stuff
 
-        let fileName1 = "test1.fs"
-        let source1 = """
-module BlahModule1 =
-
-    let blahFunction1() = 1
-
-System.Console.WriteLine(1)
-"""
+        let fileName1 = "test1.fsx"
+        let source1 = "42"
         File.WriteAllText(fileName1, source1)
 
-        let fileName2 = "test1.fs"
-        let source2 = """
-module BlahModule2 =
-
-    let blahFunction2() = 2
-
-System.Console.WriteLine(2)
-"""
-        File.WriteAllText(fileName2, source2)
-
-        let ccuThunk, tcInfo = prepareData [ fileName1; fileName2 ]
+        let ccuThunk, tcInfo = prepareData [ fileName1 ]
 
         // convert back and forth
 
