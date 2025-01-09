@@ -2209,10 +2209,21 @@ and p_pragmas x st =
 
 and p_checked_impl_file_contents (x: ModuleOrNamespaceContents) st =
     match x with
-    | TMDefs defs -> failwith ""
+    | TMDefs defs -> 
+        p_list p_checked_impl_file_contents defs st
     | TMDefOpens openDecls -> failwith ""
-    | TMDefLet (binding, range) -> failwith ""
-    | TMDefDo (expr, range) -> failwith ""
+    | TMDefLet (binding, range) -> 
+        p_tup2
+            p_bind
+            p_range
+            (binding, range)
+            st
+    | TMDefDo (expr, range) -> 
+        p_tup2
+            p_expr
+            p_range
+            (expr, range)
+            st
     | TMDefRec (isRec, opens, tycons, bindings, range) -> failwith ""
 
 and p_named_debug_point_key (x: NamedDebugPointKey) st =
