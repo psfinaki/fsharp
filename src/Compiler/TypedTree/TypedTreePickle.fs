@@ -2262,15 +2262,15 @@ and p_binding (x: ModuleOrNamespaceBinding) st =
         p_byte 1 st
         p_tup2
             p_entity_spec
-            p_checked_impl_file_contents
+            p_module_or_namespace_contents
             (moduleOrNamespace, moduleOrNamespaceContents)
             st
 
-and p_checked_impl_file_contents (x: ModuleOrNamespaceContents) st =
+and p_module_or_namespace_contents (x: ModuleOrNamespaceContents) st =
     match x with
     | TMDefs defs -> 
         p_byte 0 st
-        p_list p_checked_impl_file_contents defs st
+        p_list p_module_or_namespace_contents defs st
     | TMDefOpens openDecls ->
         p_byte 1 st
         p_list p_open_decl openDecls st
@@ -2298,6 +2298,8 @@ and p_checked_impl_file_contents (x: ModuleOrNamespaceContents) st =
             p_range
             (isRec, opens, tycons, bindings, range)
             st
+
+and p_checked_impl_file_contents = p_module_or_namespace_contents
 
 and p_named_debug_point_key (x: NamedDebugPointKey) st =
     p_tup2
@@ -2759,17 +2761,17 @@ and u_binding st : ModuleOrNamespaceBinding =
         let moduleOrNamespace, moduleOrNamespaceContents =
             u_tup2
                 u_entity_spec
-                u_checked_impl_file_contents
+                u_module_or_namespace_contents
                 st
         ModuleOrNamespaceBinding.Module (moduleOrNamespace, moduleOrNamespaceContents)
     | _ ->
         ufailwith st (nameof u_binding)
 
-and u_checked_impl_file_contents st : ModuleOrNamespaceContents =
+and u_module_or_namespace_contents st : ModuleOrNamespaceContents =
     let tag = u_byte st
     match tag with
     | 0 ->
-        let defs = u_list u_checked_impl_file_contents st
+        let defs = u_list u_module_or_namespace_contents st
         TMDefs defs
     | 1 ->
         let openDecls = u_list u_open_decl st
@@ -2799,7 +2801,9 @@ and u_checked_impl_file_contents st : ModuleOrNamespaceContents =
                 st
         TMDefRec (isRec, opens, tycons, bindings, range)
     | _ -> 
-        ufailwith st (nameof u_checked_impl_file_contents)
+        ufailwith st (nameof u_module_or_namespace_contents)
+
+and u_checked_impl_file_contents = u_module_or_namespace_contents
 
 and u_named_debug_point_key st : NamedDebugPointKey =
     let range, name =
