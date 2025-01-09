@@ -20,6 +20,7 @@ type TypeInfo() =
         let cUnit =
             FsxFromPath tempPath
             |> withReuseTcResults
+            |> withOptions [ "--compressmetadata-" ]
 
         cUnit
         |> compileExisting
