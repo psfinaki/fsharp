@@ -2207,8 +2207,28 @@ and p_pragma pragma st =
 and p_pragmas x st =
     p_list p_pragma x st
 
+and p_long_ident (x: SynLongIdent) st =
+    pfailwith st (nameof p_long_ident)
+
+and p_syn_type (x: SynType) st =
+    pfailwith st (nameof p_syn_type)
+
 and p_syn_open_decl_target (x: SynOpenDeclTarget) st =
-    pfailwith st (nameof p_syn_open_decl_target)
+    match x with
+    | SynOpenDeclTarget.ModuleOrNamespace (longId, range)->
+        p_byte 0 st
+        p_tup2
+            p_long_ident
+            p_range
+            (longId, range)
+            st
+    | SynOpenDeclTarget.Type (typeName, range) ->
+        p_byte 1 st
+        p_tup2
+            p_syn_type
+            p_range
+            (typeName, range)
+            st
 
 and p_open_decl (x: OpenDeclaration) st =
     p_tup6
