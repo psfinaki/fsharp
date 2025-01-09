@@ -2207,11 +2207,18 @@ and p_pragma pragma st =
 and p_pragmas x st =
     p_list p_pragma x st
 
+and p_open_decl (x: OpenDeclaration) st =
+    failwith "blaaaaaaah open decl"
+
+and p_binding (x: ModuleOrNamespaceBinding) st =
+    failwith "blaaaaaah binding"
+
 and p_checked_impl_file_contents (x: ModuleOrNamespaceContents) st =
     match x with
     | TMDefs defs -> 
         p_list p_checked_impl_file_contents defs st
-    | TMDefOpens openDecls -> failwith ""
+    | TMDefOpens openDecls -> 
+        p_list p_open_decl openDecls st
     | TMDefLet (binding, range) -> 
         p_tup2
             p_bind
@@ -2224,7 +2231,15 @@ and p_checked_impl_file_contents (x: ModuleOrNamespaceContents) st =
             p_range
             (expr, range)
             st
-    | TMDefRec (isRec, opens, tycons, bindings, range) -> failwith ""
+    | TMDefRec (isRec, opens, tycons, bindings, range) ->
+        p_tup5
+            p_bool
+            (p_list p_open_decl)
+            (p_list p_entity_spec_data)
+            (p_list p_binding)
+            p_range
+            (isRec, opens, tycons, bindings, range)
+            st
 
 and p_named_debug_point_key (x: NamedDebugPointKey) st =
     p_tup2
