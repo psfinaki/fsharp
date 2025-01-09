@@ -291,6 +291,9 @@ let inline  p_tup6 p1 p2 p3 p4 p5 p6 (a, b, c, d, e, f) (st: WriterState) =
 let inline  p_tup7 p1 p2 p3 p4 p5 p6 p7 (a, b, c, d, e, f, g) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 g st : unit)
 
+let inline  p_tup8 p1 p2 p3 p4 p5 p6 p7 p8 (a, b, c, d, e, f, g, h) (st: WriterState) =
+    (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 g st : unit); (p8 h st : unit)
+
 let inline  p_tup9 p1 p2 p3 p4 p5 p6 p7 p8 p9 (a, b, c, d, e, f, x7, x8, x9) (st: WriterState) =
     (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit)
 
@@ -2204,6 +2207,14 @@ and p_pragma pragma st =
 and p_pragmas x st =
     p_list p_pragma x st
 
+and p_checked_impl_file_contents (x: ModuleOrNamespaceContents) st =
+    match x with
+    | TMDefs defs -> failwith ""
+    | TMDefOpens openDecls -> failwith ""
+    | TMDefLet (binding, range) -> failwith ""
+    | TMDefDo (expr, range) -> failwith ""
+    | TMDefRec (isRec, opens, tycons, bindings, range) -> failwith ""
+
 and p_named_debug_point_key (x: NamedDebugPointKey) st =
     p_tup2
       p_range
@@ -2220,16 +2231,17 @@ and p_checked_impl_file file st =
             qualifiedNameOfFile,
             pragmas,
             signature,
-            _contents,
+            contents,
             hasExplicitEntryPoint,
             isScript,
             anonRecdTypeInfo,
             namedDebugPointsForInlinedCode)) = file
 
-    p_tup7
+    p_tup8
         p_qualified_name_of_file
         p_pragmas
         p_modul_typ
+        p_checked_impl_file_contents
         p_bool
         p_bool
         p_anon_recd_types
@@ -2237,6 +2249,7 @@ and p_checked_impl_file file st =
         (qualifiedNameOfFile,
          pragmas,
          signature,
+         contents,
          hasExplicitEntryPoint,
          isScript,
          anonRecdTypeInfo,
