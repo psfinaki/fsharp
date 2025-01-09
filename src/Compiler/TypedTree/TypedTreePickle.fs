@@ -2254,7 +2254,14 @@ and p_open_decl (x: OpenDeclaration) st =
         st
 
 and p_binding (x: ModuleOrNamespaceBinding) st =
-    failwith "blaaaaaah binding"
+    match x with
+    | ModuleOrNamespaceBinding.Binding binding ->
+        p_byte 1 st
+        p_tup2
+            p_entity_spec
+            p_checked_impl_file_contents
+            (moduleOrNamespace, moduleOrNamespaceContents)
+            st
 
 and p_checked_impl_file_contents (x: ModuleOrNamespaceContents) st =
     match x with
@@ -2740,7 +2747,20 @@ and u_open_decl st : OpenDeclaration =
     }
 
 and u_binding st : ModuleOrNamespaceBinding =
-    failwith "blaaaah u binding"
+    let tag = u_byte st
+    match tag with
+    | 0 ->
+        let binding = u_bind st
+        ModuleOrNamespaceBinding.Binding binding
+    | 1 ->
+        let moduleOrNamespace, moduleOrNamespaceContents =
+            u_tup2
+                u_entity_spec
+                u_checked_impl_file_contents
+                st
+        ModuleOrNamespaceBinding.Module (moduleOrNamespace, moduleOrNamespaceContents)
+    | _ ->
+        ufailwith st (nameof u_binding)
 
 and u_checked_impl_file_contents st : ModuleOrNamespaceContents =
     let tag = u_byte st
