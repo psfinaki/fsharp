@@ -2256,6 +2256,9 @@ and p_open_decl (x: OpenDeclaration) st =
 and p_binding (x: ModuleOrNamespaceBinding) st =
     match x with
     | ModuleOrNamespaceBinding.Binding binding ->
+        p_byte 0 st
+        p_bind binding st
+    | ModuleOrNamespaceBinding.Module (moduleOrNamespace, moduleOrNamespaceContents) ->
         p_byte 1 st
         p_tup2
             p_entity_spec
