@@ -2216,22 +2216,27 @@ and p_binding (x: ModuleOrNamespaceBinding) st =
 and p_checked_impl_file_contents (x: ModuleOrNamespaceContents) st =
     match x with
     | TMDefs defs -> 
+        p_byte 0 st
         p_list p_checked_impl_file_contents defs st
-    | TMDefOpens openDecls -> 
+    | TMDefOpens openDecls ->
+        p_byte 1 st
         p_list p_open_decl openDecls st
-    | TMDefLet (binding, range) -> 
+    | TMDefLet (binding, range) ->
+        p_byte 2 st
         p_tup2
             p_bind
             p_range
             (binding, range)
             st
-    | TMDefDo (expr, range) -> 
+    | TMDefDo (expr, range) ->
+        p_byte 3 st
         p_tup2
             p_expr
             p_range
             (expr, range)
             st
     | TMDefRec (isRec, opens, tycons, bindings, range) ->
+        p_byte 4 st
         p_tup5
             p_bool
             (p_list p_open_decl)
@@ -2631,6 +2636,48 @@ and u_pragma st =
 and u_pragmas st =
     u_list u_pragma st
 
+and u_open_decl st : OpenDeclaration =
+    failwith "blaaaaaaah u open decl"
+
+and u_binding st : ModuleOrNamespaceBinding =
+    failwith "blaaaah u binding"
+
+and u_checked_impl_file_contents st : ModuleOrNamespaceContents =
+    let tag = u_byte st
+    match tag with
+    | 0 ->
+        let defs = u_list u_checked_impl_file_contents st
+        TMDefs defs
+    | 1 ->
+        let openDecls = u_list u_open_decl st
+        TMDefOpens openDecls
+    | 2 ->
+        let binding, range =
+            u_tup2
+                u_bind
+                u_range
+                st
+        TMDefLet(binding, range)
+    | 3 ->
+        let expr, range =
+            u_tup2
+                u_expr
+                u_range
+                st
+        TMDefDo(expr, range)
+    | 4 ->
+        let isRec, opens, tycons, bindings, range =
+            u_tup5
+                u_bool
+                (u_list u_open_decl)
+                (u_list u_entity_spec_data)
+                (u_list u_binding)
+                u_range
+                st
+        TMDefRec (isRec, opens, tycons, bindings, range)
+    | _ -> 
+        ufailwith st (nameof u_checked_impl_file_contents)
+
 and u_named_debug_point_key st : NamedDebugPointKey =
     let range, name =
         u_tup2
@@ -2645,11 +2692,12 @@ and u_named_debug_points = u_Map u_named_debug_point_key u_range
 and u_anon_recd_types = u_stamp_map u_anonInfo
 
 and u_checked_impl_file st = 
-    let qualifiedNameOfFile, pragmas, signature, hasExplicitEntryPoint, isScript, anonRecdTypeInfo, namedDebugPointsForInlinedCode =
-        u_tup7
+    let qualifiedNameOfFile, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypeInfo, namedDebugPointsForInlinedCode =
+        u_tup8
             u_qualified_name_of_file
             u_pragmas
             u_modul_typ
+            u_checked_impl_file_contents
             u_bool
             u_bool
             u_anon_recd_types
@@ -2660,8 +2708,7 @@ and u_checked_impl_file st =
         qualifiedNameOfFile,
         pragmas,
         signature,
-        // ModuleOrNamespaceContents needs implementing, feels hard but doable
-        Unchecked.defaultof<_>,
+        contents,
         hasExplicitEntryPoint,
         isScript,
         anonRecdTypeInfo,
