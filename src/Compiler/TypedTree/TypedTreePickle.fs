@@ -2679,8 +2679,45 @@ and u_pragma st =
 and u_pragmas st =
     u_list u_pragma st
 
+and u_long_ident st =
+    u_list u_ident st
+
+and u_trivia st : SyntaxTrivia.IdentTrivia =
+    ufailwith st (nameof p_trivia)
+
+and u_syn_long_ident st =
+    let id, dotRanges, trivia = 
+        u_tup3
+            u_long_ident
+            (u_list u_range)
+            (u_list (u_option u_trivia))
+            st
+
+    SynLongIdent (id, dotRanges, trivia)
+
+and u_syn_type st : SynType =
+    ufailwith st (nameof u_syn_type)
+
 and u_syn_open_decl_target st : SynOpenDeclTarget =
-    ufailwith st (nameof u_syn_open_decl_target)
+    let tag = u_byte st
+    match tag with
+    | 0 ->
+        let longId, range = 
+            u_tup2
+                u_syn_long_ident
+                u_range
+                st
+
+        SynOpenDeclTarget.ModuleOrNamespace (longId, range)
+    | 1 ->
+        let typeName, range =
+            u_tup2
+                u_syn_type
+                u_range
+                st
+        SynOpenDeclTarget.Type (typeName, range) 
+    | _ ->
+        ufailwith st (nameof u_syn_open_decl_target)
 
 and u_open_decl st : OpenDeclaration =
     let target, range, modules, types, appliedScope, isOwnNamespace =
