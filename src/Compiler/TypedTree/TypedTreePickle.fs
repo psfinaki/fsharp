@@ -2207,8 +2207,20 @@ and p_pragma pragma st =
 and p_pragmas x st =
     p_list p_pragma x st
 
-and p_long_ident (x: SynLongIdent) st =
-    pfailwith st (nameof p_long_ident)
+and p_long_ident (x: LongIdent) st =
+    p_list p_ident x st
+
+and p_trivia (x: SyntaxTrivia.IdentTrivia) st =
+    pfailwith st (nameof p_trivia)
+
+and p_syn_long_ident (x: SynLongIdent) st =
+    let (SynLongIdent (id, dotRanges, trivia)) = x
+    p_tup3
+        p_long_ident
+        (p_list p_range)
+        (p_list (p_option p_trivia))
+        (id, dotRanges, trivia)
+        st
 
 and p_syn_type (x: SynType) st =
     pfailwith st (nameof p_syn_type)
@@ -2218,7 +2230,7 @@ and p_syn_open_decl_target (x: SynOpenDeclTarget) st =
     | SynOpenDeclTarget.ModuleOrNamespace (longId, range)->
         p_byte 0 st
         p_tup2
-            p_long_ident
+            p_syn_long_ident
             p_range
             (longId, range)
             st
