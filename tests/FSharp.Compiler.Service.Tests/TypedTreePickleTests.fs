@@ -164,6 +164,8 @@ type TypedTreePickleTests() =
             // doesn't work, need to figure out namespace equivalence
             // Assert.Equal(o_signature, r_signature)
 
+            Assert.Equal(o_contents, r_contents)
+
             Assert.Equal(o_hasExplicitEntryPoint, r_hasExplicitEntryPoint)
             Assert.Equal(o_isScript, r_isScript)
             Assert.Equal<StampMap<AnonRecdTypeInfo>>(o_anonRecdTypeInto, r_anonRecdTypeInto)

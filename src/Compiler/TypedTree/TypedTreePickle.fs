@@ -2207,8 +2207,19 @@ and p_pragma pragma st =
 and p_pragmas x st =
     p_list p_pragma x st
 
+and p_syn_open_decl_target (x: SynOpenDeclTarget) st =
+    pfailwith st (nameof p_syn_open_decl_target)
+
 and p_open_decl (x: OpenDeclaration) st =
-    failwith "blaaaaaaah open decl"
+    p_tup6
+        p_syn_open_decl_target
+        (p_option p_range)
+        (p_list (p_tcref "well"))
+        p_tys
+        p_range
+        p_bool
+        (x.Target, x.Range, x.Modules, x.Types, x.AppliedScope, x.IsOwnNamespace)
+        st
 
 and p_binding (x: ModuleOrNamespaceBinding) st =
     failwith "blaaaaaah binding"
@@ -2636,8 +2647,28 @@ and u_pragma st =
 and u_pragmas st =
     u_list u_pragma st
 
+and u_syn_open_decl_target st : SynOpenDeclTarget =
+    ufailwith st (nameof u_syn_open_decl_target)
+
 and u_open_decl st : OpenDeclaration =
-    failwith "blaaaaaaah u open decl"
+    let target, range, modules, types, appliedScope, isOwnNamespace =
+        u_tup6
+            u_syn_open_decl_target
+            (u_option u_range)
+            (u_list u_tcref)
+            u_tys
+            u_range
+            u_bool
+            st
+
+    {
+        Target = target
+        Range = range
+        Modules = modules
+        Types = types
+        AppliedScope = appliedScope
+        IsOwnNamespace = isOwnNamespace
+    }
 
 and u_binding st : ModuleOrNamespaceBinding =
     failwith "blaaaah u binding"
