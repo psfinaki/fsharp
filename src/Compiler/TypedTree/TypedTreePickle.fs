@@ -2242,11 +2242,18 @@ and p_syn_open_decl_target (x: SynOpenDeclTarget) st =
             (typeName, range)
             st
 
+and p_module (x: ModuleOrNamespaceRef) st =
+    p_tup2
+        p_entity_spec
+        p_nleref
+        (x.binding, x.nlr)
+        st
+
 and p_open_decl (x: OpenDeclaration) st =
     p_tup6
         p_syn_open_decl_target
         (p_option p_range)
-        (p_list (p_tcref "well"))
+        (p_list p_module)
         p_tys
         p_range
         p_bool
@@ -2731,12 +2738,23 @@ and u_syn_open_decl_target st : SynOpenDeclTarget =
     | _ ->
         ufailwith st (nameof u_syn_open_decl_target)
 
+and u_module st : ModuleOrNamespaceRef =
+    let binding, nlr = 
+        u_tup2
+            u_entity_spec
+            u_nleref
+            st
+    {
+        binding = binding
+        nlr = nlr
+    }
+
 and u_open_decl st : OpenDeclaration =
     let target, range, modules, types, appliedScope, isOwnNamespace =
         u_tup6
             u_syn_open_decl_target
             (u_option u_range)
-            (u_list u_tcref)
+            (u_list u_module)
             u_tys
             u_range
             u_bool
