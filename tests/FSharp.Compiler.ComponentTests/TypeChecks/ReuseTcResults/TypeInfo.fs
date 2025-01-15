@@ -15,12 +15,13 @@ type TypeInfo() =
 
     [<Fact>]
     let ``Recompilation``() =
-        File.WriteAllText(tempPath, "42")
+        File.WriteAllText(tempPath, "()")
 
         let cUnit =
             FsxFromPath tempPath
             |> withReuseTcResults
             |> withOptions [ "--compressmetadata-" ]
+            |> withOptions [ "--checknulls-" ]
 
         cUnit
         |> compileExisting

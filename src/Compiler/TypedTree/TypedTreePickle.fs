@@ -581,7 +581,16 @@ let p_hole () =
 
 let p_hole2 () =
     let mutable h = None
-    (fun f -> h <- Some f), (fun arg x st -> match h with Some f -> f arg x st | None -> pfailwith st "p_hole2: unfilled hole")
+
+    let f1 = fun f -> h <- Some f
+
+    let f2 = 
+        fun arg x st -> 
+            match h with 
+            | Some f -> f arg x st 
+            | None -> pfailwith st "p_hole2: unfilled hole"
+
+    f1, f2
 
 let u_array_core f n st =
     let res = Array.zeroCreate n
@@ -650,7 +659,15 @@ let u_lazy u st =
 
 let u_hole () =
     let mutable h = None
-    (fun f -> h <- Some f), (fun st -> match h with Some f -> f st | None -> ufailwith st "u_hole: unfilled hole")
+
+    let f1 = fun f -> h <- Some f
+    let f2 = 
+        fun st -> 
+            match h with
+            | Some f -> f st
+            | None -> ufailwith st "u_hole: unfilled hole"
+
+    f1, f2
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle F# interface data
@@ -715,8 +732,14 @@ let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef)
     ignore thisCcu
 #endif
 
-    let (NonLocalEntityRef(a, b)) = nleref
-    encode_uniq nlerefTab (encode_ccuref ccuTab a, Array.map (encode_string stringTab) b)
+    let (NonLocalEntityRef(ccuThunk, strings)) = nleref
+
+    let encodedCcuRef = encode_ccuref ccuTab ccuThunk
+    let encodedStrings = strings |> Array.map (encode_string stringTab)
+    let key = encodedCcuRef, encodedStrings
+    encode_uniq nlerefTab key
+
+
 let p_encoded_nleref = p_tup2 p_int (p_array p_int)
 let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.oscope x) st
 
@@ -729,10 +752,20 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 // those the KnownWithoutNull interpretation by default.
 let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], KnownAmbivalentToNull)
 let u_encoded_simpletyp st = u_int  st
-let u_simpletyp st = lookup_uniq st st.isimpletys (u_int st)
-let encode_simpletyp ccuTab stringTab nlerefTab simpleTyTab thisCcu a = encode_uniq simpleTyTab (encode_nleref ccuTab stringTab nlerefTab thisCcu a)
+
+let u_simpletyp st = 
+    let n = u_int st
+    lookup_uniq st st.isimpletys n
+
+let encode_simpletyp ccuTab stringTab nlerefTab simpleTyTab thisCcu a = 
+    let key = encode_nleref ccuTab stringTab nlerefTab thisCcu a
+    encode_uniq simpleTyTab key
+
 let p_encoded_simpletyp x st = p_int x st
-let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletys st.oscope x) st
+
+let p_simpletyp x st = 
+    let c = encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletys st.oscope x
+    p_int c st
 
 /// Arbitrary value
 [<Literal>]
@@ -3094,7 +3127,15 @@ and u_op st =
 and p_expr expr st =
     match expr with
     | Expr.Link e -> p_expr e.Value st
-    | Expr.Const (x, m, ty)              -> p_byte 0 st; p_tup3 p_const p_dummy_range p_ty (x, m, ty) st
+    | Expr.Const (x, m, ty)              -> 
+        p_byte 0 st
+        p_tup3 
+            p_const 
+            p_dummy_range 
+            p_ty 
+            (x, m, ty) 
+            st
+
     | Expr.Val (a, b, m)                 -> p_byte 1 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
     | Expr.Op (a, b, c, d)                 -> p_byte 2 st; p_tup4 p_op  p_tys p_Exprs p_dummy_range (a, b, c, d) st
     | Expr.Sequential (a, b, c, d)      -> p_byte 3 st; p_tup4 p_expr p_expr p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
@@ -3109,7 +3150,9 @@ and p_expr expr st =
     | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr p_dummy_range (a, b, c) st
     | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
     | Expr.WitnessArg (traitInfo, m) -> p_byte 14 st; p_trait traitInfo st; p_dummy_range m st
-    | Expr.DebugPoint (_, innerExpr) -> p_expr innerExpr st
+    | Expr.DebugPoint (_, innerExpr) -> 
+        p_byte 15 st
+        p_expr innerExpr st
 
 and u_expr st =
     let tag = u_byte st
@@ -3189,6 +3232,10 @@ and u_expr st =
         let traitInfo = u_trait st
         let m = u_dummy_range st
         Expr.WitnessArg (traitInfo, m)
+    | 15 ->
+        let m = u_dummy_range st
+        let expr = u_expr st
+        Expr.DebugPoint (DebugPointAtLeafExpr.Yes m, expr)
     | _ -> ufailwith st "u_expr"
 
 and p_static_optimization_constraint x st =
