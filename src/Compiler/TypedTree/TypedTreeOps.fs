@@ -184,27 +184,16 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       addNullnessToTy nullness res
 
   | TType_app (tcref, tinst, flags) as ty ->
-        try
-            match tyenv.tyconRefRemap.TryFind tcref with 
-            | Some tcrefR -> TType_app (tcrefR, remapTypesAux tyenv tinst, flags)
-            | None -> 
-                match tinst with 
-                | [] -> ty  // optimization to avoid re-allocation of TType_app node in the common case 
-                | _ -> 
-                    // avoid reallocation on idempotent 
-                    let tinstR = remapTypesAux tyenv tinst
-                    if tinst === tinstR then ty else 
-                    TType_app (tcref, tinstR, flags)
-        with
-            | :? System.Exception as _ex ->
-                match tinst with 
-                | [] -> ty  // optimization to avoid re-allocation of TType_app node in the common case 
-                | _ -> 
-                    // avoid reallocation on idempotent 
-                    let tinstR = remapTypesAux tyenv tinst
-                    if tinst === tinstR then ty else 
-                    TType_app (tcref, tinstR, flags)
-            
+        match tyenv.tyconRefRemap.TryFind tcref with 
+        | Some tcrefR -> TType_app (tcrefR, remapTypesAux tyenv tinst, flags)
+        | None -> 
+            match tinst with 
+            | [] -> ty  // optimization to avoid re-allocation of TType_app node in the common case 
+            | _ -> 
+                // avoid reallocation on idempotent 
+                let tinstR = remapTypesAux tyenv tinst
+                if tinst === tinstR then ty else 
+                TType_app (tcref, tinstR, flags)
 
   | TType_ucase (UnionCaseRef(tcref, n), tinst) -> 
       match tyenv.tyconRefRemap.TryFind tcref with 
