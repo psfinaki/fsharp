@@ -2322,30 +2322,45 @@ and p_ty_new (ty: TType) st : unit =
     match ty with
     | TType_tuple (tupInfo, l) ->
         p_byte 0 st
-        p_tup_info tupInfo st
-        p_tys_new l st
+        p_tup2
+            p_tup_info
+            p_tys_new
+            (tupInfo, l)
+            st
 
     | TType_app (tyconRef, typeInstantiation, nullness) ->
         p_byte 1 st
-        p_entity_ref tyconRef st
-        p_tys_new typeInstantiation st
-        p_nullness nullness st
+        p_tup3
+            p_entity_ref
+            p_tys_new
+            p_nullness
+            (tyconRef, typeInstantiation, nullness)
+            st
 
     | TType_fun (domainType, rangeType, nullness) ->
         p_byte 2 st
-        p_ty_new domainType st
-        p_ty_new rangeType st
-        p_nullness nullness st
+        p_tup3
+            p_ty_new
+            p_ty_new
+            p_nullness
+            (domainType, rangeType, nullness)
+            st
 
     | TType_var (typar, nullness) -> 
         p_byte 3 st
-        p_tpref typar st
-        p_nullness nullness st
+        p_tup2
+            p_tpref
+            p_nullness
+            (typar, nullness)
+            st
 
     | TType_forall (tps, r) ->
         p_byte 4 st
-        p_typars tps st
-        p_ty_new r st
+        p_tup2
+            p_typars
+            p_ty_new
+            (tps, r)
+            st
 
     | TType_measure unt ->
         p_byte 5 st
@@ -2353,36 +2368,42 @@ and p_ty_new (ty: TType) st : unit =
 
     | TType_ucase (uc, tinst) ->
         p_byte 6 st
-        p_ucref uc st
-        p_tys_new tinst st
+        p_tup2
+            p_ucref
+            p_tys_new
+            (uc, tinst)
+            st
 
     | TType_anon (anonInfo, l) ->
          p_byte 7 st
-         p_anonInfo anonInfo st
-         p_tys_new l st
+         p_tup2
+             p_anonInfo
+             p_tys_new
+             (anonInfo, l) 
+             st
 
 and p_tys_new = p_list p_ty_new
 
 and p_expr_new (expr: Expr) st =
     match expr with
-    | Expr.Link e -> p_expr_new e.Value st
-    | Expr.Const (x, m, ty)              -> p_byte 0 st; p_tup3 p_const p_dummy_range p_ty_new (x, m, ty) st
-    | Expr.Val (a, b, m)                 -> p_byte 1 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
-    | Expr.Op (a, b, c, d)                 -> p_byte 2 st; p_tup4 p_op  p_tys_new p_exprs_new p_dummy_range (a, b, c, d) st
-    | Expr.Sequential (a, b, c, d)      -> p_byte 3 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
-    | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 4 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
-    | Expr.TyLambda (_, b, c, d, e)        -> p_byte 5 st; p_tup4 p_tyar_specs p_expr_new p_dummy_range p_ty_new (b, c, d, e) st
-    | Expr.App (a1, a2, b, c, d)           -> p_byte 6 st; p_tup5 p_expr_new p_ty_new p_tys_new p_exprs_new p_dummy_range (a1, a2, b, c, d) st
-    | Expr.LetRec (a, b, c, _)            -> p_byte 7 st; p_tup3 p_binds p_expr_new p_dummy_range (a, b, c) st
-    | Expr.Let (a, b, c, _)               -> p_byte 8 st; p_tup3 p_bind p_expr_new p_dummy_range (a, b, c) st
-    | Expr.Match (_, a, b, c, d, e)         -> p_byte 9 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty_new (a, b, c, d, e) st
-    | Expr.Obj (_, b, c, d, e, f, g)       -> p_byte 10 st; p_tup6 p_ty_new (p_option p_Val) p_expr_new p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
-    | Expr.StaticOptimization (a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr_new p_expr_new p_dummy_range (a, b, c, d) st
-    | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr_new p_dummy_range (a, b, c) st
-    | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr_new p_dummy_range p_ty_new (ast, m, ty) st
-    | Expr.WitnessArg (traitInfo, m) -> p_byte 14 st; p_trait traitInfo st; p_dummy_range m st
+    | Expr.Link e -> p_byte 0 st; p_expr_new e.Value st
+    | Expr.Const (x, m, ty)              -> p_byte 1 st; p_tup3 p_const p_dummy_range p_ty_new (x, m, ty) st
+    | Expr.Val (a, b, m)                 -> p_byte 2 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
+    | Expr.Op (a, b, c, d)                 -> p_byte 3 st; p_tup4 p_op  p_tys_new p_exprs_new p_dummy_range (a, b, c, d) st
+    | Expr.Sequential (a, b, c, d)      -> p_byte 4 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
+    | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 5 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
+    | Expr.TyLambda (_, b, c, d, e)        -> p_byte 6 st; p_tup4 p_tyar_specs p_expr_new p_dummy_range p_ty_new (b, c, d, e) st
+    | Expr.App (a1, a2, b, c, d)           -> p_byte 7 st; p_tup5 p_expr_new p_ty_new p_tys_new p_exprs_new p_dummy_range (a1, a2, b, c, d) st
+    | Expr.LetRec (a, b, c, _)            -> p_byte 8 st; p_tup3 p_binds p_expr_new p_dummy_range (a, b, c) st
+    | Expr.Let (a, b, c, _)               -> p_byte 9 st; p_tup3 p_bind p_expr_new p_dummy_range (a, b, c) st
+    | Expr.Match (_, a, b, c, d, e)         -> p_byte 10 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty_new (a, b, c, d, e) st
+    | Expr.Obj (_, b, c, d, e, f, g)       -> p_byte 11 st; p_tup6 p_ty_new (p_option p_Val) p_expr_new p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
+    | Expr.StaticOptimization (a, b, c, d) -> p_byte 12 st; p_tup4 p_constraints p_expr_new p_expr_new p_dummy_range (a, b, c, d) st
+    | Expr.TyChoose (a, b, c)            -> p_byte 13 st; p_tup3 p_tyar_specs p_expr_new p_dummy_range (a, b, c) st
+    | Expr.Quote (ast, _, _, m, ty)         -> p_byte 14 st; p_tup3 p_expr_new p_dummy_range p_ty_new (ast, m, ty) st
+    | Expr.WitnessArg (traitInfo, m) -> p_byte 15 st; p_trait traitInfo st; p_dummy_range m st
     | Expr.DebugPoint (_, innerExpr) -> 
-        p_byte 15 st
+        p_byte 16 st
         p_expr_new innerExpr st
     
 and p_exprs_new = p_list p_expr_new
@@ -2899,6 +2920,180 @@ and u_binding st : ModuleOrNamespaceBinding =
     | _ ->
         ufailwith st (nameof u_binding)
 
+and u_tup_info st : TupInfo =
+    let c = u_bool st
+    TupInfo.Const c
+
+and u_nullness st =
+    let tag = u_byte st
+    let nullnessInfo =
+        match tag with
+        | 0 -> NullnessInfo.WithNull
+        | 1 -> NullnessInfo.WithoutNull
+        | 2 -> NullnessInfo.AmbivalentToNull
+        | _ -> ufailwith st (nameof u_nullness)
+
+    Nullness.Known nullnessInfo
+
+and u_typars = u_list u_tpref
+
+and u_ty_new st : TType =
+    let tag = u_byte st
+    match tag with
+    | 0 ->
+        let tupInfo, l =
+            u_tup2
+                u_tup_info
+                u_tys_new 
+                st
+        TType_tuple (tupInfo, l)
+
+    | 1 ->
+        let tyconRef, typeInstantiation, nullness =
+            u_tup3
+                u_entity_ref
+                u_tys_new
+                u_nullness
+                st
+        TType_app (tyconRef, typeInstantiation, nullness)
+
+    | 2 ->
+        let (domainType, rangeType, nullness) =
+            u_tup3
+                u_ty_new
+                u_ty_new
+                u_nullness
+                st
+        TType_fun (domainType, rangeType, nullness)
+
+    | 3 ->
+        let (typar, nullness) =
+            u_tup2
+                u_tpref
+                u_nullness
+                st
+        TType_var (typar, nullness)
+
+    | 4 ->
+        let (tps, r) =
+            u_tup2
+                u_typars
+                u_ty_new
+                st
+
+        TType_forall (tps, r)
+
+    | 5 ->
+        let unt = u_measure_expr st
+        TType_measure unt
+
+    | 6 ->
+        let uc, tinst =
+            u_tup2
+                u_ucref
+                u_tys_new
+                st
+        TType_ucase (uc, tinst)
+
+    | 7 ->
+        let anonInfo, l =
+             u_tup2
+                 u_anonInfo
+                 u_tys_new
+                 st
+        TType_anon (anonInfo, l)
+    | _ ->
+        ufailwith st (nameof u_ty_new)
+
+and u_tys_new = u_list u_ty_new
+
+and u_expr_new st : Expr =
+    let tag = u_byte st
+    match tag with
+    | 0 -> let e = u_expr_new st
+           let r = ref e
+           Expr.Link r
+    | 1 -> let a = u_const st
+           let b = u_dummy_range st
+           let c = u_ty st
+           Expr.Const (a, b, c)
+    | 2 -> let a = u_vref st
+           let b = u_vrefFlags st
+           let c = u_dummy_range st
+           Expr.Val (a, b, c)
+    | 3 -> let a = u_op st
+           let b = u_tys st
+           let c = u_Exprs st
+           let d = u_dummy_range st
+           Expr.Op (a, b, c, d)
+    | 4 -> let a = u_expr st
+           let b = u_expr st
+           let c = u_int st
+           let d = u_dummy_range  st
+           let dir = match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"
+           Expr.Sequential (a, b, dir, d)
+    | 5 -> let a0 = u_option u_Val st
+           let b0 = u_option u_Val st
+           let b1 = u_Vals st
+           let c = u_expr st
+           let d = u_dummy_range st
+           let e = u_ty st
+           Expr.Lambda (newUnique(), a0, b0, b1, c, d, e)
+    | 6  -> let b = u_tyar_specs st
+            let c = u_expr st
+            let d = u_dummy_range st
+            let e = u_ty st
+            Expr.TyLambda (newUnique(), b, c, d, e)
+    | 7 ->  let a1 = u_expr st
+            let a2 = u_ty st
+            let b = u_tys st
+            let c = u_Exprs st
+            let d = u_dummy_range st
+            Expr.App (a1, a2, b, c, d)
+    | 8 ->  let a = u_binds st
+            let b = u_expr st
+            let c = u_dummy_range st
+            Expr.LetRec (a, b, c, Construct.NewFreeVarsCache())
+    | 9 ->  let a = u_bind st
+            let b = u_expr st
+            let c = u_dummy_range st
+            Expr.Let (a, b, c, Construct.NewFreeVarsCache())
+    | 10 -> let a = u_dummy_range st
+            let b = u_dtree st
+            let c = u_targets st
+            let d = u_dummy_range st
+            let e = u_ty st
+            Expr.Match (DebugPointAtBinding.NoneAtSticky, a, b, c, d, e)
+    | 11 -> let b = u_ty st
+            let c = (u_option u_Val) st
+            let d = u_expr st
+            let e = u_methods st
+            let f = u_intfs st
+            let g = u_dummy_range st
+            Expr.Obj (newUnique(), b, c, d, e, f, g)
+    | 12 -> let a = u_constraints st
+            let b = u_expr st
+            let c = u_expr st
+            let d = u_dummy_range st
+            Expr.StaticOptimization (a, b, c, d)
+    | 13 -> let a = u_tyar_specs st
+            let b = u_expr st
+            let c = u_dummy_range st
+            Expr.TyChoose (a, b, c)
+    | 14 -> let b = u_expr st
+            let c = u_dummy_range st
+            let d = u_ty st
+            Expr.Quote (b, ref None, false, c, d) // isFromQueryExpression=false
+    | 15 -> let traitInfo = u_trait st
+            let m = u_dummy_range st
+            Expr.WitnessArg (traitInfo, m)
+    | 16 -> let m = u_dummy_range st
+            let expr = u_expr st
+            Expr.DebugPoint (DebugPointAtLeafExpr.Yes m, expr)
+    | _ -> ufailwith st "u_expr"
+  
+and u_exprs_new = u_list u_expr_new
+
 and u_module_or_namespace_contents st : ModuleOrNamespaceContents =
     let tag = u_byte st
     match tag with
@@ -2918,7 +3113,7 @@ and u_module_or_namespace_contents st : ModuleOrNamespaceContents =
     | 3 ->
         let expr, range =
             u_tup2
-                u_expr
+                u_expr_new
                 u_range
                 st
         TMDefDo(expr, range)
