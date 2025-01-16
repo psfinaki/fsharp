@@ -3015,19 +3015,19 @@ and u_expr_new st : Expr =
            Expr.Link r
     | 1 -> let a = u_const st
            let b = u_dummy_range st
-           let c = u_ty st
+           let c = u_ty_new st
            Expr.Const (a, b, c)
     | 2 -> let a = u_vref st
            let b = u_vrefFlags st
            let c = u_dummy_range st
            Expr.Val (a, b, c)
     | 3 -> let a = u_op st
-           let b = u_tys st
-           let c = u_Exprs st
+           let b = u_tys_new st
+           let c = u_exprs_new st
            let d = u_dummy_range st
            Expr.Op (a, b, c, d)
-    | 4 -> let a = u_expr st
-           let b = u_expr st
+    | 4 -> let a = u_expr_new st
+           let b = u_expr_new st
            let c = u_int st
            let d = u_dummy_range  st
            let dir = match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"
@@ -3035,60 +3035,60 @@ and u_expr_new st : Expr =
     | 5 -> let a0 = u_option u_Val st
            let b0 = u_option u_Val st
            let b1 = u_Vals st
-           let c = u_expr st
+           let c = u_expr_new st
            let d = u_dummy_range st
-           let e = u_ty st
+           let e = u_ty_new st
            Expr.Lambda (newUnique(), a0, b0, b1, c, d, e)
     | 6  -> let b = u_tyar_specs st
-            let c = u_expr st
+            let c = u_expr_new st
             let d = u_dummy_range st
-            let e = u_ty st
+            let e = u_ty_new st
             Expr.TyLambda (newUnique(), b, c, d, e)
-    | 7 ->  let a1 = u_expr st
-            let a2 = u_ty st
-            let b = u_tys st
-            let c = u_Exprs st
+    | 7 ->  let a1 = u_expr_new st
+            let a2 = u_ty_new st
+            let b = u_tys_new st
+            let c = u_exprs_new st
             let d = u_dummy_range st
             Expr.App (a1, a2, b, c, d)
     | 8 ->  let a = u_binds st
-            let b = u_expr st
+            let b = u_expr_new st
             let c = u_dummy_range st
             Expr.LetRec (a, b, c, Construct.NewFreeVarsCache())
     | 9 ->  let a = u_bind st
-            let b = u_expr st
+            let b = u_expr_new st
             let c = u_dummy_range st
             Expr.Let (a, b, c, Construct.NewFreeVarsCache())
     | 10 -> let a = u_dummy_range st
             let b = u_dtree st
             let c = u_targets st
             let d = u_dummy_range st
-            let e = u_ty st
+            let e = u_ty_new st
             Expr.Match (DebugPointAtBinding.NoneAtSticky, a, b, c, d, e)
-    | 11 -> let b = u_ty st
+    | 11 -> let b = u_ty_new st
             let c = (u_option u_Val) st
-            let d = u_expr st
+            let d = u_expr_new st
             let e = u_methods st
             let f = u_intfs st
             let g = u_dummy_range st
             Expr.Obj (newUnique(), b, c, d, e, f, g)
     | 12 -> let a = u_constraints st
-            let b = u_expr st
-            let c = u_expr st
+            let b = u_expr_new st
+            let c = u_expr_new st
             let d = u_dummy_range st
             Expr.StaticOptimization (a, b, c, d)
     | 13 -> let a = u_tyar_specs st
-            let b = u_expr st
+            let b = u_expr_new st
             let c = u_dummy_range st
             Expr.TyChoose (a, b, c)
-    | 14 -> let b = u_expr st
+    | 14 -> let b = u_expr_new st
             let c = u_dummy_range st
-            let d = u_ty st
+            let d = u_ty_new st
             Expr.Quote (b, ref None, false, c, d) // isFromQueryExpression=false
     | 15 -> let traitInfo = u_trait st
             let m = u_dummy_range st
             Expr.WitnessArg (traitInfo, m)
     | 16 -> let m = u_dummy_range st
-            let expr = u_expr st
+            let expr = u_expr_new st
             Expr.DebugPoint (DebugPointAtLeafExpr.Yes m, expr)
     | _ -> ufailwith st "u_expr"
   
