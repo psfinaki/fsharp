@@ -2275,7 +2275,7 @@ and p_syn_open_decl_target (x: SynOpenDeclTarget) st =
             (typeName, range)
             st
 
-and p_module (x: ModuleOrNamespaceRef) st =
+and p_entity_ref (x: ModuleOrNamespaceRef) st =
     p_tup2
         p_entity_spec
         p_nleref
@@ -2286,7 +2286,7 @@ and p_open_decl (x: OpenDeclaration) st =
     p_tup6
         p_syn_open_decl_target
         (p_option p_range)
-        (p_list p_module)
+        (p_list p_entity_ref)
         p_tys
         p_range
         p_bool
@@ -2306,6 +2306,87 @@ and p_binding (x: ModuleOrNamespaceBinding) st =
             (moduleOrNamespace, moduleOrNamespaceContents)
             st
 
+and p_tup_info (tupInfo: TupInfo) st =
+    let (TupInfo.Const c) = tupInfo
+    p_bool c st
+
+and p_nullness (nullness: Nullness) st =
+    match nullness.Evaluate() with 
+    | NullnessInfo.WithNull -> p_byte 0 st
+    | NullnessInfo.WithoutNull -> p_byte 1 st
+    | NullnessInfo.AmbivalentToNull -> p_byte 2 st
+
+and p_typars = p_list p_tpref
+
+and p_ty_new (ty: TType) st : unit =
+    match ty with
+    | TType_tuple (tupInfo, l) ->
+        p_byte 0 st
+        p_tup_info tupInfo st
+        p_tys_new l st
+
+    | TType_app (tyconRef, typeInstantiation, nullness) ->
+        p_byte 1 st
+        p_entity_ref tyconRef st
+        p_tys_new typeInstantiation st
+        p_nullness nullness st
+
+    | TType_fun (domainType, rangeType, nullness) ->
+        p_byte 2 st
+        p_ty_new domainType st
+        p_ty_new rangeType st
+        p_nullness nullness st
+
+    | TType_var (typar, nullness) -> 
+        p_byte 3 st
+        p_tpref typar st
+        p_nullness nullness st
+
+    | TType_forall (tps, r) ->
+        p_byte 4 st
+        p_typars tps st
+        p_ty_new r st
+
+    | TType_measure unt ->
+        p_byte 5 st
+        p_measure_expr unt st
+
+    | TType_ucase (uc, tinst) ->
+        p_byte 6 st
+        p_ucref uc st
+        p_tys_new tinst st
+
+    | TType_anon (anonInfo, l) ->
+         p_byte 7 st
+         p_anonInfo anonInfo st
+         p_tys_new l st
+
+and p_tys_new = p_list p_ty_new
+
+and p_expr_new (expr: Expr) st =
+    match expr with
+    | Expr.Link e -> p_expr_new e.Value st
+    | Expr.Const (x, m, ty)              -> p_byte 0 st; p_tup3 p_const p_dummy_range p_ty_new (x, m, ty) st
+    | Expr.Val (a, b, m)                 -> p_byte 1 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
+    | Expr.Op (a, b, c, d)                 -> p_byte 2 st; p_tup4 p_op  p_tys_new p_exprs_new p_dummy_range (a, b, c, d) st
+    | Expr.Sequential (a, b, c, d)      -> p_byte 3 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
+    | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 4 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
+    | Expr.TyLambda (_, b, c, d, e)        -> p_byte 5 st; p_tup4 p_tyar_specs p_expr_new p_dummy_range p_ty_new (b, c, d, e) st
+    | Expr.App (a1, a2, b, c, d)           -> p_byte 6 st; p_tup5 p_expr_new p_ty_new p_tys_new p_exprs_new p_dummy_range (a1, a2, b, c, d) st
+    | Expr.LetRec (a, b, c, _)            -> p_byte 7 st; p_tup3 p_binds p_expr_new p_dummy_range (a, b, c) st
+    | Expr.Let (a, b, c, _)               -> p_byte 8 st; p_tup3 p_bind p_expr_new p_dummy_range (a, b, c) st
+    | Expr.Match (_, a, b, c, d, e)         -> p_byte 9 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty_new (a, b, c, d, e) st
+    | Expr.Obj (_, b, c, d, e, f, g)       -> p_byte 10 st; p_tup6 p_ty_new (p_option p_Val) p_expr_new p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
+    | Expr.StaticOptimization (a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr_new p_expr_new p_dummy_range (a, b, c, d) st
+    | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr_new p_dummy_range (a, b, c) st
+    | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr_new p_dummy_range p_ty_new (ast, m, ty) st
+    | Expr.WitnessArg (traitInfo, m) -> p_byte 14 st; p_trait traitInfo st; p_dummy_range m st
+    | Expr.DebugPoint (_, innerExpr) -> 
+        p_byte 15 st
+        p_expr_new innerExpr st
+    
+and p_exprs_new = p_list p_expr_new
+
 and p_module_or_namespace_contents (x: ModuleOrNamespaceContents) st =
     match x with
     | TMDefs defs -> 
@@ -2324,7 +2405,7 @@ and p_module_or_namespace_contents (x: ModuleOrNamespaceContents) st =
     | TMDefDo (expr, range) ->
         p_byte 3 st
         p_tup2
-            p_expr
+            p_expr_new
             p_range
             (expr, range)
             st
@@ -2771,7 +2852,7 @@ and u_syn_open_decl_target st : SynOpenDeclTarget =
     | _ ->
         ufailwith st (nameof u_syn_open_decl_target)
 
-and u_module st : ModuleOrNamespaceRef =
+and u_entity_ref st : EntityRef =
     let binding, nlr = 
         u_tup2
             u_entity_spec
@@ -2787,7 +2868,7 @@ and u_open_decl st : OpenDeclaration =
         u_tup6
             u_syn_open_decl_target
             (u_option u_range)
-            (u_list u_module)
+            (u_list u_entity_ref)
             u_tys
             u_range
             u_bool
