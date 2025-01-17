@@ -15,7 +15,7 @@ type TypeInfo() =
 
     [<Fact>]
     let ``Recompilation``() =
-        File.WriteAllText(tempPath, "()")
+        File.WriteAllText(tempPath, "()") 
 
         let cUnit =
             FsxFromPath tempPath
