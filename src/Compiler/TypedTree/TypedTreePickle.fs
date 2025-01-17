@@ -2319,6 +2319,8 @@ and p_nullness (nullness: Nullness) st =
 and p_typars = p_list p_tpref
 
 and p_ty_new (ty: TType) st : unit =
+    let ty = stripTyparEqns ty
+
     match ty with
     | TType_tuple (tupInfo, l) ->
         p_byte 0 st
