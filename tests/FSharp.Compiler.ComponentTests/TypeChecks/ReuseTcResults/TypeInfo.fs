@@ -41,7 +41,7 @@ type TypeInfo() =
     let ``Recompilation 2``() =
         let tempPath = $"{getTemporaryFileName()}.fsx"
         
-        File.WriteAllText(tempPath, "printfn \"Hello world!") 
+        File.WriteAllText(tempPath, "printfn \"Hello world!\"") 
 
         let cUnit =
             FsxFromPath tempPath
