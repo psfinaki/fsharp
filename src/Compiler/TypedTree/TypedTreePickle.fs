@@ -2390,10 +2390,26 @@ and p_entity_ref (x: ModuleOrNamespaceRef) st =
         (x.binding, x.nlr)
         st
 
+and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
+    let a = nlv.EnclosingEntity
+    let key = nlv.ItemKey
+    let pkey = key.PartialKey
+    p_entity_ref a st
+    p_option p_string pkey.MemberParentMangledName st
+    p_bool pkey.MemberIsOverride st
+    p_string pkey.LogicalName st
+    p_int pkey.TotalArgCount st
+    let isStructThisArgPos =
+        match key.TypeForLinkage with
+        | None -> false
+        | Some ty -> checkForInRefStructThisArg st ty
+    p_option (p_ty2 isStructThisArgPos) key.TypeForLinkage st
+
+
 and p_vref_new (x: ValRef) st =
     p_tup2
         p_Val_new
-        p_nonlocal_val_ref
+        p_nonlocal_val_ref_new
         (x.binding, x.nlr)
         st
 
@@ -3105,27 +3121,21 @@ and u_entity_ref st : EntityRef =
         nlr = nlr
     }
 
-and u_val_linkage_partial_key st : ValLinkagePartialKey =
-    let memberParentMangledName, memberIsOverride, logicalName, totalArgCount =
-        u_tup4
-            (u_option u_string)
-            u_bool
-            u_string
-            u_int
-            st
-
-    {
-        MemberParentMangledName = memberParentMangledName
-        MemberIsOverride = memberIsOverride
-        LogicalName = logicalName
-        TotalArgCount = totalArgCount
-    }
+and u_nonlocal_val_ref_new st : NonLocalValOrMemberRef =
+    let a = u_entity_ref st
+    let b1 = u_option u_string st
+    let b2 = u_bool st
+    let b3 = u_string st
+    let c = u_int st
+    let d = u_option u_ty st
+    { EnclosingEntity = a
+      ItemKey=ValLinkageFullKey({ MemberParentMangledName=b1; MemberIsOverride=b2;LogicalName=b3; TotalArgCount=c }, d) }
 
 and u_vref_new st : ValRef =
     let binding, nlr =
         u_tup2
             u_Val_new
-            u_nonlocal_val_ref
+            u_nonlocal_val_ref_new
             st
 
     {
