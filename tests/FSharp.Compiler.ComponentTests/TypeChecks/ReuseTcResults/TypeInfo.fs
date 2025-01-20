@@ -2,11 +2,13 @@
 
 open System.IO
 
+open FSharp.Test
 open FSharp.Test.Compiler
 
 open Xunit
 
 open TestFramework
+open FSharp.Test
 
 
 type TypeInfo() =
@@ -23,14 +25,16 @@ type TypeInfo() =
             |> withOptions [ "--compressmetadata-" ]
             |> withOptions [ "--checknulls-" ]
 
-        cUnit
-        |> compileExisting
-        |> shouldSucceed
-        |> ignore
+        let _r1 =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
-        cUnit
-        |> compileExisting
-        |> shouldSucceed
-        |> ignore
+        let _r2 =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
         Assert.True(true)
