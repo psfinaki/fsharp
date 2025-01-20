@@ -746,7 +746,6 @@ let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef)
     let key = encodedCcuRef, encodedStrings
     encode_uniq nlerefTab key
 
-
 let p_encoded_nleref = p_tup2 p_int (p_array p_int)
 let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.oscope x) st
 
@@ -2367,6 +2366,36 @@ and p_entity_ref (x: ModuleOrNamespaceRef) st =
         (x.binding, x.nlr)
         st
 
+and p_val_linkage_partial_key (pkey: ValLinkagePartialKey) st =
+    p_tup4
+        (p_option p_string)
+        p_bool
+        p_string
+        p_int
+        (pkey.MemberParentMangledName, pkey.MemberIsOverride, pkey.LogicalName, pkey.TotalArgCount)
+        st
+
+and p_val_linkage_full_key (key: ValLinkageFullKey) st =
+    p_tup2
+        p_val_linkage_partial_key
+        (p_option p_ty_new)
+        (key.PartialKey, key.TypeForLinkage)
+        st
+
+and p_nlvomref (x: NonLocalValOrMemberRef) st =
+    p_tup2
+        p_entity_ref
+        p_val_linkage_full_key
+        (x.EnclosingEntity, x.ItemKey)
+        st
+
+and p_vref_new (x: ValRef) st =
+    p_tup2
+        p_Val
+        p_nlvomref
+        (x.binding, x.nlr)
+        st
+
 and p_open_decl (x: OpenDeclaration) st =
     p_tup6
         p_syn_open_decl_target
@@ -2475,7 +2504,7 @@ and p_expr_new (expr: Expr) st =
     match expr with
     | Expr.Link e -> p_byte 0 st; p_expr_new e.Value st
     | Expr.Const (x, m, ty)              -> p_byte 1 st; p_tup3 p_const p_dummy_range p_ty_new (x, m, ty) st
-    | Expr.Val (a, b, m)                 -> p_byte 2 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
+    | Expr.Val (a, b, m)                 -> p_byte 2 st; p_tup3 p_vref_new p_vrefFlags p_dummy_range (a, b, m) st
     | Expr.Op (a, b, c, d)                 -> p_byte 3 st; p_tup4 p_op  p_tys_new p_exprs_new p_dummy_range (a, b, c, d) st
     | Expr.Sequential (a, b, c, d)      -> p_byte 4 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
     | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 5 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
@@ -3025,6 +3054,54 @@ and u_entity_ref st : EntityRef =
             u_entity_spec_new
             u_nleref
             st
+    {
+        binding = binding
+        nlr = nlr
+    }
+
+and u_val_linkage_partial_key st : ValLinkagePartialKey =
+    let memberParentMangledName, memberIsOverride, logicalName, totalArgCount =
+        u_tup4
+            (u_option u_string)
+            u_bool
+            u_string
+            u_int
+            st
+
+    {
+        MemberParentMangledName = memberParentMangledName
+        MemberIsOverride = memberIsOverride
+        LogicalName = logicalName
+        TotalArgCount = totalArgCount
+    }
+
+and u_val_linkage_full_key st : ValLinkageFullKey =
+    let partialKey, typeForLinkage = 
+        u_tup2
+            u_val_linkage_partial_key
+            (u_option u_ty_new)
+            st
+
+    ValLinkageFullKey(partialKey, typeForLinkage)
+
+and u_nlvomref st : NonLocalValOrMemberRef =
+    let enclosingEntity, itemKey =
+        u_tup2
+            u_entity_ref
+            u_val_linkage_full_key
+            st
+    {
+        EnclosingEntity = enclosingEntity
+        ItemKey = itemKey
+    }
+
+and u_vref_new st : ValRef =
+    let binding, nlr =
+        u_tup2
+            u_Val
+            u_nlvomref
+            st
+
     {
         binding = binding
         nlr = nlr
