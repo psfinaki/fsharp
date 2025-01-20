@@ -433,6 +433,13 @@ let inline u_tup13 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 (st: ReaderState) 
   let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
   (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13)
 
+let inline u_tup14 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 (st: ReaderState) =
+  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
+  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
+  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in let x14 = p14 st in 
+  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14)
+
+
 let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (st: ReaderState) =
   let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
   let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
@@ -1092,6 +1099,54 @@ let p_ILBasicType x st =
 let p_ILVolatility x st = p_int (match x with Volatile -> 0 | Nonvolatile -> 1) st
 let p_ILReadonly   x st = p_int (match x with ReadonlyAddress -> 0 | NormalAddress -> 1) st
 
+//let u_ILTypeDef st =
+//    let name,
+//        attributes,
+//        layout,
+//        implements,
+//        genericParams,
+//        extends,
+//        methods,
+//        nestedTypes,
+//        fields,
+//        methodImpls,
+//        events,
+//        properties,
+//        securityDecls,
+//        customAttrs =
+//            u_tup14
+//                u_string
+//                u_type_attributes
+//                u_layout
+//                (u_list u_interface_impl)
+//                u_generic_params
+//                (u_option u_ILType)
+//                u_ILMethodDefs
+//                u_ILTypeDefs
+//                u_ILFiedsDefs
+//                u_ILMethodImpls
+//                u_ILEventDefs
+//                u_ILPropertyDefs
+//                u_ILSecurityDecls
+//                u_ILAttributesStored
+//                st
+    
+    //ILTypeDef(
+    //    name,
+    //    attributes,
+    //    layout,
+    //    implements,
+    //    genericParams,
+    //    extends,
+    //    methods,
+    //    nestedTypes,
+    //    fields,
+    //    methodImpls,
+    //    events,
+    //    properties,
+    //    securityDecls,
+    //    customAttrs)
+
 let u_ILMethodRef st =
     let x1, x2, x3, x4, x5, x6 = u_tup6 u_ILTypeRef u_ILCallConv u_int u_string u_ILTypes u_ILType st
     ILMethodRef.Create(x1, x2, x4, x3, x5, x6)
@@ -1128,6 +1183,8 @@ let u_ILBasicType st =
 
 let u_ILVolatility st = (match u_int st with  0 -> Volatile | 1 -> Nonvolatile | _ -> ufailwith st "u_ILVolatility" )
 let u_ILReadonly   st = (match u_int st with  0 -> ReadonlyAddress | 1 -> NormalAddress | _ -> ufailwith st "u_ILReadonly" )
+
+
 
 let [<Literal>] itag_nop           = 0
 let [<Literal>] itag_ldarg         = 1
@@ -2044,8 +2101,12 @@ let rec p_tycon_repr x st =
         false
 #endif
 
-    | TILObjectRepr (TILObjectReprData (_, _, td)) ->
-        error (Failure("Unexpected IL type definition"+td.Name))
+    | TILObjectRepr (TILObjectReprData (scope, nesting, td)) ->
+        p_byte 5 st
+        false
+        //p_ILScopeRef scope st
+        //p_list p_typedef nesting st
+        //p_typedef td st
 
 and p_tycon_objmodel_data x st =
   p_tycon_objmodel_kind x.fsobjmodel_kind st
@@ -2567,6 +2628,9 @@ and u_tycon_repr st =
         | 4 ->
             let v = u_ty st
             (fun _flagBit -> TMeasureableRepr v)
+
+        | 5 ->
+            (fun _flagBit -> TNoRepr)
 
         | _ -> ufailwith st "u_tycon_repr"
 
