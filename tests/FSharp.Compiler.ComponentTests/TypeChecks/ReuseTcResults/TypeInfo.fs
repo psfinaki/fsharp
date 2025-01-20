@@ -8,33 +8,56 @@ open FSharp.Test.Compiler
 open Xunit
 
 open TestFramework
-open FSharp.Test
 
 
 type TypeInfo() =
 
-    let tempPath = $"{getTemporaryFileName()}.fsx"
-
     [<Fact>]
-    let ``Recompilation``() =
+    let ``Recompilation 1``() =
+        let tempPath = $"{getTemporaryFileName()}.fsx"
+        
         File.WriteAllText(tempPath, "42") 
 
         let cUnit =
             FsxFromPath tempPath
             |> withReuseTcResults
             |> withOptions [ "--compressmetadata-" ]
-            |> withOptions [ "--checknulls-" ]
 
-        let _r1 =
+        let r1 =
             cUnit
             |> compileExisting
             |> shouldSucceed
             |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
-        let _r2 =
+        let r2 =
             cUnit
             |> compileExisting
             |> shouldSucceed
             |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
-        Assert.True(true)
+        Assert.Equal(r1, r2)
+
+    [<Fact>]
+    let ``Recompilation 2``() =
+        let tempPath = $"{getTemporaryFileName()}.fsx"
+        
+        File.WriteAllText(tempPath, "printfn \"Hello world!") 
+
+        let cUnit =
+            FsxFromPath tempPath
+            |> withReuseTcResults
+            |> withOptions [ "--compressmetadata-" ]
+
+        let r1 =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
+
+        let r2 =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
+
+        Assert.Equal(r1, r2)
