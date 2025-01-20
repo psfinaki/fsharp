@@ -2366,33 +2366,10 @@ and p_entity_ref (x: ModuleOrNamespaceRef) st =
         (x.binding, x.nlr)
         st
 
-and p_val_linkage_partial_key (pkey: ValLinkagePartialKey) st =
-    p_tup4
-        (p_option p_string)
-        p_bool
-        p_string
-        p_int
-        (pkey.MemberParentMangledName, pkey.MemberIsOverride, pkey.LogicalName, pkey.TotalArgCount)
-        st
-
-and p_val_linkage_full_key (key: ValLinkageFullKey) st =
-    p_tup2
-        p_val_linkage_partial_key
-        (p_option p_ty_new)
-        (key.PartialKey, key.TypeForLinkage)
-        st
-
-and p_nlvomref (x: NonLocalValOrMemberRef) st =
-    p_tup2
-        p_entity_ref
-        p_val_linkage_full_key
-        (x.EnclosingEntity, x.ItemKey)
-        st
-
 and p_vref_new (x: ValRef) st =
     p_tup2
         p_Val
-        p_nlvomref
+        p_nonlocal_val_ref
         (x.binding, x.nlr)
         st
 
@@ -3075,31 +3052,11 @@ and u_val_linkage_partial_key st : ValLinkagePartialKey =
         TotalArgCount = totalArgCount
     }
 
-and u_val_linkage_full_key st : ValLinkageFullKey =
-    let partialKey, typeForLinkage = 
-        u_tup2
-            u_val_linkage_partial_key
-            (u_option u_ty_new)
-            st
-
-    ValLinkageFullKey(partialKey, typeForLinkage)
-
-and u_nlvomref st : NonLocalValOrMemberRef =
-    let enclosingEntity, itemKey =
-        u_tup2
-            u_entity_ref
-            u_val_linkage_full_key
-            st
-    {
-        EnclosingEntity = enclosingEntity
-        ItemKey = itemKey
-    }
-
 and u_vref_new st : ValRef =
     let binding, nlr =
         u_tup2
             u_Val
-            u_nlvomref
+            u_nonlocal_val_ref
             st
 
     {
@@ -3240,7 +3197,7 @@ and u_expr_new st : Expr =
            let b = u_dummy_range st
            let c = u_ty_new st
            Expr.Const (a, b, c)
-    | 2 -> let a = u_vref st
+    | 2 -> let a = u_vref_new st
            let b = u_vrefFlags st
            let c = u_dummy_range st
            Expr.Val (a, b, c)
