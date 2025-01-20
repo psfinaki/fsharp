@@ -2629,9 +2629,6 @@ and u_tycon_repr st =
             let v = u_ty st
             (fun _flagBit -> TMeasureableRepr v)
 
-        | 5 ->
-            (fun _flagBit -> TNoRepr)
-
         | _ -> ufailwith st "u_tycon_repr"
 
     // Unions with static fields use a different format to other FSharpTyconRepr
@@ -2639,6 +2636,10 @@ and u_tycon_repr st =
         let cases = u_array u_unioncase_spec st
         let data = u_tycon_objmodel_data st
         fun _flagBit -> TFSharpTyconRepr { data with fsobjmodel_cases = Construct.MakeUnionCases (Array.toList cases) }
+    
+    | 5 ->
+        (fun _flagBit -> TNoRepr)
+
     | _ -> ufailwith st "u_tycon_repr"
 
 and u_tycon_objmodel_data st =
