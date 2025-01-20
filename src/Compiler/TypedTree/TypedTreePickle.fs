@@ -2298,8 +2298,32 @@ and p_ValData x st =
     else
         p_space 1 () st
 
+and p_ValData_new x st =
+    p_string x.val_logical_name st
+    p_option p_string x.ValCompiledName st
+    // only keep range information on published values, not on optimization data
+    p_ranges (x.ValReprInfo |> Option.map (fun _ -> x.val_range, x.DefinitionRange)) st
+
+    p_ty_new x.val_type st
+
+    p_int64 x.val_flags.PickledBits st
+    p_option p_member_info x.MemberInfo st
+    p_attribs x.Attribs st
+    p_option p_ValReprInfo x.ValReprInfo st
+    p_string x.XmlDocSig st
+    p_access x.Accessibility st
+    p_parentref x.TryDeclaringEntity st
+    p_option p_const x.LiteralValue st
+    if st.oInMem then
+        p_used_space1 (p_xmldoc x.XmlDoc) st
+    else
+        p_space 1 () st
+
 and p_Val x st =
     p_osgn_decl st.ovals p_ValData x st
+
+and p_Val_new x st =
+    p_osgn_decl st.ovals p_ValData_new x st
 
 and p_modul_typ (x: ModuleOrNamespaceType) st =
     p_tup3
@@ -2368,7 +2392,7 @@ and p_entity_ref (x: ModuleOrNamespaceRef) st =
 
 and p_vref_new (x: ValRef) st =
     p_tup2
-        p_Val
+        p_Val_new
         p_nonlocal_val_ref
         (x.binding, x.nlr)
         st
@@ -2958,8 +2982,53 @@ and u_ValData st =
                      val_attribs          = x9 }
     }
 
+
+and u_ValData_new st =
+    let x1, x1z, x1a, x2, x4, x8, x9, x10, x12, x13, x13b, x14, x15 =
+      u_tup13
+        u_string
+        (u_option u_string)
+        u_ranges
+        u_ty_new
+        u_int64
+        (u_option u_member_info)
+        u_attribs
+        (u_option u_ValReprInfo)
+        u_string
+        u_access
+        u_parentref
+        (u_option u_const)
+        (u_used_space1 u_xmldoc)
+        st
+
+    { val_logical_name = x1
+      val_range        = (match x1a with None -> range0 | Some(a, _) -> a)
+      val_type         = x2
+      val_stamp        = newStamp()
+      val_flags        = ValFlags x4
+      val_opt_data     =
+          match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
+          | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None
+          | _ ->
+              Some { val_compiled_name    = x1z
+                     val_other_range      = (match x1a with None -> None | Some(_, b) -> Some(b, true))
+                     val_defn             = None
+                     val_repr_info        = x10
+                     val_repr_info_for_display = None
+                     arg_repr_info_for_display = None
+                     val_const            = x14
+                     val_access           = x13
+                     val_xmldoc           = defaultArg x15 XmlDoc.Empty
+                     val_other_xmldoc     = None
+                     val_member_info      = x8
+                     val_declaring_entity = x13b
+                     val_xmldocsig        = x12
+                     val_attribs          = x9 }
+    }
+
 and u_Val st = u_osgn_decl st.ivals u_ValData st
 
+and u_Val_new st = u_osgn_decl st.ivals u_ValData_new st
 
 and u_modul_typ st =
     let x1, x3, x5 =
@@ -3055,7 +3124,7 @@ and u_val_linkage_partial_key st : ValLinkagePartialKey =
 and u_vref_new st : ValRef =
     let binding, nlr =
         u_tup2
-            u_Val
+            u_Val_new
             u_nonlocal_val_ref
             st
 
@@ -3200,7 +3269,8 @@ and u_expr_new st : Expr =
     | 2 -> let a = u_vref_new st
            let b = u_vrefFlags st
            let c = u_dummy_range st
-           Expr.Val (a, b, c)
+           let expr = Expr.Val (a, b, c)
+           expr
     | 3 -> let a = u_op st
            let b = u_tys_new st
            let c = u_exprs_new st
@@ -3229,7 +3299,8 @@ and u_expr_new st : Expr =
             let b = u_tys_new st
             let c = u_exprs_new st
             let d = u_dummy_range st
-            Expr.App (a1, a2, b, c, d)
+            let expr = Expr.App (a1, a2, b, c, d)
+            expr
     | 8 ->  let a = u_binds st
             let b = u_expr_new st
             let c = u_dummy_range st
