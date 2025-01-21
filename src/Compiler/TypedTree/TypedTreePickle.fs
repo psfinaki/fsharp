@@ -2383,9 +2383,14 @@ and p_syn_open_decl_target (x: SynOpenDeclTarget) st =
             (typeName, range)
             st
 
+and p_non_null_slot f (x: 'a | null) st =
+    match x with
+    | null -> p_byte 0 st
+    | h -> p_byte 1 st; f h st
+
 and p_entity_ref (x: ModuleOrNamespaceRef) st =
     p_tup2
-        p_entity_spec_new
+        (p_non_null_slot p_entity_spec_new)
         p_nleref
         (x.binding, x.nlr)
         st
@@ -3110,10 +3115,18 @@ and u_syn_open_decl_target st : SynOpenDeclTarget =
     | _ ->
         ufailwith st (nameof u_syn_open_decl_target)
 
+and u_non_null_slot f st =
+    let tag = u_byte st
+    match tag with
+    | 0 -> Unchecked.defaultof<_>
+    | 1 -> f st
+    | n -> ufailwith st ("u_option: found number " + string n)
+
+
 and u_entity_ref st : EntityRef =
-    let binding, nlr = 
+    let (binding: NonNullSlot<Entity>), nlr = 
         u_tup2
-            u_entity_spec_new
+            (u_non_null_slot u_entity_spec_new)
             u_nleref
             st
     {
