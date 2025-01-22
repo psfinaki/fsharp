@@ -2190,7 +2190,7 @@ and p_entity_spec_data_new (x: Entity) st =
     p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
     p_option p_cpath x.entity_cpath st
-    p_maybe_lazy p_modul_typ x.entity_modul_type st
+    p_maybe_lazy p_modul_typ_new x.entity_modul_type st
     p_exnc_repr x.ExceptionInfo st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2333,6 +2333,14 @@ and p_modul_typ (x: ModuleOrNamespaceType) st =
       (x.ModuleOrNamespaceKind, x.AllValsAndMembers, x.AllEntities)
       st
 
+and p_modul_typ_new (x: ModuleOrNamespaceType) st =
+    p_tup3
+      p_istype
+      (p_qlist p_Val)
+      (p_qlist p_entity_spec_new)
+      (x.ModuleOrNamespaceKind, x.AllValsAndMembers, x.AllEntities)
+      st
+
 and p_qualified_name_of_file qualifiedNameOfFile st =
     let (QualifiedNameOfFile ident) = qualifiedNameOfFile
     p_ident ident st
@@ -2437,7 +2445,7 @@ and p_binding (x: ModuleOrNamespaceBinding) st =
     | ModuleOrNamespaceBinding.Module (moduleOrNamespace, moduleOrNamespaceContents) ->
         p_byte 1 st
         p_tup2
-            p_entity_spec
+            p_entity_spec_new
             p_module_or_namespace_contents
             (moduleOrNamespace, moduleOrNamespaceContents)
             st
@@ -2455,7 +2463,7 @@ and p_nullness (nullness: Nullness) st =
 and p_typars = p_list p_tpref
 
 and p_ty_new (ty: TType) st : unit =
-    let ty = stripTyparEqns ty
+    //let ty = stripTyparEqns ty
 
     match ty with
     | TType_tuple (tupInfo, l) ->
@@ -2573,7 +2581,7 @@ and p_module_or_namespace_contents (x: ModuleOrNamespaceContents) st =
         p_tup5
             p_bool
             (p_list p_open_decl)
-            (p_list p_entity_spec_data)
+            (p_list p_entity_spec_data_new)
             (p_list p_binding)
             p_range
             (isRec, opens, tycons, bindings, range)
@@ -2606,7 +2614,7 @@ and p_checked_impl_file file st =
     p_tup8
         p_qualified_name_of_file
         p_pragmas
-        p_modul_typ
+        p_modul_typ_new
         p_checked_impl_file_contents
         p_bool
         p_bool
@@ -2838,7 +2846,7 @@ and u_entity_spec_data_new st : Entity =
           u_kind
           u_int64
           (u_option u_cpath )
-          (u_lazy u_modul_typ)
+          (u_lazy u_modul_typ_new)
           u_exnc_repr
           (u_used_space1 u_xmldoc)
           st
@@ -3059,6 +3067,14 @@ and u_modul_typ st =
           (u_qlist u_entity_spec) st
     ModuleOrNamespaceType(x1, x3, x5)
 
+and u_modul_typ_new st =
+    let x1, x3, x5 =
+        u_tup3
+          u_istype
+          (u_qlist u_Val)
+          (u_qlist u_entity_spec_new) st
+    ModuleOrNamespaceType(x1, x3, x5)
+
 and u_qualified_name_of_file st = 
     let ident = u_ident st
     QualifiedNameOfFile(ident)
@@ -3185,7 +3201,7 @@ and u_binding st : ModuleOrNamespaceBinding =
     | 1 ->
         let moduleOrNamespace, moduleOrNamespaceContents =
             u_tup2
-                u_entity_spec
+                u_entity_spec_new
                 u_module_or_namespace_contents
                 st
         ModuleOrNamespaceBinding.Module (moduleOrNamespace, moduleOrNamespaceContents)
@@ -3396,7 +3412,7 @@ and u_module_or_namespace_contents st : ModuleOrNamespaceContents =
             u_tup5
                 u_bool
                 (u_list u_open_decl)
-                (u_list u_entity_spec_data)
+                (u_list u_entity_spec_data_new)
                 (u_list u_binding)
                 u_range
                 st
@@ -3424,7 +3440,7 @@ and u_checked_impl_file st =
         u_tup8
             u_qualified_name_of_file
             u_pragmas
-            u_modul_typ
+            u_modul_typ_new
             u_checked_impl_file_contents
             u_bool
             u_bool
