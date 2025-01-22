@@ -2336,7 +2336,7 @@ and p_modul_typ (x: ModuleOrNamespaceType) st =
 and p_modul_typ_new (x: ModuleOrNamespaceType) st =
     p_tup3
       p_istype
-      (p_qlist p_Val)
+      (p_qlist p_Val_new)
       (p_qlist p_entity_spec_new)
       (x.ModuleOrNamespaceKind, x.AllValsAndMembers, x.AllEntities)
       st
@@ -2416,7 +2416,7 @@ and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
         match key.TypeForLinkage with
         | None -> false
         | Some ty -> checkForInRefStructThisArg st ty
-    p_option (p_ty2 isStructThisArgPos) key.TypeForLinkage st
+    p_option p_ty_new key.TypeForLinkage st
 
 
 and p_vref_new (x: ValRef) st =
@@ -3071,7 +3071,7 @@ and u_modul_typ_new st =
     let x1, x3, x5 =
         u_tup3
           u_istype
-          (u_qlist u_Val)
+          (u_qlist u_Val_new)
           (u_qlist u_entity_spec_new) st
     ModuleOrNamespaceType(x1, x3, x5)
 
@@ -3156,7 +3156,7 @@ and u_nonlocal_val_ref_new st : NonLocalValOrMemberRef =
     let b2 = u_bool st
     let b3 = u_string st
     let c = u_int st
-    let d = u_option u_ty st
+    let d = u_option u_ty_new st
     { EnclosingEntity = a
       ItemKey=ValLinkageFullKey({ MemberParentMangledName=b1; MemberIsOverride=b2;LogicalName=b3; TotalArgCount=c }, d) }
 
