@@ -2187,7 +2187,7 @@ and p_entity_spec_data_new (x: Entity) st =
     p_attribs_new x.entity_attribs st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty_new x.TypeAbbrev st
-    p_tcaug x.entity_tycon_tcaug st
+    p_tcaug_new x.entity_tycon_tcaug st
     p_string System.String.Empty st
     p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
@@ -2208,6 +2208,34 @@ and p_tcaug p st =
       (p_list (p_tup2 p_string (p_vref "adhoc")))
       (p_list (p_tup3 p_ty p_bool p_dummy_range))
       (p_option p_ty)
+      p_bool
+      (p_space 1)
+      (p.tcaug_compare,
+       p.tcaug_compare_withc,
+       p.tcaug_hash_and_equals_withc |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
+       p.tcaug_equals,
+       (p.tcaug_adhoc_list
+           |> ResizeArray.toList
+           // Explicit impls of interfaces only get kept in the adhoc list
+           // in order to get check the well-formedness of an interface.
+           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
+           // does not work correctly (they may get incorrectly relinked to a default member)
+           |> List.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
+           |> List.map (fun (_, vref) -> vref.LogicalName, vref)),
+       p.tcaug_interfaces,
+       p.tcaug_super,
+       p.tcaug_abstract,
+       space) st
+
+and p_tcaug_new (p: TyconAugmentation) st =
+    p_tup9
+      (p_option (p_tup2 (p_vref_new) (p_vref_new)))
+      (p_option (p_vref_new))
+      (p_option (p_tup3 (p_vref_new) (p_vref_new) (p_vref_new)))
+      (p_option (p_tup2 (p_vref_new) (p_vref_new )))
+      (p_list (p_tup2 p_string (p_vref_new)))
+      (p_list (p_tup3 p_ty_new p_bool p_dummy_range))
+      (p_option p_ty_new)
       p_bool
       (p_space 1)
       (p.tcaug_compare,
@@ -2857,7 +2885,7 @@ and u_entity_spec_data_new st : Entity =
           u_attribs_new
           u_tycon_repr
           (u_option u_ty_new)
-          u_tcaug
+          u_tcaug_new
           u_string
           u_kind
           u_int64
@@ -2923,6 +2951,34 @@ and u_tcaug st =
      // pickled type definitions are always closed (i.e. no more intrinsic members allowed)
      tcaug_closed=true
      tcaug_abstract=g}
+
+and u_tcaug_new st =
+    let a1, a2, a3, b2, c, d, e, g, _space =
+      u_tup9
+        (u_option (u_tup2 u_vref_new u_vref_new))
+        (u_option u_vref_new)
+        (u_option (u_tup3 u_vref_new u_vref_new u_vref_new))
+        (u_option (u_tup2 u_vref_new u_vref_new))
+        (u_list (u_tup2 u_string u_vref_new))
+        (u_list (u_tup3 u_ty_new u_bool u_dummy_range))
+        (u_option u_ty_new)
+        u_bool
+        (u_space 1)
+        st
+    {tcaug_compare=a1
+     tcaug_compare_withc=a2
+     tcaug_hash_and_equals_withc=a3 |> Option.map (fun (v1, v2, v3) -> (v1, v2, v3, None))
+     tcaug_equals=b2
+     // only used for code generation and checking - hence don't care about the values when reading back in
+     tcaug_hasObjectGetHashCode=false
+     tcaug_adhoc_list= ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
+     tcaug_adhoc=NameMultiMap.ofList c
+     tcaug_interfaces=d
+     tcaug_super=e
+     // pickled type definitions are always closed (i.e. no more intrinsic members allowed)
+     tcaug_closed=true
+     tcaug_abstract=g}
+
 
 and u_entity_spec st =
     u_osgn_decl st.ientities u_entity_spec_data st
