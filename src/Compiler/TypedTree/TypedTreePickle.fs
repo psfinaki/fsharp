@@ -1463,7 +1463,6 @@ let p_ty = p_ty2 false
 let p_tys = (p_list p_ty)
 
 let fill_p_attribs, p_attribs = p_hole()
-let fill_p_attribs_new, p_attribs_new = p_hole()
 
 // In F# 4.5, the type of the "this" pointer for structs is considered to be inref for the purposes of checking the implementation
 // of the struct.  However for backwards compat reasons we can't serialize this as the type.
@@ -1497,7 +1496,6 @@ let p_vrefs ctxt = p_list (p_vref ctxt)
 let fill_u_ty, u_ty = u_hole()
 let u_tys = (u_list u_ty)
 let fill_u_attribs, u_attribs = u_hole()
-let fill_u_attribs_new, u_attribs_new = u_hole()
 
 let u_nonlocal_val_ref st : NonLocalValOrMemberRef =
     let a = u_tcref st
@@ -2186,7 +2184,7 @@ and p_entity_spec_data_new (x: Entity) st =
     p_option p_pubpath x.entity_pubpath st
     p_access x.Accessibility st
     p_access  x.TypeReprAccessibility st
-    p_attribs_new x.entity_attribs st
+    p_attribs x.entity_attribs st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty_new x.TypeAbbrev st
     p_tcaug x.entity_tycon_tcaug st
@@ -2251,21 +2249,11 @@ and p_attribkind x st =
 and p_attrib (Attrib (a, b, c, d, e, _targets, f)) st = // AttributeTargets are not preserved
     p_tup6 (p_tcref "attrib") p_attribkind (p_list p_attrib_expr) (p_list p_attrib_arg) p_bool p_dummy_range (a, b, c, d, e, f) st
 
-and p_attrib_new (Attrib (a, b, c, d, e, _targets, f)) st = // AttributeTargets are not preserved
-    p_tup6 (p_tcref_new) p_attribkind (p_list p_attrib_expr_new) (p_list p_attrib_arg_new) p_bool p_dummy_range (a, b, c, d, e, f) st
-
 and p_attrib_expr (AttribExpr(e1, e2)) st =
     p_tup2 p_expr p_expr (e1, e2) st
 
-and p_attrib_expr_new (AttribExpr(e1, e2)) st =
-    p_tup2 p_expr_new p_expr_new (e1, e2) st
-
 and p_attrib_arg (AttribNamedArg(a, b, c, d)) st =
     p_tup4 p_string p_ty p_bool p_attrib_expr (a, b, c, d) st
-
-and p_attrib_arg_new (AttribNamedArg(a, b, c, d)) st =
-    p_tup4 p_string p_ty_new p_bool p_attrib_expr_new (a, b, c, d) st
-
 
 and p_member_info (x: ValMemberInfo) st =
     p_tup4 (p_tcref "member_info")  p_MemberFlags (p_list p_slotsig) p_bool
@@ -2331,7 +2319,7 @@ and p_ValData_new x st =
 
     p_int64 x.val_flags.PickledBits st
     p_option p_member_info_new x.MemberInfo st
-    p_attribs_new x.Attribs st
+    p_attribs x.Attribs st
     p_option p_ValReprInfo x.ValReprInfo st
     p_string x.XmlDocSig st
     p_access x.Accessibility st
@@ -2884,7 +2872,7 @@ and u_entity_spec_data_new st : Entity =
           u_range
           (u_option u_pubpath)
           (u_tup2 u_access u_access)
-          u_attribs_new
+          u_attribs
           u_tycon_repr
           (u_option u_ty_new)
           u_tcaug
@@ -2985,24 +2973,12 @@ and u_attrib st : Attrib =
     let a, b, c, d, e, f = u_tup6 u_tcref u_attribkind (u_list u_attrib_expr) (u_list u_attrib_arg) u_bool u_dummy_range st
     Attrib(a, b, c, d, e, None, f)  // AttributeTargets are not preserved
 
-and u_attrib_new st : Attrib =
-    let a, b, c, d, e, f = u_tup6 u_tcref_new u_attribkind (u_list u_attrib_expr_new) (u_list u_attrib_arg_new) u_bool u_dummy_range st
-    Attrib(a, b, c, d, e, None, f)  // AttributeTargets are not preserved
-
 and u_attrib_expr st =
     let a, b = u_tup2 u_expr u_expr st
     AttribExpr(a, b)
 
-and u_attrib_expr_new st =
-    let a, b = u_tup2 u_expr_new u_expr_new st
-    AttribExpr(a, b)
-
 and u_attrib_arg st  =
     let a, b, c, d = u_tup4 u_string u_ty u_bool u_attrib_expr st
-    AttribNamedArg(a, b, c, d)
-
-and u_attrib_arg_new st  =
-    let a, b, c, d = u_tup4 u_string u_ty_new u_bool u_attrib_expr_new st
     AttribNamedArg(a, b, c, d)
 
 and u_member_info st : ValMemberInfo =
@@ -3093,7 +3069,7 @@ and u_ValData_new st =
         u_ty_new
         u_int64
         (u_option u_member_info_new)
-        u_attribs_new
+        u_attribs
         (u_option u_ValReprInfo)
         u_string
         u_access
@@ -3957,7 +3933,6 @@ let _ = fill_p_Exprs (p_list p_expr)
 let _ = fill_p_Expr_hole p_expr
 let _ = fill_p_Exprs (p_List p_expr)
 let _ = fill_p_attribs (p_list p_attrib)
-let _ = fill_p_attribs_new (p_list p_attrib_new)
 let _ = fill_p_Vals (p_list p_Val)
 
 let _ = fill_u_binds (u_List u_bind)
@@ -3966,7 +3941,6 @@ let _ = fill_u_constraints (u_list u_static_optimization_constraint)
 let _ = fill_u_Exprs (u_list u_expr)
 let _ = fill_u_Expr_hole u_expr
 let _ = fill_u_attribs (u_list u_attrib)
-let _ = fill_u_attribs_new (u_list u_attrib)
 let _ = fill_u_Vals (u_list u_Val)
 
 //---------------------------------------------------------------------------
@@ -3980,9 +3954,9 @@ let pickleCcuInfo (minfo: PickledCcuInfo) st =
 
 let pickleTcInfo (tcInfo: PickledTcInfo) (st: WriterState) =
     p_tup4
-        p_attribs_new
-        p_attribs_new
-        p_attribs_new
+        p_attribs
+        p_attribs
+        p_attribs
         (p_list p_checked_impl_file)
         (tcInfo.MainMethodAttrs, tcInfo.NetModuleAttrs, tcInfo.AssemblyAttrs, tcInfo.DeclaredImpls)
         st
@@ -3996,9 +3970,9 @@ let unpickleCcuInfo st =
 let unpickleTcInfo st : PickledTcInfo =
     let mainMethodAttrs, netModuleAttrs, assemblyAttrs, declaredImpls =
         u_tup4
-            u_attribs_new
-            u_attribs_new
-            u_attribs_new
+            u_attribs
+            u_attribs
+            u_attribs
             (u_list u_checked_impl_file)
             st
 
