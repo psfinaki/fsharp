@@ -2264,6 +2264,10 @@ and p_member_info (x: ValMemberInfo) st =
     p_tup4 (p_tcref "member_info")  p_MemberFlags (p_list p_slotsig) p_bool
         (x.ApparentEnclosingEntity, x.MemberFlags, x.ImplementedSlotSigs, x.IsImplemented) st
 
+and p_member_info_new (x: ValMemberInfo) st =
+    p_tup4 (p_entity_ref) p_MemberFlags (p_list p_slotsig) p_bool
+        (x.ApparentEnclosingEntity, x.MemberFlags, x.ImplementedSlotSigs, x.IsImplemented) st
+
 and p_tycon_objmodel_kind x st =
     match x with
     | TFSharpClass       -> p_byte 0 st
@@ -2319,7 +2323,7 @@ and p_ValData_new x st =
     p_ty_new x.val_type st
 
     p_int64 x.val_flags.PickledBits st
-    p_option p_member_info x.MemberInfo st
+    p_option p_member_info_new x.MemberInfo st
     p_attribs_new x.Attribs st
     p_option p_ValReprInfo x.ValReprInfo st
     p_string x.XmlDocSig st
@@ -2971,6 +2975,13 @@ and u_member_info st : ValMemberInfo =
       ImplementedSlotSigs=x4
       IsImplemented=x5  }
 
+and u_member_info_new st : ValMemberInfo =
+    let x2, x3, x4, x5 = u_tup4 u_entity_ref u_MemberFlags (u_list u_slotsig) u_bool st
+    { ApparentEnclosingEntity=x2
+      MemberFlags=x3
+      ImplementedSlotSigs=x4
+      IsImplemented=x5  }
+
 and u_tycon_objmodel_kind st =
     let tag = u_byte st
     match tag with
@@ -3000,7 +3011,7 @@ and u_ValData st =
         u_ranges
         u_ty
         u_int64
-        (u_option u_member_info)
+        (u_option u_member_info_new)
         u_attribs
         (u_option u_ValReprInfo)
         u_string
