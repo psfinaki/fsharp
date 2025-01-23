@@ -2236,11 +2236,6 @@ and p_parentref x st =
     | ParentNone -> p_byte 0 st
     | Parent x -> p_byte 1 st; p_tcref "parent tycon" x st
 
-and p_parentref_new x st =
-    match x with
-    | ParentNone -> p_byte 0 st
-    | Parent x -> p_byte 1 st; p_tcref_new x st
-
 and p_attribkind x st =
     match x with
     | ILAttrib x -> p_byte 0 st; p_ILMethodRef x st
@@ -2257,10 +2252,6 @@ and p_attrib_arg (AttribNamedArg(a, b, c, d)) st =
 
 and p_member_info (x: ValMemberInfo) st =
     p_tup4 (p_tcref "member_info")  p_MemberFlags (p_list p_slotsig) p_bool
-        (x.ApparentEnclosingEntity, x.MemberFlags, x.ImplementedSlotSigs, x.IsImplemented) st
-
-and p_member_info_new (x: ValMemberInfo) st =
-    p_tup4 (p_tcref_new) p_MemberFlags (p_list p_slotsig) p_bool
         (x.ApparentEnclosingEntity, x.MemberFlags, x.ImplementedSlotSigs, x.IsImplemented) st
 
 and p_tycon_objmodel_kind x st =
@@ -2318,12 +2309,12 @@ and p_ValData_new x st =
     p_ty_new x.val_type st
 
     p_int64 x.val_flags.PickledBits st
-    p_option p_member_info_new x.MemberInfo st
+    p_option p_member_info x.MemberInfo st
     p_attribs x.Attribs st
     p_option p_ValReprInfo x.ValReprInfo st
     p_string x.XmlDocSig st
     p_access x.Accessibility st
-    p_parentref_new x.TryDeclaringEntity st
+    p_parentref x.TryDeclaringEntity st
     p_option p_const x.LiteralValue st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2955,13 +2946,6 @@ and u_parentref st =
     | 1 -> u_tcref st |> Parent
     | _ -> ufailwith st "u_attribkind"
 
-and u_parentref_new st =
-    let tag = u_byte st
-    match tag with
-    | 0 -> ParentNone
-    | 1 -> u_tcref_new st |> Parent
-    | _ -> ufailwith st "u_attribkind"
-
 and u_attribkind st =
     let tag = u_byte st
     match tag with
@@ -2983,13 +2967,6 @@ and u_attrib_arg st  =
 
 and u_member_info st : ValMemberInfo =
     let x2, x3, x4, x5 = u_tup4 u_tcref u_MemberFlags (u_list u_slotsig) u_bool st
-    { ApparentEnclosingEntity=x2
-      MemberFlags=x3
-      ImplementedSlotSigs=x4
-      IsImplemented=x5  }
-
-and u_member_info_new st : ValMemberInfo =
-    let x2, x3, x4, x5 = u_tup4 u_tcref_new u_MemberFlags (u_list u_slotsig) u_bool st
     { ApparentEnclosingEntity=x2
       MemberFlags=x3
       ImplementedSlotSigs=x4
@@ -3068,12 +3045,12 @@ and u_ValData_new st =
         u_ranges
         u_ty_new
         u_int64
-        (u_option u_member_info_new)
+        (u_option u_member_info)
         u_attribs
         (u_option u_ValReprInfo)
         u_string
         u_access
-        u_parentref_new
+        u_parentref
         (u_option u_const)
         (u_used_space1 u_xmldoc)
         st
