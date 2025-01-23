@@ -2227,34 +2227,6 @@ and p_tcaug p st =
        p.tcaug_abstract,
        space) st
 
-and p_tcaug_new (p: TyconAugmentation) st =
-    p_tup9
-      (p_option (p_tup2 (p_vref_new) (p_vref_new)))
-      (p_option (p_vref_new))
-      (p_option (p_tup3 (p_vref_new) (p_vref_new) (p_vref_new)))
-      (p_option (p_tup2 (p_vref_new) (p_vref_new )))
-      (p_list (p_tup2 p_string (p_vref_new)))
-      (p_list (p_tup3 p_ty_new p_bool p_dummy_range))
-      (p_option p_ty_new)
-      p_bool
-      (p_space 1)
-      (p.tcaug_compare,
-       p.tcaug_compare_withc,
-       p.tcaug_hash_and_equals_withc |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
-       p.tcaug_equals,
-       (p.tcaug_adhoc_list
-           |> ResizeArray.toList
-           // Explicit impls of interfaces only get kept in the adhoc list
-           // in order to get check the well-formedness of an interface.
-           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
-           // does not work correctly (they may get incorrectly relinked to a default member)
-           |> List.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
-           |> List.map (fun (_, vref) -> vref.LogicalName, vref)),
-       p.tcaug_interfaces,
-       p.tcaug_super,
-       p.tcaug_abstract,
-       space) st
-
 and p_entity_spec x st = p_osgn_decl st.oentities p_entity_spec_data x st
 
 and p_entity_spec_new x st = p_osgn_decl st.oentities p_entity_spec_data_new x st
@@ -2467,13 +2439,10 @@ and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
         | Some ty -> checkForInRefStructThisArg st ty
     p_option p_ty_new key.TypeForLinkage st
 
-
 and p_vref_new (x: ValRef) st =
-    p_tup2
-        p_Val_new
-        (p_non_null_slot p_nonlocal_val_ref_new)
-        (x.binding, x.nlr)
-        st
+    match x with
+    | VRefLocal x    -> p_byte 0 st; p_local_item_ref "valref" st.ovals x st
+    | VRefNonLocal x -> p_byte 1 st; p_nonlocal_val_ref_new x st
 
 and p_open_decl (x: OpenDeclaration) st =
     p_tup6
@@ -2957,34 +2926,6 @@ and u_tcaug st =
      tcaug_closed=true
      tcaug_abstract=g}
 
-and u_tcaug_new st : TyconAugmentation =
-    let a1, a2, a3, b2, c, d, e, g, _space =
-      u_tup9
-        (u_option (u_tup2 u_vref_new u_vref_new))
-        (u_option u_vref_new)
-        (u_option (u_tup3 u_vref_new u_vref_new u_vref_new))
-        (u_option (u_tup2 u_vref_new u_vref_new))
-        (u_list (u_tup2 u_string u_vref_new))
-        (u_list (u_tup3 u_ty_new u_bool u_dummy_range))
-        (u_option u_ty_new)
-        u_bool
-        (u_space 1)
-        st
-    {tcaug_compare=a1
-     tcaug_compare_withc=a2
-     tcaug_hash_and_equals_withc=a3 |> Option.map (fun (v1, v2, v3) -> (v1, v2, v3, None))
-     tcaug_equals=b2
-     // only used for code generation and checking - hence don't care about the values when reading back in
-     tcaug_hasObjectGetHashCode=false
-     tcaug_adhoc_list= ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
-     tcaug_adhoc=NameMultiMap.ofList c
-     tcaug_interfaces=d
-     tcaug_super=e
-     // pickled type definitions are always closed (i.e. no more intrinsic members allowed)
-     tcaug_closed=true
-     tcaug_abstract=g}
-
-
 and u_entity_spec st =
     u_osgn_decl st.ientities u_entity_spec_data st
 
@@ -3264,16 +3205,11 @@ and u_nonlocal_val_ref_new st : NonLocalValOrMemberRef =
       ItemKey=ValLinkageFullKey({ MemberParentMangledName=b1; MemberIsOverride=b2;LogicalName=b3; TotalArgCount=c }, d) }
 
 and u_vref_new st : ValRef =
-    let binding, nlr =
-        u_tup2
-            u_Val_new
-            (u_non_null_slot u_nonlocal_val_ref_new)
-            st
-
-    {
-        binding = binding
-        nlr = nlr
-    }
+    let tag = u_byte st
+    match tag with
+    | 0 -> u_local_item_ref st.ivals st |> VRefLocal
+    | 1 -> u_nonlocal_val_ref_new st |> VRefNonLocal
+    | _ -> ufailwith st "u_item_ref"
 
 and u_open_decl st : OpenDeclaration =
     let target, range, modules, types, appliedScope, isOwnNamespace =
