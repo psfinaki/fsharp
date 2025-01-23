@@ -2187,7 +2187,7 @@ and p_entity_spec_data_new (x: Entity) st =
     p_attribs_new x.entity_attribs st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty_new x.TypeAbbrev st
-    p_tcaug_new x.entity_tycon_tcaug st
+    p_tcaug x.entity_tycon_tcaug st
     p_string System.String.Empty st
     p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
@@ -2263,6 +2263,11 @@ and p_parentref x st =
     match x with
     | ParentNone -> p_byte 0 st
     | Parent x -> p_byte 1 st; p_tcref "parent tycon" x st
+
+and p_parentref_new x st =
+    match x with
+    | ParentNone -> p_byte 0 st
+    | Parent x -> p_byte 1 st; p_entity_ref x st
 
 and p_attribkind x st =
     match x with
@@ -2356,7 +2361,7 @@ and p_ValData_new x st =
     p_option p_ValReprInfo x.ValReprInfo st
     p_string x.XmlDocSig st
     p_access x.Accessibility st
-    p_parentref x.TryDeclaringEntity st
+    p_parentref_new x.TryDeclaringEntity st
     p_option p_const x.LiteralValue st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2466,7 +2471,7 @@ and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
 and p_vref_new (x: ValRef) st =
     p_tup2
         p_Val_new
-        p_nonlocal_val_ref_new
+        (p_non_null_slot p_nonlocal_val_ref_new)
         (x.binding, x.nlr)
         st
 
@@ -2885,7 +2890,7 @@ and u_entity_spec_data_new st : Entity =
           u_attribs_new
           u_tycon_repr
           (u_option u_ty_new)
-          u_tcaug_new
+          u_tcaug
           u_string
           u_kind
           u_int64
@@ -2952,7 +2957,7 @@ and u_tcaug st =
      tcaug_closed=true
      tcaug_abstract=g}
 
-and u_tcaug_new st =
+and u_tcaug_new st : TyconAugmentation =
     let a1, a2, a3, b2, c, d, e, g, _space =
       u_tup9
         (u_option (u_tup2 u_vref_new u_vref_new))
@@ -2991,6 +2996,13 @@ and u_parentref st =
     match tag with
     | 0 -> ParentNone
     | 1 -> u_tcref st |> Parent
+    | _ -> ufailwith st "u_attribkind"
+
+and u_parentref_new st =
+    let tag = u_byte st
+    match tag with
+    | 0 -> ParentNone
+    | 1 -> u_entity_ref st |> Parent
     | _ -> ufailwith st "u_attribkind"
 
 and u_attribkind st =
@@ -3116,7 +3128,7 @@ and u_ValData_new st =
         (u_option u_ValReprInfo)
         u_string
         u_access
-        u_parentref
+        u_parentref_new
         (u_option u_const)
         (u_used_space1 u_xmldoc)
         st
@@ -3255,7 +3267,7 @@ and u_vref_new st : ValRef =
     let binding, nlr =
         u_tup2
             u_Val_new
-            u_nonlocal_val_ref_new
+            (u_non_null_slot u_nonlocal_val_ref_new)
             st
 
     {
