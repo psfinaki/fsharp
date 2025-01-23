@@ -2439,10 +2439,13 @@ and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
         | Some ty -> checkForInRefStructThisArg st ty
     p_option p_ty_new key.TypeForLinkage st
 
+
 and p_vref_new (x: ValRef) st =
-    match x with
-    | VRefLocal x    -> p_byte 0 st; p_local_item_ref "valref" st.ovals x st
-    | VRefNonLocal x -> p_byte 1 st; p_nonlocal_val_ref_new x st
+    p_tup2
+        p_Val_new
+        (p_non_null_slot p_nonlocal_val_ref_new)
+        (x.binding, x.nlr)
+        st
 
 and p_open_decl (x: OpenDeclaration) st =
     p_tup6
@@ -3205,11 +3208,16 @@ and u_nonlocal_val_ref_new st : NonLocalValOrMemberRef =
       ItemKey=ValLinkageFullKey({ MemberParentMangledName=b1; MemberIsOverride=b2;LogicalName=b3; TotalArgCount=c }, d) }
 
 and u_vref_new st : ValRef =
-    let tag = u_byte st
-    match tag with
-    | 0 -> u_local_item_ref st.ivals st |> VRefLocal
-    | 1 -> u_nonlocal_val_ref_new st |> VRefNonLocal
-    | _ -> ufailwith st "u_item_ref"
+    let binding, nlr =
+        u_tup2
+            u_Val_new
+            (u_non_null_slot u_nonlocal_val_ref_new)
+            st
+
+    {
+        binding = binding
+        nlr = nlr
+    }
 
 and u_open_decl st : OpenDeclaration =
     let target, range, modules, types, appliedScope, isOwnNamespace =
