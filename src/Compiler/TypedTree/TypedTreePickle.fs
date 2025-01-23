@@ -2239,7 +2239,7 @@ and p_parentref x st =
 and p_parentref_new x st =
     match x with
     | ParentNone -> p_byte 0 st
-    | Parent x -> p_byte 1 st; p_entity_ref x st
+    | Parent x -> p_byte 1 st; p_tcref_new x st
 
 and p_attribkind x st =
     match x with
@@ -2250,7 +2250,7 @@ and p_attrib (Attrib (a, b, c, d, e, _targets, f)) st = // AttributeTargets are 
     p_tup6 (p_tcref "attrib") p_attribkind (p_list p_attrib_expr) (p_list p_attrib_arg) p_bool p_dummy_range (a, b, c, d, e, f) st
 
 and p_attrib_new (Attrib (a, b, c, d, e, _targets, f)) st = // AttributeTargets are not preserved
-    p_tup6 (p_entity_ref) p_attribkind (p_list p_attrib_expr_new) (p_list p_attrib_arg_new) p_bool p_dummy_range (a, b, c, d, e, f) st
+    p_tup6 (p_tcref_new) p_attribkind (p_list p_attrib_expr_new) (p_list p_attrib_arg_new) p_bool p_dummy_range (a, b, c, d, e, f) st
 
 and p_attrib_expr (AttribExpr(e1, e2)) st =
     p_tup2 p_expr p_expr (e1, e2) st
@@ -2270,7 +2270,7 @@ and p_member_info (x: ValMemberInfo) st =
         (x.ApparentEnclosingEntity, x.MemberFlags, x.ImplementedSlotSigs, x.IsImplemented) st
 
 and p_member_info_new (x: ValMemberInfo) st =
-    p_tup4 (p_entity_ref) p_MemberFlags (p_list p_slotsig) p_bool
+    p_tup4 (p_tcref_new) p_MemberFlags (p_list p_slotsig) p_bool
         (x.ApparentEnclosingEntity, x.MemberFlags, x.ImplementedSlotSigs, x.IsImplemented) st
 
 and p_tycon_objmodel_kind x st =
@@ -2417,7 +2417,7 @@ and p_non_null_slot f (x: 'a | null) st =
     | null -> p_byte 0 st
     | h -> p_byte 1 st; f h st
 
-and p_entity_ref (x: ModuleOrNamespaceRef) st =
+and p_tcref_new (x: ModuleOrNamespaceRef) st =
     p_tup2
         (p_non_null_slot p_entity_spec_new)
         p_nleref
@@ -2428,7 +2428,7 @@ and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
     let a = nlv.EnclosingEntity
     let key = nlv.ItemKey
     let pkey = key.PartialKey
-    p_entity_ref a st
+    p_tcref_new a st
     p_option p_string pkey.MemberParentMangledName st
     p_bool pkey.MemberIsOverride st
     p_string pkey.LogicalName st
@@ -2449,7 +2449,7 @@ and p_open_decl (x: OpenDeclaration) st =
     p_tup6
         p_syn_open_decl_target
         (p_option p_range)
-        (p_list p_entity_ref)
+        (p_list p_tcref_new)
         p_tys
         p_range
         p_bool
@@ -2496,7 +2496,7 @@ and p_ty_new (ty: TType) st : unit =
     | TType_app (tyconRef, typeInstantiation, nullness) ->
         p_byte 1 st
         p_tup3
-            p_entity_ref
+            p_tcref_new
             p_tys_new
             p_nullness
             (tyconRef, typeInstantiation, nullness)
@@ -2944,7 +2944,7 @@ and u_parentref_new st =
     let tag = u_byte st
     match tag with
     | 0 -> ParentNone
-    | 1 -> u_entity_ref st |> Parent
+    | 1 -> u_tcref_new st |> Parent
     | _ -> ufailwith st "u_attribkind"
 
 and u_attribkind st =
@@ -2959,7 +2959,7 @@ and u_attrib st : Attrib =
     Attrib(a, b, c, d, e, None, f)  // AttributeTargets are not preserved
 
 and u_attrib_new st : Attrib =
-    let a, b, c, d, e, f = u_tup6 u_entity_ref u_attribkind (u_list u_attrib_expr_new) (u_list u_attrib_arg_new) u_bool u_dummy_range st
+    let a, b, c, d, e, f = u_tup6 u_tcref_new u_attribkind (u_list u_attrib_expr_new) (u_list u_attrib_arg_new) u_bool u_dummy_range st
     Attrib(a, b, c, d, e, None, f)  // AttributeTargets are not preserved
 
 and u_attrib_expr st =
@@ -2986,7 +2986,7 @@ and u_member_info st : ValMemberInfo =
       IsImplemented=x5  }
 
 and u_member_info_new st : ValMemberInfo =
-    let x2, x3, x4, x5 = u_tup4 u_entity_ref u_MemberFlags (u_list u_slotsig) u_bool st
+    let x2, x3, x4, x5 = u_tup4 u_tcref_new u_MemberFlags (u_list u_slotsig) u_bool st
     { ApparentEnclosingEntity=x2
       MemberFlags=x3
       ImplementedSlotSigs=x4
@@ -3184,7 +3184,7 @@ and u_non_null_slot f st =
     | n -> ufailwith st ("u_option: found number " + string n)
 
 
-and u_entity_ref st : EntityRef =
+and u_tcref_new st : EntityRef =
     let (binding: NonNullSlot<Entity>), nlr = 
         u_tup2
             (u_non_null_slot u_entity_spec_new)
@@ -3196,7 +3196,7 @@ and u_entity_ref st : EntityRef =
     }
 
 and u_nonlocal_val_ref_new st : NonLocalValOrMemberRef =
-    let a = u_entity_ref st
+    let a = u_tcref_new st
     let b1 = u_option u_string st
     let b2 = u_bool st
     let b3 = u_string st
@@ -3217,7 +3217,7 @@ and u_open_decl st : OpenDeclaration =
         u_tup6
             u_syn_open_decl_target
             (u_option u_range)
-            (u_list u_entity_ref)
+            (u_list u_tcref_new)
             u_tys
             u_range
             u_bool
@@ -3279,7 +3279,7 @@ and u_ty_new st : TType =
     | 1 ->
         let tyconRef, typeInstantiation, nullness =
             u_tup3
-                u_entity_ref
+                u_tcref_new
                 u_tys_new
                 u_nullness
                 st
