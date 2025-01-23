@@ -3011,7 +3011,7 @@ and u_ValData st =
         u_ranges
         u_ty
         u_int64
-        (u_option u_member_info_new)
+        (u_option u_member_info)
         u_attribs
         (u_option u_ValReprInfo)
         u_string
@@ -3055,7 +3055,7 @@ and u_ValData_new st =
         u_ranges
         u_ty_new
         u_int64
-        (u_option u_member_info)
+        (u_option u_member_info_new)
         u_attribs_new
         (u_option u_ValReprInfo)
         u_string
