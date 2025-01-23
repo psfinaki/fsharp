@@ -2517,10 +2517,11 @@ and p_ty_new (ty: TType) st : unit =
 
     | TType_var (typar, nullness) -> 
         p_byte 3 st
-        p_tup2
+        p_tup3
             p_tpref
             p_nullness
-            (typar, nullness)
+            (p_option p_ty_new)
+            (typar, nullness, typar.Solution)
             st
 
     | TType_forall (tps, r) ->
@@ -3315,11 +3316,14 @@ and u_ty_new st : TType =
         TType_fun (domainType, rangeType, nullness)
 
     | 3 ->
-        let (typar, nullness) =
-            u_tup2
+        let (typar, nullness, solution) =
+            u_tup3
                 u_tpref
                 u_nullness
+                (u_option u_ty_new)
                 st
+        
+        typar.typar_solution <- solution
         TType_var (typar, nullness)
 
     | 4 ->
