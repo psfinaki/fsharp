@@ -2488,8 +2488,6 @@ and p_nullness (nullness: Nullness) st =
 and p_typars = p_list p_tpref
 
 and p_ty_new (ty: TType) st : unit =
-    //let ty = stripTyparEqns ty
-
     match ty with
     | TType_tuple (tupInfo, l) ->
         p_byte 0 st
@@ -2502,7 +2500,7 @@ and p_ty_new (ty: TType) st : unit =
     | TType_app (tyconRef, typeInstantiation, nullness) ->
         p_byte 1 st
         p_tup3
-            p_tcref_new
+            (p_tcref "app")
             p_tys_new
             p_nullness
             (tyconRef, typeInstantiation, nullness)
@@ -3301,7 +3299,7 @@ and u_ty_new st : TType =
     | 1 ->
         let tyconRef, typeInstantiation, nullness =
             u_tup3
-                u_tcref_new
+                u_tcref
                 u_tys_new
                 u_nullness
                 st
