@@ -725,6 +725,15 @@ let lookup_nleref st nlerefTab x = lookup_uniq st nlerefTab x
 let u_encoded_nleref = u_tup2 u_int (u_array u_int)
 let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
 
+let u_nleref_new st = 
+    let ccu, strings =
+        u_tup2
+            u_ccuref
+            (u_array u_string)
+            st
+
+    NonLocalEntityRef (ccu, strings)
+
 let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef) =
 #if !NO_TYPEPROVIDERS
     // Remap references to statically-linked Entity nodes in provider-generated entities to point to the current assembly.
@@ -748,6 +757,14 @@ let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef)
 
 let p_encoded_nleref = p_tup2 p_int (p_array p_int)
 let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.oscope x) st
+
+let p_nleref_new (x: NonLocalEntityRef) st =
+    let (NonLocalEntityRef (ccu, strings)) = x
+    p_tup2
+        p_ccuref
+        (p_array p_string)
+        (ccu, strings)
+        st
 
 // Simple types are types like "int", represented as TType(Ref_nonlocal(..., "int"), []).
 // A huge number of these occur in pickled F# data, so make them unique.
@@ -2412,17 +2429,10 @@ and p_syn_open_decl_target (x: SynOpenDeclTarget) st =
             (typeName, range)
             st
 
-and p_non_null_slot f (x: 'a | null) st =
+and p_tcref_new (x: EntityRef) st =
     match x with
-    | null -> p_byte 0 st
-    | h -> p_byte 1 st; f h st
-
-and p_tcref_new (x: ModuleOrNamespaceRef) st =
-    p_tup2
-        (p_non_null_slot p_entity_spec_new)
-        p_nleref
-        (x.binding, x.nlr)
-        st
+    | ERefLocal x -> p_byte 0 st; p_local_item_ref "tcref" st.oentities x st
+    | ERefNonLocal x -> p_byte 1 st; p_nleref_new x st
 
 and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
     let a = nlv.EnclosingEntity
@@ -3176,24 +3186,12 @@ and u_syn_open_decl_target st : SynOpenDeclTarget =
     | _ ->
         ufailwith st (nameof u_syn_open_decl_target)
 
-and u_non_null_slot f st =
+and u_tcref_new st : EntityRef =
     let tag = u_byte st
     match tag with
-    | 0 -> Unchecked.defaultof<_>
-    | 1 -> f st
-    | n -> ufailwith st ("u_option: found number " + string n)
-
-
-and u_tcref_new st : EntityRef =
-    let (binding: NonNullSlot<Entity>), nlr = 
-        u_tup2
-            (u_non_null_slot u_entity_spec_new)
-            u_nleref
-            st
-    {
-        binding = binding
-        nlr = nlr
-    }
+    | 0 -> u_local_item_ref st.ientities  st |> ERefLocal
+    | 1 -> u_nleref_new                     st |> ERefNonLocal
+    | _ -> ufailwith st "u_item_ref"
 
 and u_nonlocal_val_ref_new st : NonLocalValOrMemberRef =
     let a = u_tcref_new st
