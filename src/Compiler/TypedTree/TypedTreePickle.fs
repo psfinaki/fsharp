@@ -537,6 +537,11 @@ let p_option f x st =
     | None -> p_byte 0 st
     | Some h -> p_byte 1 st; f h st
 
+let p_non_null_slot f (x: 'a | null) st =
+    match x with
+    | null -> p_byte 0 st
+    | h -> p_byte 1 st; f h st
+
 // Pickle lazy values in such a way that they can, in some future F# compiler version, be read back
 // lazily. However, a lazy reader is not used in this version because the value may contain the definitions of some
 // OSGN nodes.
@@ -647,6 +652,13 @@ let u_option f st =
     match tag with
     | 0 -> None
     | 1 -> Some (f st)
+    | n -> ufailwith st ("u_option: found number " + string n)
+
+let u_non_null_slot f st =
+    let tag = u_byte st
+    match tag with
+    | 0 -> Unchecked.defaultof<_>
+    | 1 -> f st
     | n -> ufailwith st ("u_option: found number " + string n)
 
 let u_lazy u st =
@@ -2499,11 +2511,12 @@ and p_ty_new (ty: TType) st : unit =
 
     | TType_app (tyconRef, typeInstantiation, nullness) ->
         p_byte 1 st
-        p_tup3
+        p_tup4
             (p_tcref "app")
             p_tys_new
             p_nullness
-            (tyconRef, typeInstantiation, nullness)
+            (p_non_null_slot p_entity_spec_new)
+            (tyconRef, typeInstantiation, nullness, tyconRef.binding)
             st
 
     | TType_fun (domainType, rangeType, nullness) ->
@@ -3298,12 +3311,15 @@ and u_ty_new st : TType =
         TType_tuple (tupInfo, l)
 
     | 1 ->
-        let tyconRef, typeInstantiation, nullness =
-            u_tup3
+        let tyconRef, typeInstantiation, nullness, binding =
+            u_tup4
                 u_tcref
                 u_tys_new
                 u_nullness
+                (u_non_null_slot u_entity_spec_new)
                 st
+        
+        tyconRef.binding <- binding
         TType_app (tyconRef, typeInstantiation, nullness)
 
     | 2 ->

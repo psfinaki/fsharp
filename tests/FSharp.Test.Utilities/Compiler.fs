@@ -828,7 +828,7 @@ module rec Compiler =
 
             let outputFilePath = Path.ChangeExtension(sourceFilePath, ".dll")
             let err, _, _ = rawCompile outputFilePath false fs.Options TargetFramework.Current [ fs.Source ]
-            let diagnostics = err |> fromFSharpDiagnostic
+            let diagnostics = err |> Array.where (fun d -> d.Severity <> FSharpDiagnosticSeverity.Warning) |> fromFSharpDiagnostic
 
             let result = {
                 OutputPath    = Some outputFilePath
@@ -840,7 +840,7 @@ module rec Compiler =
                 Compilation   = cUnit
             }
 
-            if err.Length = 0 then
+            if diagnostics.Length = 0 then
                 CompilationResult.Success result
             else
                 CompilationResult.Failure result
