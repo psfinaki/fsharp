@@ -2571,7 +2571,15 @@ and p_expr_new (expr: Expr) st =
     match expr with
     | Expr.Link e -> p_byte 0 st; p_expr_new e.Value st
     | Expr.Const (x, m, ty)              -> p_byte 1 st; p_tup3 p_const p_dummy_range p_ty_new (x, m, ty) st
-    | Expr.Val (a, b, m)                 -> p_byte 2 st; p_tup3 p_vref_new p_vrefFlags p_dummy_range (a, b, m) st
+    | Expr.Val (a, b, m)                 -> 
+        p_byte 2 st
+        p_tup4 
+            p_vref_new 
+            p_vrefFlags 
+            p_dummy_range 
+            (p_non_null_slot p_Val_new)
+            (a, b, m, a.binding) 
+            st
     | Expr.Op (a, b, c, d)                 -> p_byte 3 st; p_tup4 p_op  p_tys_new p_exprs_new p_dummy_range (a, b, c, d) st
     | Expr.Sequential (a, b, c, d)      -> p_byte 4 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
     | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 5 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
@@ -3385,10 +3393,13 @@ and u_expr_new st : Expr =
            let b = u_dummy_range st
            let c = u_ty_new st
            Expr.Const (a, b, c)
-    | 2 -> let a = u_vref_new st
-           let b = u_vrefFlags st
-           let c = u_dummy_range st
-           let expr = Expr.Val (a, b, c)
+    | 2 -> let valRef = u_vref_new st
+           let flags = u_vrefFlags st
+           let range = u_dummy_range st
+           let binding = (u_non_null_slot u_Val_new) st
+
+           valRef.binding <- binding
+           let expr = Expr.Val (valRef, flags, range)
            expr
     | 3 -> let a = u_op st
            let b = u_tys_new st
