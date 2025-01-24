@@ -2319,6 +2319,7 @@ and p_ValData_new x st =
     p_ranges (x.ValReprInfo |> Option.map (fun _ -> x.val_range, x.DefinitionRange)) st
 
     p_ty_new x.val_type st
+    p_stamp x.val_stamp st
 
     p_int64 x.val_flags.PickledBits st
     p_option p_member_info x.MemberInfo st
@@ -2521,12 +2522,9 @@ and p_ty_new (ty: TType) st : unit =
 
     | TType_fun (domainType, rangeType, nullness) ->
         p_byte 2 st
-        p_tup3
-            p_ty_new
-            p_ty_new
-            p_nullness
-            (domainType, rangeType, nullness)
-            st
+        p_ty_new domainType st
+        p_ty_new rangeType st
+        p_nullness nullness st
 
     | TType_var (typar, nullness) -> 
         p_byte 3 st
@@ -2584,7 +2582,14 @@ and p_expr_new (expr: Expr) st =
     | Expr.Sequential (a, b, c, d)      -> p_byte 4 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
     | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 5 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
     | Expr.TyLambda (_, b, c, d, e)        -> p_byte 6 st; p_tup4 p_tyar_specs p_expr_new p_dummy_range p_ty_new (b, c, d, e) st
-    | Expr.App (a1, a2, b, c, d)           -> p_byte 7 st; p_tup5 p_expr_new p_ty_new p_tys_new p_exprs_new p_dummy_range (a1, a2, b, c, d) st
+    | Expr.App (funcExpr, formalType, typeArgs, args, range)           -> 
+        p_byte 7 st
+        
+        p_expr_new funcExpr st
+        p_ty_new formalType st
+        p_tys_new typeArgs st
+        p_exprs_new args st
+        p_dummy_range range st
     | Expr.LetRec (a, b, c, _)            -> p_byte 8 st; p_tup3 p_binds p_expr_new p_dummy_range (a, b, c) st
     | Expr.Let (a, b, c, _)               -> p_byte 9 st; p_tup3 p_bind p_expr_new p_dummy_range (a, b, c) st
     | Expr.Match (_, a, b, c, d, e)         -> p_byte 10 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty_new (a, b, c, d, e) st
@@ -3058,12 +3063,13 @@ and u_ValData st =
 
 
 and u_ValData_new st =
-    let x1, x1z, x1a, x2, x4, x8, x9, x10, x12, x13, x13b, x14, x15 =
-      u_tup13
+    let x1, x1z, x1a, x2, stamp, x4, x8, x9, x10, x12, x13, x13b, x14, x15 =
+      u_tup14
         u_string
         (u_option u_string)
         u_ranges
         u_ty_new
+        u_stamp
         u_int64
         (u_option u_member_info)
         u_attribs
@@ -3078,7 +3084,7 @@ and u_ValData_new st =
     { val_logical_name = x1
       val_range        = (match x1a with None -> range0 | Some(a, _) -> a)
       val_type         = x2
-      val_stamp        = newStamp()
+      val_stamp        = stamp
       val_flags        = ValFlags x4
       val_opt_data     =
           match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
