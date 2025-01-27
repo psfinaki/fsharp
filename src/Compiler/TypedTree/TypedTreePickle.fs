@@ -447,6 +447,12 @@ let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (s
   let x14 = p14 st in let x15 = p15 st in let x16 = p16 st in let x17 = p17 st in
   (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17)
 
+let inline u_tup18 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 (st: ReaderState) =
+  let a = p1 st in let b = p2 st in let c = p3 st in let d = p4 st in
+  let e = p5 st in let f = p6 st in let x7 = p7 st in let x8 = p8 st in
+  let x9 = p9 st in let x10 = p10 st in let x11 = p11 st in let x12 = p12 st in let x13 = p13 st in
+  let x14 = p14 st in let x15 = p15 st in let x16 = p16 st in let x17 = p17 st in let x18 = p18 st in
+  (a, b, c, d, e, f, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle operations for observably shared graph nodes
@@ -2142,6 +2148,7 @@ and p_entity_spec_data_new (x: Entity) st =
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
     p_range  x.entity_range st
+    p_stamp x.entity_stamp st
     p_option p_pubpath x.entity_pubpath st
     p_access x.Accessibility st
     p_access  x.TypeReprAccessibility st
@@ -2829,12 +2836,13 @@ and u_entity_spec_data st : Entity =
     }
 
 and u_entity_spec_data_new st : Entity =
-    let x1, x2a, x2b, x2c, x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
-       u_tup17
+    let x1, x2a, x2b, x2c, stamp, x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
+       u_tup18
           u_tyar_specs
           u_string
           (u_option u_string)
           u_range
+          u_stamp
           (u_option u_pubpath)
           (u_tup2 u_access u_access)
           u_attribs
@@ -2854,7 +2862,7 @@ and u_entity_spec_data_new st : Entity =
     let x11 = x11 &&& ~~~EntityFlags.ReservedBitForPickleFormatTyconReprFlag
 
     { entity_typars=LazyWithContext.NotLazy x1
-      entity_stamp=newStamp()
+      entity_stamp=stamp
       entity_logical_name=x2a
       entity_range=x2c
       entity_pubpath=x3
