@@ -10,9 +10,15 @@ open Xunit
 open TestFramework
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
-type TypeInfo() =
+type Recompilation() =
 
-    let test (code: string) =
+    [<Theory>]
+    [<InlineData "">]
+    [<InlineData "()">]
+    [<InlineData "42">]
+    [<InlineData "exit 0">]
+    [<InlineData "printfn \"Hello world!\"">]
+    let ``Recompiles using restored TC info`` (code: string) =
         let tempPath = $"{getTemporaryFileName()}.fsx"
         
         File.WriteAllText(tempPath, code) 
@@ -35,23 +41,3 @@ type TypeInfo() =
             |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
         Assert.Equal(r1, r2)
-
-    [<Fact>]
-    let ``Empty file``() =
-        test ""
-
-    [<Fact>]
-    let ``Empty function``() =
-        test "()"
-        
-    [<Fact>]
-    let ``42``() =
-        test "42"
-        
-    [<Fact>]
-    let ``exit``() =
-        test "exit 0"
-
-    [<Fact>]
-    let ``hello world``() =
-        test "printfn \"Hello world!\""
