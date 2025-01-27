@@ -1112,54 +1112,6 @@ let p_ILBasicType x st =
 let p_ILVolatility x st = p_int (match x with Volatile -> 0 | Nonvolatile -> 1) st
 let p_ILReadonly   x st = p_int (match x with ReadonlyAddress -> 0 | NormalAddress -> 1) st
 
-//let u_ILTypeDef st =
-//    let name,
-//        attributes,
-//        layout,
-//        implements,
-//        genericParams,
-//        extends,
-//        methods,
-//        nestedTypes,
-//        fields,
-//        methodImpls,
-//        events,
-//        properties,
-//        securityDecls,
-//        customAttrs =
-//            u_tup14
-//                u_string
-//                u_type_attributes
-//                u_layout
-//                (u_list u_interface_impl)
-//                u_generic_params
-//                (u_option u_ILType)
-//                u_ILMethodDefs
-//                u_ILTypeDefs
-//                u_ILFiedsDefs
-//                u_ILMethodImpls
-//                u_ILEventDefs
-//                u_ILPropertyDefs
-//                u_ILSecurityDecls
-//                u_ILAttributesStored
-//                st
-    
-    //ILTypeDef(
-    //    name,
-    //    attributes,
-    //    layout,
-    //    implements,
-    //    genericParams,
-    //    extends,
-    //    methods,
-    //    nestedTypes,
-    //    fields,
-    //    methodImpls,
-    //    events,
-    //    properties,
-    //    securityDecls,
-    //    customAttrs)
-
 let u_ILMethodRef st =
     let x1, x2, x3, x4, x5, x6 = u_tup6 u_ILTypeRef u_ILCallConv u_int u_string u_ILTypes u_ILType st
     ILMethodRef.Create(x1, x2, x4, x3, x5, x6)
@@ -2117,9 +2069,6 @@ let rec p_tycon_repr x st =
     | TILObjectRepr (TILObjectReprData (scope, nesting, td)) ->
         p_byte 5 st
         false
-        //p_ILScopeRef scope st
-        //p_list p_typedef nesting st
-        //p_typedef td st
 
 and p_tycon_objmodel_data x st =
   p_tycon_objmodel_kind x.fsobjmodel_kind st
