@@ -186,7 +186,6 @@ type CachingDriver(tcConfig: TcConfig) =
 
         writeThisTcData thisTcData 
 
-        ///
         let tcInfo =
             {
                 MainMethodAttrs = topAttrs.mainMethodAttrs
@@ -195,11 +194,13 @@ type CachingDriver(tcConfig: TcConfig) =
                 DeclaredImpls = declaredImpls
             }
 
-        // will need to pass results further somewhere
-        let typecheckingDataResources =
-            EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)        
+        let encodedData = EncodeTypecheckingData(
+            tcConfig,
+            tcGlobals,
+            tcState.Ccu,
+            outfile,
+            false,
+            tcInfo)        
 
-        let resource = typecheckingDataResources[0].GetBytes().ToArray()
+        let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes("tc", resource)
-
-        ()
