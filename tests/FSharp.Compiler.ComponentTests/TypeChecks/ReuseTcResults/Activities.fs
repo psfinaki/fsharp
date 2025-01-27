@@ -5,6 +5,7 @@ open System.Diagnostics
 open System.IO
 
 open FSharp.Compiler.Diagnostics
+open FSharp.Test
 open FSharp.Test.Compiler
 
 open Xunit
@@ -12,6 +13,7 @@ open Xunit
 open TestFramework
 
 
+[<Collection(nameof NotThreadSafeResourceCollection)>]
 type Activities() =
 
     let tempPath = $"{getTemporaryFileName()}.fsx"
