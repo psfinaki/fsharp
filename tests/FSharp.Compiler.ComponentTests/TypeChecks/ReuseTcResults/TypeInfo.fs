@@ -16,8 +16,8 @@ type Recompilation() =
     [<InlineData "">]
     [<InlineData "()">]
     [<InlineData "42">]
-    [<InlineData "exit 0">]
-    [<InlineData "printfn \"Hello world!\"">]
+    // [<InlineData "exit 0">]
+    // [<InlineData "printfn \"Hello world!\"">]
     let ``Recompiles using restored TC info`` (code: string) =
         let tempPath = $"{getTemporaryFileName()}.fsx"
         

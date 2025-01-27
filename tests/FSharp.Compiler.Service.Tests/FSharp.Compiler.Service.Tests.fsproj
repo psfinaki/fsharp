@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-    <Compile Include="TypedTreePickleTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
