@@ -200,7 +200,8 @@ type CachingDriver(tcConfig: TcConfig) =
             tcState.Ccu,
             outfile,
             false,
-            tcInfo)        
+            tcInfo
+        )        
 
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes("tc", resource)

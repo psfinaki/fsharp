@@ -166,28 +166,29 @@ let TypeCheck
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
         let cachingDriver = CachingDriver(tcConfig)
-        if cachingDriver.CanReuseTcResults(inputs) then
-            let results = cachingDriver.ReuseTcResults inputs tcInitialState
-            results
-        else
-            let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
-                CheckClosedInputSet(
-                    ctok,
-                    diagnosticsLogger.CheckForErrors,
-                    tcConfig,
-                    tcImports,
-                    tcGlobals,
-                    None,
-                    tcInitialState,
-                    eagerFormat,
-                    inputs
-                )
+        let results =
+            if cachingDriver.CanReuseTcResults(inputs) then
+                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile = cachingDriver.ReuseTcResults inputs tcInitialState
+                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+            else
+                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
+                    CheckClosedInputSet(
+                        ctok,
+                        diagnosticsLogger.CheckForErrors,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        None,
+                        tcInitialState,
+                        eagerFormat,
+                        inputs
+                    )
 
-            let results = tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+                cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
             
-            cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
-            
-            results
+                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+
+        results
     with exn ->
         errorRecovery exn rangeStartup
         exiter.Exit 1
@@ -683,6 +684,8 @@ let main1
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
 
+    let stamp = CompilerGlobalState.stampCount
+    CompilerGlobalState.stampCount <- stamp
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> Async.RunImmediate

@@ -373,7 +373,8 @@ let EncodeTypecheckingData (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile
             outfile, 
             isIncrementalBuild, 
             generatedCcu,
-            tcInfo)
+            tcInfo
+        )
 
     let resources =
         [
@@ -1443,7 +1444,9 @@ and [<Sealed>] TcImports
             RequireTcImportsLock(tcitok, ccuInfos)
 
             match importsBase with
-            | Some importsBase -> List.append (importsBase.GetImportedAssemblies()) ccuInfos
+            | Some importsBase -> 
+                let importedAssemblies = importsBase.GetImportedAssemblies()
+                ccuInfos |> List.append importedAssemblies
             | None -> ccuInfos)
 
     member _.GetCcusExcludingBase() =
@@ -1454,7 +1457,9 @@ and [<Sealed>] TcImports
 
     member tcImports.GetCcusInDeclOrder() =
         CheckDisposed()
-        List.map (fun x -> x.FSharpViewOfMetadata) (tcImports.GetImportedAssemblies())
+        let importedAssemblies = tcImports.GetImportedAssemblies()
+        let fsharpViewsOfMetadata = importedAssemblies |> List.map (fun x -> x.FSharpViewOfMetadata)
+        fsharpViewsOfMetadata
 
     // This is the main "assembly reference --> assembly" resolution routine.
     member tcImports.FindCcuInfo(ctok, m, assemblyName, lookupOnly) =

@@ -1750,12 +1750,30 @@ let p_tyar_spec_data (x: Typar) st =
       p_xmldoc
       (x.typar_id, x.Attribs, int64 x.typar_flags.PickledBits, x.Constraints, x.XmlDoc) st
 
+let p_tyar_spec_data_new (x: Typar) st =
+    p_tup6
+      p_ident
+      p_attribs
+      p_int64
+      p_tyar_constraints
+      p_xmldoc
+      p_stamp
+      (x.typar_id, x.Attribs, int64 x.typar_flags.PickledBits, x.Constraints, x.XmlDoc, x.Stamp) st
+
 let p_tyar_spec (x: Typar) st =
     //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
     if x.IsFromError then warning(Error((0, "p_tyar_spec: from error"), x.Range))
     p_osgn_decl st.otypars p_tyar_spec_data x st
 
+let p_tyar_spec_new (x: Typar) st =
+    //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
+    if x.IsFromError then warning(Error((0, "p_tyar_spec: from error"), x.Range))
+    p_osgn_decl st.otypars p_tyar_spec_data_new x st
+
+
 let p_tyar_specs = (p_list p_tyar_spec)
+
+let p_tyar_specs_new = (p_list p_tyar_spec_new)
 
 let u_tyar_spec_data st =
     let a, c, d, e, g = u_tup5 u_ident u_attribs u_int64 u_tyar_constraints u_xmldoc st
@@ -1769,10 +1787,27 @@ let u_tyar_spec_data st =
         | doc, [], [] when doc.IsEmpty -> None
         | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e; typar_attribs = c;typar_is_contravariant = false } }
 
+let u_tyar_spec_data_new st =
+    let a, c, d, e, g, stamp = u_tup6 u_ident u_attribs u_int64 u_tyar_constraints u_xmldoc u_stamp st
+    { typar_id=a
+      typar_stamp=stamp
+      typar_flags=TyparFlags(int32 d)
+      typar_solution=None
+      typar_astype= Unchecked.defaultof<_>
+      typar_opt_data=
+        match g, e, c with
+        | doc, [], [] when doc.IsEmpty -> None
+        | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e; typar_attribs = c;typar_is_contravariant = false } }
+
 let u_tyar_spec st =
     u_osgn_decl st.itypars u_tyar_spec_data st
 
+let u_tyar_spec_new st =
+    u_osgn_decl st.itypars u_tyar_spec_data_new st
+
 let u_tyar_specs = (u_list u_tyar_spec)
+
+let u_tyar_specs_new = (u_list u_tyar_spec_new)
 
 let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
     let ty = stripTyparEqns ty
@@ -2144,7 +2179,7 @@ and p_entity_spec_data (x: Entity) st =
         p_space 1 () st
 
 and p_entity_spec_data_new (x: Entity) st =
-    p_tyar_specs (x.entity_typars.Force(x.entity_range)) st
+    p_tyar_specs_new (x.entity_typars.Force(x.entity_range)) st
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
     p_range  x.entity_range st
@@ -2565,7 +2600,7 @@ and p_expr_new (expr: Expr) st =
     | Expr.Op (a, b, c, d)                 -> p_byte 3 st; p_tup4 p_op  p_tys_new p_exprs_new p_dummy_range (a, b, c, d) st
     | Expr.Sequential (a, b, c, d)      -> p_byte 4 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
     | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 5 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
-    | Expr.TyLambda (_, b, c, d, e)        -> p_byte 6 st; p_tup4 p_tyar_specs p_expr_new p_dummy_range p_ty_new (b, c, d, e) st
+    | Expr.TyLambda (_, b, c, d, e)        -> p_byte 6 st; p_tup4 p_tyar_specs_new p_expr_new p_dummy_range p_ty_new (b, c, d, e) st
     | Expr.App (funcExpr, formalType, typeArgs, args, range)           -> 
         p_byte 7 st
         
@@ -2579,7 +2614,7 @@ and p_expr_new (expr: Expr) st =
     | Expr.Match (_, a, b, c, d, e)         -> p_byte 10 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty_new (a, b, c, d, e) st
     | Expr.Obj (_, b, c, d, e, f, g)       -> p_byte 11 st; p_tup6 p_ty_new (p_option p_Val) p_expr_new p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
     | Expr.StaticOptimization (a, b, c, d) -> p_byte 12 st; p_tup4 p_constraints p_expr_new p_expr_new p_dummy_range (a, b, c, d) st
-    | Expr.TyChoose (a, b, c)            -> p_byte 13 st; p_tup3 p_tyar_specs p_expr_new p_dummy_range (a, b, c) st
+    | Expr.TyChoose (a, b, c)            -> p_byte 13 st; p_tup3 p_tyar_specs_new p_expr_new p_dummy_range (a, b, c) st
     | Expr.Quote (ast, _, _, m, ty)         -> p_byte 14 st; p_tup3 p_expr_new p_dummy_range p_ty_new (ast, m, ty) st
     | Expr.WitnessArg (traitInfo, m) -> p_byte 15 st; p_trait traitInfo st; p_dummy_range m st
     | Expr.DebugPoint (_, innerExpr) -> 
@@ -2866,7 +2901,7 @@ and u_entity_spec_data st : Entity =
 and u_entity_spec_data_new st : Entity =
     let x1, x2a, x2b, x2c, stamp, x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
        u_tup18
-          u_tyar_specs
+          u_tyar_specs_new
           u_string
           (u_option u_string)
           u_range
@@ -3437,7 +3472,7 @@ and u_expr_new st : Expr =
            let d = u_dummy_range st
            let e = u_ty_new st
            Expr.Lambda (newUnique(), a0, b0, b1, c, d, e)
-    | 6  -> let b = u_tyar_specs st
+    | 6  -> let b = u_tyar_specs_new st
             let c = u_expr_new st
             let d = u_dummy_range st
             let e = u_ty_new st
@@ -3475,7 +3510,7 @@ and u_expr_new st : Expr =
             let c = u_expr_new st
             let d = u_dummy_range st
             Expr.StaticOptimization (a, b, c, d)
-    | 13 -> let a = u_tyar_specs st
+    | 13 -> let a = u_tyar_specs_new st
             let b = u_expr_new st
             let c = u_dummy_range st
             Expr.TyChoose (a, b, c)
