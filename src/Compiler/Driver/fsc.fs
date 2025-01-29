@@ -489,6 +489,8 @@ let main1
         disposables: DisposablesTracker
     ) =
 
+    CompilerGlobalState.stampCount <- 0L
+
     // See Bug 735819
     let lcidFromCodePage =
         let thread = Thread.CurrentThread
@@ -684,8 +686,6 @@ let main1
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
 
-    let stamp = CompilerGlobalState.stampCount
-    CompilerGlobalState.stampCount <- stamp
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> Async.RunImmediate
