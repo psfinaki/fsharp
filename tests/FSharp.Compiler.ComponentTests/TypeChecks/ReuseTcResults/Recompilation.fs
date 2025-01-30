@@ -29,16 +29,16 @@ type Recompilation() =
             |> withOptions [ "--compressmetadata-" ]
             |> withOptions [ "--optimize-" ]
 
-        let r1 =
+        let expected =
             cUnit
             |> compileExisting
             |> shouldSucceed
             |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
-        let r2 =
+        let actual =
             cUnit
             |> compileExisting
             |> shouldSucceed
             |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
-        Assert.Equal(r1, r2)
+        Assert.Equal(expected, actual)

@@ -2394,6 +2394,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         OptimizeExprOp cenv env (op, tyargs, args, m)
 
     | Expr.App (f, fty, tyargs, argsl, m) -> 
+        let _oldapp = Expr.App(f, fty, tyargs, argsl, m)
         match expr with
         | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m) ->
             OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) 
@@ -2408,7 +2409,9 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         // eliminate uses of query
         match TryDetectQueryQuoteAndRun cenv expr with 
         | Some newExpr -> OptimizeExpr cenv env newExpr
-        | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
+        | None -> 
+            let newapp = OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
+            newapp
 
     | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, bodyTy) -> 
         let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)

@@ -2547,11 +2547,12 @@ and p_ty_new (ty: TType) st : unit =
 
     | TType_var (typar, nullness) -> 
         p_byte 3 st
-        p_tup3
+        p_tup4
             p_tpref
             p_nullness
             (p_option p_ty_new)
-            (typar, nullness, typar.Solution)
+            p_stamp
+            (typar, nullness, typar.Solution, typar.Stamp)
             st
 
     | TType_forall (tps, r) ->
@@ -2582,7 +2583,9 @@ and p_ty_new (ty: TType) st : unit =
              (anonInfo, l) 
              st
 
-and p_tys_new = p_list p_ty_new
+and p_tys_new l = 
+    let _count = l.Length
+    p_list p_ty_new l
 
 and p_expr_new (expr: Expr) st =
     match expr with
@@ -3393,14 +3396,16 @@ and u_ty_new st : TType =
         TType_fun (domainType, rangeType, nullness)
 
     | 3 ->
-        let (typar, nullness, solution) =
-            u_tup3
+        let (typar, nullness, solution, stamp) =
+            u_tup4
                 u_tpref
                 u_nullness
                 (u_option u_ty_new)
+                u_stamp
                 st
         
         typar.typar_solution <- solution
+        typar.typar_stamp <- stamp
         TType_var (typar, nullness)
 
     | 4 ->
