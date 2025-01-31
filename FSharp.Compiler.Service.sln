@@ -18,6 +18,10 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fslex", "buildtools\fslex\f
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fsyacc", "buildtools\fsyacc\fsyacc.fsproj", "{D63BBEE6-DA15-44B6-95DC-CCC50737A441}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{89397FB2-D838-0C64-B856-01D0EFBAB2BA}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Benchmarks.Common", "tests\benchmarks\FSharp.Benchmarks.Common\FSharp.Benchmarks.Common.fsproj", "{8DBFB6A6-494F-FE85-26F2-2C8C4501BBA4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +48,14 @@ Global
 		{D63BBEE6-DA15-44B6-95DC-CCC50737A441}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D63BBEE6-DA15-44B6-95DC-CCC50737A441}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D63BBEE6-DA15-44B6-95DC-CCC50737A441}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89397FB2-D838-0C64-B856-01D0EFBAB2BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89397FB2-D838-0C64-B856-01D0EFBAB2BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89397FB2-D838-0C64-B856-01D0EFBAB2BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89397FB2-D838-0C64-B856-01D0EFBAB2BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DBFB6A6-494F-FE85-26F2-2C8C4501BBA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DBFB6A6-494F-FE85-26F2-2C8C4501BBA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DBFB6A6-494F-FE85-26F2-2C8C4501BBA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DBFB6A6-494F-FE85-26F2-2C8C4501BBA4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

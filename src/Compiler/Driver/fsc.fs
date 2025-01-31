@@ -165,30 +165,45 @@ let TypeCheck
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
-        let cachingDriver = CachingDriver(tcConfig)
-        let results =
-            if cachingDriver.CanReuseTcResults(inputs) then
-                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile = cachingDriver.ReuseTcResults inputs tcInitialState
-                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
-            else
-                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
-                    CheckClosedInputSet(
-                        ctok,
-                        diagnosticsLogger.CheckForErrors,
-                        tcConfig,
-                        tcImports,
-                        tcGlobals,
-                        None,
-                        tcInitialState,
-                        eagerFormat,
-                        inputs
-                    )
 
-                cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
+        if tcConfig.reuseTcResults = ReuseTcResults.On then
+            let cachingDriver = CachingDriver(tcConfig)
+            let results =
+                if cachingDriver.CanReuseTcResults(inputs) then
+                    let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile = cachingDriver.ReuseTcResults inputs tcInitialState
+                    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+                else
+                    let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
+                        CheckClosedInputSet(
+                            ctok,
+                            diagnosticsLogger.CheckForErrors,
+                            tcConfig,
+                            tcImports,
+                            tcGlobals,
+                            None,
+                            tcInitialState,
+                            eagerFormat,
+                            inputs
+                        )
+
+                    cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
             
-                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+                    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
-        results
+            results
+
+        else
+            CheckClosedInputSet(
+                    ctok,
+                    diagnosticsLogger.CheckForErrors,
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    None,
+                    tcInitialState,
+                    eagerFormat,
+                    inputs)
+
     with exn ->
         errorRecovery exn rangeStartup
         exiter.Exit 1
