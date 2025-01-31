@@ -34,61 +34,69 @@ type ReuseTcResultsBenchmarks() =
 
     [<Benchmark>]
     member this.NoReuse() = 
-        let tempPath = $"{getTemporaryFileName()}.fsx"
-        let code = "printfn \"Hello world!\""
-        File.WriteAllText(tempPath, code) 
+        this.setup
+            { SyntheticProject.Create() with
+                SourceFiles =
+                    [
+                        { 
+                              Id = "Test"
+                              PublicVersion = 1
+                              InternalVersion = 1
+                              DependsOn = []
+                              FunctionName = "f"
+                              SignatureFile = No
+                              HasErrors = false
+                              Source = "module Test"
+                              ExtraSource = ""
+                              EntryPoint = false
+                              IsPhysicalFile = true 
+                        }
+                    ]
+                OtherOptions =
+                    [
+                        "--compressmetadata-"
+                        "--optimize-"
+                    ]
+                SkipInitialCheck = true
+                AutoAddModules = false
+            }
 
-        let options = [
-            "--compressmetadata-"
-            "--optimize-"
-        ]
-
-        let arguments =
-            [|
-                yield "fsc.exe"
-                yield! options
-                yield! [tempPath]
-            |]
-
-
-
-        let checker = FSharpChecker.Create()
-        let _r = 
-            checker.Compile(arguments)
-            |> Async.RunSynchronously
-
-        let _r = 
-            checker.Compile(arguments)
-            |> Async.RunSynchronously
-
-        true
+        this.Benchmark { 
+            compileWithFSC 
+            compileWithFSC 
+        }
 
     [<Benchmark>]
     member this.Reuse() =
-        let tempPath = $"{getTemporaryFileName()}.fsx"
-        let code = "printfn \"Hello world!\""
-        File.WriteAllText(tempPath, code) 
+        this.setup
+            { SyntheticProject.Create() with
+                SourceFiles =
+                    [
+                        { 
+                              Id = "Test"
+                              PublicVersion = 1
+                              InternalVersion = 1
+                              DependsOn = []
+                              FunctionName = "f"
+                              SignatureFile = No
+                              HasErrors = false
+                              Source = "module Test"
+                              ExtraSource = ""
+                              EntryPoint = false
+                              IsPhysicalFile = true 
+                        }
+                    ]
+                OtherOptions =
+                    [
+                        "--compressmetadata-"
+                        "--optimize-"
+                        "--reusetypecheckingresults"
+                    ]
+                SkipInitialCheck = true
+                AutoAddModules = false
+            }
 
-        let options = [
-            "--compressmetadata-"
-            "--optimize-"
-            "--reusetypecheckingresults"
-        ]
-
-        let arguments =
-            [|
-                yield "fsc.exe"
-                yield! options
-                yield! [tempPath]
-            |]
-
-        let checker = FSharpChecker.Create()
-        let _r = 
-            checker.Compile(arguments)
-            |> Async.RunSynchronously
-
-        let _r = 
-            checker.Compile(arguments)
-            |> Async.RunSynchronously
-
-        true
+        this.Benchmark { 
+            compileWithFSC 
+            compileWithFSC 
+        }
