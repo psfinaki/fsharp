@@ -2637,7 +2637,7 @@ and p_module_or_namespace_contents (x: ModuleOrNamespaceContents) st =
     | TMDefLet (binding, range) ->
         p_byte 2 st
         p_tup2
-            p_bind
+            p_bind_new
             p_range
             (binding, range)
             st
@@ -3545,7 +3545,7 @@ and u_module_or_namespace_contents st : ModuleOrNamespaceContents =
     | 2 ->
         let binding, range =
             u_tup2
-                u_bind
+                u_bind_new
                 u_range
                 st
         TMDefLet(binding, range)
@@ -3677,6 +3677,8 @@ and p_dtree_discrim x st =
 and p_target (TTarget(a, b, _)) st = p_tup2 p_Vals p_expr (a, b) st
 and p_bind (TBind(a, b, _)) st = p_tup2 p_Val p_expr (a, b) st
 
+and p_bind_new (TBind(a, b, _)) st = p_tup2 p_Val_new p_expr_new (a, b) st
+
 and p_lval_op_kind x st =
     p_byte (match x with LAddrOf _ -> 0 | LByrefGet -> 1 | LSet -> 2 | LByrefSet -> 3) st
 
@@ -3710,6 +3712,11 @@ and u_dtree_discrim st =
 and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, None))
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, DebugPointAtBinding.NoneAtSticky)
+
+and u_bind_new st = 
+    let a = u_Val_new st
+    let b = u_expr_new st
+    TBind(a, b, DebugPointAtBinding.NoneAtSticky)
 
 and u_lval_op_kind st =
     match u_byte st with
