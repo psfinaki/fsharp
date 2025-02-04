@@ -162,6 +162,8 @@ type ValFlags =
 
     member WithMakesNoCriticalTailcalls: ValFlags
 
+    member Flags: int64
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess>]
 type TyparKind =

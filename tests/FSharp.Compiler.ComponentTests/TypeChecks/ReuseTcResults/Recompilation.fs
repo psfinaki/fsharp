@@ -8,6 +8,7 @@ open FSharp.Test.Compiler
 open Xunit
 
 open TestFramework
+open System
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 type Recompilation() =
@@ -40,7 +41,8 @@ let rec f2 x = x""">]
     //[<InlineData "None">]
     //[<InlineData "let f = function | _ -> 42">]
     let ``Recompiles using restored TC info`` (code: string) =
-        let tempPath = $"{getTemporaryFileName()}.fsx"
+        let fileName = getTemporaryFileName()
+        let tempPath = $"{fileName}.fsx"
         
         File.WriteAllText(tempPath, code) 
 
@@ -62,4 +64,10 @@ let rec f2 x = x""">]
             |> shouldSucceed
             |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
-        Assert.Equal(expected, actual)
+        let outcome, _msg, _actualIL = 
+            ILChecker.compareIL
+                fileName 
+                actual 
+                [ expected ]
+
+        Assert.True(outcome)

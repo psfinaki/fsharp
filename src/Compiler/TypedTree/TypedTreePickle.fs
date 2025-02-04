@@ -2340,7 +2340,7 @@ and p_ValData_new x st =
     p_ty_new x.val_type st
     p_stamp x.val_stamp st
 
-    p_int64 x.val_flags.PickledBits st
+    p_int64 x.val_flags.Flags st
     p_option p_member_info x.MemberInfo st
     p_attribs x.Attribs st
     p_option p_ValReprInfo x.ValReprInfo st

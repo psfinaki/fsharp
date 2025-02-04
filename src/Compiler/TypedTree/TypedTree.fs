@@ -252,6 +252,8 @@ type ValFlags(flags: int64) =
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
                                                       (flags       &&&   ~~~0b010011001100000000000L) 
 
+    member x.Flags = flags
+
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type TyparKind = 
