@@ -21,18 +21,22 @@ type Recompilation() =
     [<InlineData "printfn \"Hello world!\"">]
     [<InlineData "module Test">]
     [<InlineData "namespace Test">]
-    [<InlineData """namespace Test
-module M1 = ()""">]
     [<InlineData "let x = 42">]
     [<InlineData "let f x = x">]
-    [<InlineData "let rec f x = x">]
-    [<InlineData """let f1 x = x
-let rec f2 x = x""">]
     [<InlineData "let rec f x = x">]
     [<InlineData "type T = int">]
     [<InlineData "let f = function | _ -> 42">]
     [<InlineData "Some 42">]
     [<InlineData "None">]
+
+    [<InlineData """namespace Test
+module M1 = ()""">]
+    [<InlineData """let f1 x = x
+let rec f2 x = x""">]
+    [<InlineData """let x = "Hello world!"
+printfn $"{x}" """>]
+    [<InlineData """let x = 42
+printfn $"{x}" """>]
 
     //[<InlineData "let x = []">]
     //[<InlineData "let f x = x * x">]
