@@ -32,7 +32,7 @@ let rec f2 x = x""">]
 
     //[<InlineData "let x = []">]
     //[<InlineData "let f x = x * x">]
-    //[<InlineData "let x = 42">]
+    [<InlineData "let x = 42">]
     //[<InlineData "let f() = 42">]
     //[<InlineData "type DU = A of int">]
     //[<InlineData "type DU = A of int | B of string">]

@@ -294,6 +294,8 @@ type EntityFlags =
     /// Get the flags as included in the F# binary metadata
     member PickledBits: int64
 
+    member Flags: int64
+
     member PreEstablishedHasDefaultConstructor: bool
 
     /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct

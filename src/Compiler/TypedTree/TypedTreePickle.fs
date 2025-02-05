@@ -1045,6 +1045,24 @@ and p_ILCallSig x st = p_tup3 p_ILCallConv p_ILTypes p_ILType (x.CallingConv, x.
 
 and p_ILTypeRef (x: ILTypeRef) st = p_tup3 p_ILScopeRef p_strings p_string (x.Scope, x.Enclosing, x.Name) st
 
+and p_ILTypeDef (x: ILTypeDef) st = 
+    p_string x.Name st
+    //p_type_attributes x.Attributes
+    //p_il_type_def_layout x.Layout
+    //x.Implements
+    //x.Extends
+    //x.Methods
+    //x.NestedTypes
+    //x.Fields
+    //x.MethodImpls
+    //x.Events
+    //x.Properties
+    //x.Flags
+    //x.SecurityDeclsStored
+    //x.CustomAttrsStored
+    //p_il
+    //p_int32 x.MetadataIndex st
+
 and p_ILTypeSpec (a: ILTypeSpec) st = p_tup2 p_ILTypeRef p_ILTypes (a.TypeRef, a.GenericArgs) st
 
 let u_ILBasicCallConv st =
@@ -1066,6 +1084,38 @@ let u_ILHasThis st =
 
 let u_ILCallConv st = let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st in Callconv(a, b)
 let u_ILTypeRef st = let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st in ILTypeRef.Create(a, b, c)
+
+let u_ILTypeDef st : ILTypeDef = 
+    let name = u_string st
+    let attributes = System.Reflection.TypeAttributes.Public
+    let layout = ILTypeDefLayout.Auto
+    let implements = Unchecked.defaultof<_>
+    let genericParams = []
+    let extends = Unchecked.defaultof<_>
+    let methods = ILMethodDefs(fun () -> [||])
+    let nestedTypes = Unchecked.defaultof<_>
+    let fields = Unchecked.defaultof<_>
+    let events = Unchecked.defaultof<_>
+    let properties = Unchecked.defaultof<_>
+    let additionalFlags = Unchecked.defaultof<_>
+    let securityDeclsStored = ILSecurityDecls([||])
+    let customAttrsStored = Unchecked.defaultof<_>
+
+    ILTypeDef(name,
+        attributes,
+        layout,
+        implements,
+        genericParams,
+        extends,
+        methods,
+        nestedTypes,
+        fields,
+        events,
+        properties,
+        additionalFlags,
+        securityDeclsStored,
+        customAttrsStored)
+
 let u_ILArrayShape = u_wrap (ILArrayShape) (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
 
 
@@ -2036,7 +2086,7 @@ let u_cpath st =
     let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st 
     CompPath(a, SyntaxAccess.Unknown, b)
 
-let rec p_tycon_repr x st =
+let rec p_tycon_repr (x: TyconRepresentation) st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
 
     match x with
@@ -2109,6 +2159,84 @@ let rec p_tycon_repr x st =
 
     | TILObjectRepr (TILObjectReprData (scope, nesting, td)) ->
         p_byte 5 st
+        false
+
+and p_tycon_repr_new (x: TyconRepresentation) st =
+    // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
+
+    match x with
+    // Records
+    | TFSharpTyconRepr { fsobjmodel_rfields = fs; fsobjmodel_kind = TFSharpRecord } ->
+        p_byte 1 st
+        p_byte 0 st
+        p_rfield_table fs st
+        false
+
+    // Unions without static fields
+    | TFSharpTyconRepr { fsobjmodel_cases = x; fsobjmodel_kind = TFSharpUnion; fsobjmodel_rfields = fs } when fs.FieldsByIndex.Length = 0 ->
+        p_byte 1 st
+        p_byte 1 st
+        p_array p_unioncase_spec x.CasesTable.CasesByIndex st
+        false
+
+    // Unions with static fields, added to format
+    | TFSharpTyconRepr ({ fsobjmodel_cases = cases; fsobjmodel_kind = TFSharpUnion } as r) ->
+        if st.oglobals.compilingFSharpCore then
+            let fields = r.fsobjmodel_rfields.FieldsByIndex
+            let firstFieldRange = fields[0].DefinitionRange
+            let allFieldsText = fields |> Array.map (fun f -> f.LogicalName) |> String.concat System.Environment.NewLine
+            raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible("fields in union",allFieldsText), firstFieldRange))
+           
+        p_byte 2 st
+        p_array p_unioncase_spec cases.CasesTable.CasesByIndex st
+        p_tycon_objmodel_data r st
+        false
+
+    | TAsmRepr ilTy ->
+        p_byte 1 st
+        p_byte 2 st
+        p_ILType ilTy st
+        false
+
+    | TFSharpTyconRepr r  ->
+        p_byte 1 st
+        p_byte 3 st
+        p_tycon_objmodel_data r st
+        false
+
+    | TMeasureableRepr ty  ->
+        p_byte 1 st
+        p_byte 4 st
+        p_ty ty st
+        false
+
+    | TNoRepr ->
+        p_byte 0 st
+        false
+
+#if !NO_TYPEPROVIDERS
+    | TProvidedTypeRepr info ->
+        if info.IsErased then
+            // Pickle erased type definitions as a NoRepr
+            p_byte 0 st
+            false
+        else
+            // Pickle generated type definitions as a TAsmRepr
+            p_byte 1 st
+            p_byte 2 st
+            p_ILType (mkILBoxedType(ILTypeSpec.Create(TypeProviders.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st
+            true
+
+    | TProvidedNamespaceRepr _ ->
+        p_byte 0 st
+        false
+#endif
+
+    | TILObjectRepr (TILObjectReprData (scope, nesting, td)) ->
+        p_byte 5 st
+        p_ILScopeRef scope st
+        (p_list p_ILTypeDef) nesting st
+        p_ILTypeDef td st
         false
 
 and p_tycon_objmodel_data x st =
@@ -2188,12 +2316,12 @@ and p_entity_spec_data_new (x: Entity) st =
     p_access x.Accessibility st
     p_access  x.TypeReprAccessibility st
     p_attribs x.entity_attribs st
-    let flagBit = p_tycon_repr x.entity_tycon_repr st
+    let _ = p_tycon_repr_new x.entity_tycon_repr st
     p_option p_ty_new x.TypeAbbrev st
     p_tcaug_new x.entity_tycon_tcaug st
     p_string System.String.Empty st
     p_kind x.TypeOrMeasureKind st
-    p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
+    p_int64 x.entity_flags.Flags st
     p_option p_cpath x.entity_cpath st
     p_maybe_lazy p_modul_typ_new x.entity_modul_type st
     p_exnc_repr x.ExceptionInfo st
@@ -2773,6 +2901,85 @@ and u_tycon_repr st =
 
     | _ -> ufailwith st "u_tycon_repr"
 
+
+
+and u_tycon_repr_new st =
+    let tag1 = u_byte st
+    match tag1 with
+    | 0 -> (fun _flagBit -> TNoRepr)
+    | 1 ->
+        let tag2 = u_byte st
+        match tag2 with
+        // Records historically use a different format to other FSharpTyconRepr
+        | 0 ->
+            let v = u_rfield_table st
+            (fun _flagBit ->
+                TFSharpTyconRepr
+                    {
+                        fsobjmodel_cases = Construct.MakeUnionCases []
+                        fsobjmodel_kind=TFSharpRecord
+                        fsobjmodel_vslots=[]
+                        fsobjmodel_rfields=v
+                    })
+
+        // Unions  without static fields historically use a different format to other FSharpTyconRepr
+        | 1 ->
+            let v = u_list u_unioncase_spec  st
+            (fun _flagBit -> Construct.MakeUnionRepr v)
+
+        | 2 ->
+            let v = u_ILType st
+            // This is the F# 3.0 extension to the format used for F# provider-generated types, which record an ILTypeRef in the format
+            // You can think of an F# 2.0 reader as always taking the path where 'flagBit' is false. Thus the F# 2.0 reader will
+            // interpret provider-generated types as TAsmRepr.
+            (fun flagBit ->
+                if flagBit then
+                    let iltref = v.TypeRef
+                    match st.iILModule with
+                    | None -> TNoRepr
+                    | Some iILModule ->
+                    try
+                        let rec find acc enclosingTypeNames (tdefs: ILTypeDefs) =
+                            match enclosingTypeNames with
+                            | [] -> List.rev acc, tdefs.FindByName iltref.Name
+                            | h :: t ->
+                                let nestedTypeDef = tdefs.FindByName h
+                                find (nestedTypeDef :: acc) t nestedTypeDef.NestedTypes
+                        let nestedILTypeDefs, ilTypeDef = find [] iltref.Enclosing iILModule.TypeDefs
+                        TILObjectRepr(TILObjectReprData(st.iilscope, nestedILTypeDefs, ilTypeDef))
+                    with _ ->
+                        System.Diagnostics.Debug.Assert(false, sprintf "failed to find IL backing metadata for cross-assembly generated type %s" iltref.FullName)
+                        TNoRepr
+                else
+                    TAsmRepr v)
+
+        | 3 ->
+            let v = u_tycon_objmodel_data  st
+            (fun _flagBit -> TFSharpTyconRepr v)
+
+        | 4 ->
+            let v = u_ty st
+            (fun _flagBit -> TMeasureableRepr v)
+
+        | _ -> ufailwith st "u_tycon_repr"
+
+    // Unions with static fields use a different format to other FSharpTyconRepr
+    | 2 ->
+        let cases = u_array u_unioncase_spec st
+        let data = u_tycon_objmodel_data st
+        fun _flagBit -> TFSharpTyconRepr { data with fsobjmodel_cases = Construct.MakeUnionCases (Array.toList cases) }
+    
+    | 5 ->
+        //    | TILObjectRepr (TILObjectReprData (scope, nesting, td)) ->
+        let scope = u_ILScopeRef st
+        let nesting = u_list u_ILTypeDef st
+        let definition = u_ILTypeDef st
+
+        (fun _flagBit -> TILObjectRepr (TILObjectReprData (scope, nesting, definition)))
+
+    | _ -> ufailwith st "u_tycon_repr"
+
+
 and u_tycon_objmodel_data st =
     let x1, x2, x3 = u_tup3 u_tycon_objmodel_kind u_vrefs u_rfield_table st
     {
@@ -2902,7 +3109,7 @@ and u_entity_spec_data st : Entity =
     }
 
 and u_entity_spec_data_new st : Entity =
-    let x1, x2a, x2b, x2c, stamp, x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
+    let x1, x2a, x2b, x2c, stamp, x3, (x4a, x4b), x6, x7, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
        u_tup18
           u_tyar_specs_new
           u_string
@@ -2912,7 +3119,7 @@ and u_entity_spec_data_new st : Entity =
           (u_option u_pubpath)
           (u_tup2 u_access u_access)
           u_attribs
-          u_tycon_repr
+          u_tycon_repr_new
           (u_option u_ty_new)
           u_tcaug_new
           u_string
@@ -2924,8 +3131,8 @@ and u_entity_spec_data_new st : Entity =
           (u_used_space1 u_xmldoc)
           st
     // We use a bit that was unused in the F# 2.0 format to indicate two possible representations in the F# 3.0 tycon_repr format
-    let x7 = x7f (x11 &&& EntityFlags.ReservedBitForPickleFormatTyconReprFlag <> 0L)
-    let x11 = x11 &&& ~~~EntityFlags.ReservedBitForPickleFormatTyconReprFlag
+    //let x7 = x7f (x11 &&& EntityFlags.ReservedBitForPickleFormatTyconReprFlag <> 0L)
+    //let x11 = x11 &&& ~~~EntityFlags.ReservedBitForPickleFormatTyconReprFlag
 
     { entity_typars=LazyWithContext.NotLazy x1
       entity_stamp=stamp
@@ -2933,7 +3140,7 @@ and u_entity_spec_data_new st : Entity =
       entity_range=x2c
       entity_pubpath=x3
       entity_attribs=x6
-      entity_tycon_repr=x7
+      entity_tycon_repr=x7 false
       entity_tycon_tcaug=x9
       entity_flags=EntityFlags x11
       entity_cpath=x12

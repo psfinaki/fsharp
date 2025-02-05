@@ -492,7 +492,7 @@ type EntityFlags(flags: int64) =
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits =                         (flags       &&&  ~~~0b000111111000100L)
 
-
+    member x.Flags = flags
 
 exception UndefinedName of 
     depth: int * 
