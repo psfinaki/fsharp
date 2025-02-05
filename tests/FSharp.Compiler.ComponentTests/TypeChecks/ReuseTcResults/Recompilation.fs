@@ -90,14 +90,15 @@ printfn "hello world!" """>]
 //module M2
 //printfn $"{M1.helloWorld}"
 
-        let code = "let x = 42"
+        let code = """module M1
+let helloWorld = "hello world!" """
         let fileName = getTemporaryFileName()
-        let tempPath = $"{fileName}.fsx"
+        let tempPath = $"{fileName}.fs"
         
         File.WriteAllText(tempPath, code) 
 
         let cUnit =
-            FsxFromPath tempPath
+            FsFromPath tempPath
             |> withReuseTcResults
             |> withOptions [ "--compressmetadata-" ]
             |> withOptions [ "--optimize-" ]
