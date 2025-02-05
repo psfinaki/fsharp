@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 open Xunit
 
 open TestFramework
-open System
+
 
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 type Recompilation() =
@@ -79,3 +79,46 @@ printfn "hello world!" """>]
                 [ expected ]
 
         Assert.True(outcome)
+
+
+    [<Fact>]
+    let ``Multiple files`` () =
+
+//module M1
+//let helloWorld = "hello world!"
+
+//module M2
+//printfn $"{M1.helloWorld}"
+
+        let code = "let x = 42"
+        let fileName = getTemporaryFileName()
+        let tempPath = $"{fileName}.fsx"
+        
+        File.WriteAllText(tempPath, code) 
+
+        let cUnit =
+            FsxFromPath tempPath
+            |> withReuseTcResults
+            |> withOptions [ "--compressmetadata-" ]
+            |> withOptions [ "--optimize-" ]
+
+        let expected =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
+
+        let actual =
+            cUnit
+            |> compileExisting
+            |> shouldSucceed
+            |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
+
+        let outcome, _msg, _actualIL = 
+            ILChecker.compareIL
+                fileName 
+                actual 
+                [ expected ]
+
+        Assert.True(outcome)
+
