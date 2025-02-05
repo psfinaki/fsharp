@@ -37,6 +37,10 @@ let rec f2 x = x""">]
 printfn $"{x}" """>]
     [<InlineData """let x = 42
 printfn $"{x}" """>]
+    [<InlineData """module M1
+let helloWorld = "hello world!" """>]
+    [<InlineData """module M2
+printfn "hello world!" """>]
 
     //[<InlineData "let x = []">]
     //[<InlineData "let f x = x * x">]
