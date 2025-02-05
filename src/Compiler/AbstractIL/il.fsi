@@ -1620,6 +1620,7 @@ type ILTypeDef =
     member Encoding: ILDefaultPInvokeEncoding
     member IsKnownToBeAttribute: bool
     member CanContainExtensionMethods: bool
+    member Flags: ILTypeDefAdditionalFlags
 
     member internal WithAccess: ILTypeDefAccess -> ILTypeDef
     member internal WithNestedAccess: ILMemberAccess -> ILTypeDef

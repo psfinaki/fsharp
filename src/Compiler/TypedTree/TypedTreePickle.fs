@@ -1045,6 +1045,9 @@ and p_ILCallSig x st = p_tup3 p_ILCallConv p_ILTypes p_ILType (x.CallingConv, x.
 
 and p_ILTypeRef (x: ILTypeRef) st = p_tup3 p_ILScopeRef p_strings p_string (x.Scope, x.Enclosing, x.Name) st
 
+and p_ILTypeDefAdditionalFlags (x: ILTypeDefAdditionalFlags) st =
+    p_int32 (int x) st
+
 and p_ILTypeDef (x: ILTypeDef) st = 
     p_string x.Name st
     //p_type_attributes x.Attributes
@@ -1057,7 +1060,7 @@ and p_ILTypeDef (x: ILTypeDef) st =
     //x.MethodImpls
     //x.Events
     //x.Properties
-    //x.Flags
+    p_ILTypeDefAdditionalFlags x.Flags st
     //x.SecurityDeclsStored
     //x.CustomAttrsStored
     //p_il
@@ -1085,6 +1088,10 @@ let u_ILHasThis st =
 let u_ILCallConv st = let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st in Callconv(a, b)
 let u_ILTypeRef st = let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st in ILTypeRef.Create(a, b, c)
 
+let u_ILTypeDefAdditionalFlags st : ILTypeDefAdditionalFlags =
+    let i = u_int32 st
+    enum i
+
 let u_ILTypeDef st : ILTypeDef = 
     let name = u_string st
     let attributes = System.Reflection.TypeAttributes.Public
@@ -1095,9 +1102,10 @@ let u_ILTypeDef st : ILTypeDef =
     let methods = ILMethodDefs(fun () -> [||])
     let nestedTypes = Unchecked.defaultof<_>
     let fields = Unchecked.defaultof<_>
+    let methodImpls = Unchecked.defaultof<_>
     let events = Unchecked.defaultof<_>
     let properties = Unchecked.defaultof<_>
-    let additionalFlags = Unchecked.defaultof<_>
+    let additionalFlags = u_ILTypeDefAdditionalFlags st
     let securityDeclsStored = ILSecurityDecls([||])
     let customAttrsStored = Unchecked.defaultof<_>
 
@@ -1110,6 +1118,7 @@ let u_ILTypeDef st : ILTypeDef =
         methods,
         nestedTypes,
         fields,
+        methodImpls,
         events,
         properties,
         additionalFlags,

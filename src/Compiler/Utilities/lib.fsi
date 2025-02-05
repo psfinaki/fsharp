@@ -239,7 +239,7 @@ type cache<'T when 'T: not struct> = { mutable cacheVal: NonNullSlot<'T> }
 
 val newCache: unit -> cache<'a> when 'a: not struct
 
-val inline cached: cache: cache<'a> -> resF: (unit -> 'a) -> 'a when 'a: not struct
+val cached: cache: cache<'a> -> resF: (unit -> 'a) -> 'a when 'a: not struct
 
 val inline cacheOptByref: cache: byref<'T option> -> f: (unit -> 'T) -> 'T
 
