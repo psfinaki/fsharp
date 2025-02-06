@@ -2568,20 +2568,17 @@ and p_syn_open_decl_target (x: SynOpenDeclTarget) st =
             st
 
 and p_ccu_data (x: CcuData) st =
-    p_tup9
-        (p_option p_string) 
-        p_ILScopeRef
-        p_stamp
-        (p_option p_string)
-        p_string
-        p_bool
-        p_bool
-        p_bool
-        p_entity_spec_data_new
-        (x.FileName, x.ILScopeRef, x.Stamp, x.QualifiedName,
-         x.SourceCodeDirectory, x.IsFSharp, x.IsProviderGenerated, 
-         x.UsesFSharp20PlusQuotations, x.Contents)
-        st
+    p_option p_string x.FileName st
+    p_ILScopeRef x.ILScopeRef st
+    p_stamp x.Stamp st
+    p_option p_string x.QualifiedName st
+    p_string x.SourceCodeDirectory st
+    p_bool x.IsFSharp st
+#if !NO_TYPEPROVIDERS
+    p_bool x.IsProviderGenerated st
+#endif
+    p_bool x.UsesFSharp20PlusQuotations st
+    p_entity_spec_data_new x.Contents st
 
 and p_ccuref_new (x: CcuThunk) st =
     p_tup2
@@ -3454,20 +3451,18 @@ and u_syn_open_decl_target st : SynOpenDeclTarget =
         ufailwith st (nameof u_syn_open_decl_target)
 
 and u_ccu_data st : CcuData =
-    let fileName, ilScopeRef, stamp, qualifiedName,
-        sourceCodeDirectory, isFSharp, isProviderGenerated,
-        usesFSharp20PlusQuotations, contents = 
-            u_tup9
-                (u_option u_string)
-                u_ILScopeRef
-                u_stamp
-                (u_option u_string)
-                u_string
-                u_bool
-                u_bool
-                u_bool
-                u_entity_spec_data_new
-                st
+    let fileName = u_option u_string st
+    let ilScopeRef = u_ILScopeRef st
+    let stamp = u_stamp st
+    let qualifiedName = u_option u_string st
+    let sourceCodeDirectory = u_string st
+    let isFSharp = u_bool st
+#if !NO_TYPEPROVIDERS
+    let isProviderGenerated = u_bool st
+#endif
+    let usesFSharp20PlusQuotations = u_bool st
+    let contents = u_entity_spec_data_new st
+
     {
         FileName = fileName
         ILScopeRef = ilScopeRef
@@ -3475,9 +3470,11 @@ and u_ccu_data st : CcuData =
         QualifiedName = qualifiedName
         SourceCodeDirectory = sourceCodeDirectory
         IsFSharp = isFSharp
+#if !NO_TYPEPROVIDERS
         IsProviderGenerated = isProviderGenerated
         InvalidateEvent = Unchecked.defaultof<_>
         ImportProvidedType = Unchecked.defaultof<_>
+#endif
         UsesFSharp20PlusQuotations = usesFSharp20PlusQuotations
         Contents = contents
         TryGetILModuleDef = Unchecked.defaultof<_>

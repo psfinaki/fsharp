@@ -175,7 +175,7 @@ type CachingDriver(tcConfig: TcConfig) =
             declaredImpls <- declaredImpls @ [rawData.DeclaredImpl]
 
             
-        let topAttrs : TopAttribs =
+        let topAttrs: TopAttribs =
             {
                 mainMethodAttrs = mainMethodAttrs
                 netModuleAttrs = netModuleAttrs
@@ -198,7 +198,7 @@ type CachingDriver(tcConfig: TcConfig) =
                 References = getThisCompilationReferences tcConfig.referencedDLLs
             }
 
-        writeThisTcData thisTcData 
+        writeThisTcData thisTcData
 
         for i = 0 to declaredImpls.Length - 1 do
             let declaredImpl = declaredImpls[i]
@@ -211,13 +211,8 @@ type CachingDriver(tcConfig: TcConfig) =
                     DeclaredImpl = declaredImpl
                 }
 
-            let encodedData = EncodeTypecheckingData(
-                tcConfig,
-                tcGlobals,
-                tcState.Ccu,
-                outfile,
-                false,
-                tcInfo)        
+            let encodedData =
+                EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
 
             let resource = encodedData[0].GetBytes().ToArray()
             File.WriteAllBytes($"{tcResourceFilePath}{i}", resource)
