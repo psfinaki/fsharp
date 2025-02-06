@@ -54,7 +54,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
 open FSharp.Compiler.CheckExpressionsOps
-
 open ReuseTcResults
 
 //----------------------------------------------------------------------------
@@ -184,7 +183,6 @@ let TypeCheck
                     )
 
                 cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
-
                 tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
         else
             CheckClosedInputSet(
