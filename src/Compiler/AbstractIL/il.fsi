@@ -949,7 +949,7 @@ type internal ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte[]
 /// below to construct/destruct these.
 [<NoComparison; NoEquality; Struct>]
 type internal ILSecurityDecls =
-    new: array : ILSecurityDecl[] -> ILSecurityDecls
+    new: array: ILSecurityDecl[] -> ILSecurityDecls
 
     member AsList: unit -> ILSecurityDecl list
 
@@ -1209,9 +1209,7 @@ type ILMethodDef =
 /// name and arity.
 [<NoEquality; NoComparison; Class; Sealed>]
 type ILMethodDefs =
-    new:
-        f: (unit -> ILMethodDef array) ->
-                ILMethodDefs
+    new: f: (unit -> ILMethodDef array) -> ILMethodDefs
 
     inherit DelayInitArrayMap<ILMethodDef, string, ILMethodDef list>
 
@@ -1325,7 +1323,7 @@ type ILFieldDefs =
 /// Event definitions.
 [<NoComparison; NoEquality>]
 type ILEventDef =
-    
+
     /// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
     internal new:
         eventType: ILType option *

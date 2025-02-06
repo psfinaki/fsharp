@@ -165,12 +165,14 @@ let TypeCheck
 
         let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
-
         if tcConfig.reuseTcResults = ReuseTcResults.On then
             let cachingDriver = CachingDriver(tcConfig)
+
             let results =
                 if cachingDriver.CanReuseTcResults(inputs) then
-                    let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile = cachingDriver.ReuseTcResults inputs tcInitialState
+                    let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
+                        cachingDriver.ReuseTcResults inputs tcInitialState
+
                     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
                 else
                     let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
@@ -187,22 +189,23 @@ let TypeCheck
                         )
 
                     cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
-            
+
                     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
             results
 
         else
             CheckClosedInputSet(
-                    ctok,
-                    diagnosticsLogger.CheckForErrors,
-                    tcConfig,
-                    tcImports,
-                    tcGlobals,
-                    None,
-                    tcInitialState,
-                    eagerFormat,
-                    inputs)
+                ctok,
+                diagnosticsLogger.CheckForErrors,
+                tcConfig,
+                tcImports,
+                tcGlobals,
+                None,
+                tcInitialState,
+                eagerFormat,
+                inputs
+            )
 
     with exn ->
         errorRecovery exn rangeStartup
