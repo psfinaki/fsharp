@@ -4305,7 +4305,7 @@ type PickledTcInfo =
     { MainMethodAttrs: Attribs
       NetModuleAttrs: Attribs
       AssemblyAttrs: Attribs
-      DeclaredImpls: CheckedImplFile list }
+      DeclaredImpl: CheckedImplFile }
 
 /// Represents a set of free local values. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.
