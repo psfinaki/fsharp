@@ -90,17 +90,18 @@ let helloWorld = "hello world!" """
         let code2 = """module M2
 printfn $"{M1.helloWorld}" """
 
-        let tempPath1 = tempDir ++ "File1.fs"
-        let tempPath2 = tempDir ++ "File2.fs"
+        let fileName1 = "File1"
+        let fileName2 = "File2"
+
+        let tempPath1 = tempDir ++ $"{fileName1}.fs"
+        let tempPath2 = tempDir ++ $"{fileName2}.fs"
 
         File.WriteAllText(tempPath1, code1) 
         File.WriteAllText(tempPath2, code2) 
 
-        let sourceFile2 = { FileName = tempPath2; SourceText = Some code2 }
-
         let cUnit = 
             FsFromPath tempPath1
-            |> withAdditionalSourceFile (SourceCodeFileKind.Fs sourceFile2)
+            |> withAdditionalSourceFile (SourceCodeFileKind.Create tempPath2)
             |> withReuseTcResults
             |> withOptions [ "--compressmetadata-" ]
             |> withOptions [ "--optimize-" ]
@@ -117,11 +118,11 @@ printfn $"{M1.helloWorld}" """
             |> shouldSucceed
             |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
-        //let outcome, _msg, _actualIL = 
-        //    ILChecker.compareIL
-        //        fileName 
-        //        actual 
-        //        [ expected ]
+        let outcome, _msg, _actualIL = 
+            ILChecker.compareIL
+                fileName1 
+                actual 
+                [ expected ]
 
-        Assert.Equal(expected, actual)
+        Assert.True(outcome)
 

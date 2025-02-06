@@ -27,7 +27,8 @@ type CachingDriver(tcConfig: TcConfig) =
 
     let outputDir = tcConfig.outputDir |> Option.defaultValue ""
     let tcDataFilePath = Path.Combine(outputDir, FSharpTcDataResourceName)
-
+    let tcResourceFilePath = Path.Combine(outputDir, "tc")
+    
     [<Literal>]
     let CmdLineHeader = "CMDLINE"
 
@@ -145,7 +146,7 @@ type CachingDriver(tcConfig: TcConfig) =
 
     member _.ReuseTcResults inputs (tcInitialState: TcState) =
 
-        let bytes = File.ReadAllBytes("tc")
+        let bytes = File.ReadAllBytes(tcResourceFilePath)
         let memory = ByteMemory.FromArray(bytes)
         let byteReaderA () = ReadOnlyByteMemory(memory)
 
@@ -203,4 +204,4 @@ type CachingDriver(tcConfig: TcConfig) =
             tcInfo)        
 
         let resource = encodedData[0].GetBytes().ToArray()
-        File.WriteAllBytes("tc", resource)
+        File.WriteAllBytes(tcResourceFilePath, resource)

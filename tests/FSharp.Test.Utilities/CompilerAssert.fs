@@ -436,7 +436,7 @@ module CompilerAssertHelpers =
              |]
 
         // Generate a response file, purely for diagnostic reasons.
-        File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
+        //File.WriteAllLines(Path.ChangeExtension(outputFilePath, ".rsp"), args)
         let errors, ex = checker.Compile args |> Async.RunImmediate
         errors, ex, outputFilePath
 
