@@ -10,7 +10,7 @@ open FSharp.Benchmarks.Common.Categories
 [<BenchmarkCategory(LongCategory)>]
 type GraphTypeCheckingBenchmarks() =
 
-    let size = 5
+    let size = 250
 
     let somethingToCompile =
         File.ReadAllText(__SOURCE_DIRECTORY__ ++ "SomethingToCompile.fs")

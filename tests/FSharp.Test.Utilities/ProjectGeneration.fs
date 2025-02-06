@@ -441,7 +441,7 @@ let private renderFsProj (p: SyntheticProject) =
         <Project Sdk="Microsoft.NET.Sdk">
 
         <PropertyGroup>
-            <OutputType>Library</OutputType>
+            <OutputType>Exe</OutputType>
             <TargetFramework>net9.0</TargetFramework>
         </PropertyGroup>
 
@@ -1358,11 +1358,10 @@ type ProjectWorkflowBuilder
                     yield! projectOptions.OtherOptions
                     yield! projectOptions.SourceFiles
                 |]
-            let! _diagnostics, _ex = checker.Compile(arguments)
-            //if ex.IsSome then raise ex.Value
+            let! _diagnostics, ex = checker.Compile(arguments)
+            if ex.IsSome then raise ex.Value
             return ctx
         }
-
         
     [<CustomOperation "tryGetRecentCheckResults">]
     member this.TryGetRecentCheckResults(workflow: Async<WorkflowContext>, fileId: string, expected) =

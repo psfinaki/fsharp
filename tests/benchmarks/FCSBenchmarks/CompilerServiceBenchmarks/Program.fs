@@ -1,7 +1,6 @@
 ﻿open BenchmarkDotNet.Running
 open FSharp.Compiler.Benchmarks
 open BenchmarkDotNet.Configs
-open FSharp.Benchmarks
 
 [<EntryPoint>]
 let main args =
