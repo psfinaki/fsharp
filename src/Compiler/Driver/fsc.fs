@@ -152,7 +152,7 @@ let TypeCheck
         openDecls0,
         inputs,
         exiter: Exiter,
-        outfile: string
+        outfile
     ) =
     try
         if isNil inputs then
@@ -167,33 +167,25 @@ let TypeCheck
 
         if tcConfig.reuseTcResults = ReuseTcResults.On then
             let cachingDriver = CachingDriver(tcConfig)
+            if cachingDriver.CanReuseTcResults(inputs) then
+                cachingDriver.ReuseTcResults inputs tcInitialState
+            else
+                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
+                    CheckClosedInputSet(
+                        ctok,
+                        diagnosticsLogger.CheckForErrors,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        None,
+                        tcInitialState,
+                        eagerFormat,
+                        inputs
+                    )
 
-            let results =
-                if cachingDriver.CanReuseTcResults(inputs) then
-                    let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
-                        cachingDriver.ReuseTcResults inputs tcInitialState
+                cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
 
-                    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
-                else
-                    let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
-                        CheckClosedInputSet(
-                            ctok,
-                            diagnosticsLogger.CheckForErrors,
-                            tcConfig,
-                            tcImports,
-                            tcGlobals,
-                            None,
-                            tcInitialState,
-                            eagerFormat,
-                            inputs
-                        )
-
-                    cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
-
-                    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
-
-            results
-
+                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
         else
             CheckClosedInputSet(
                 ctok,

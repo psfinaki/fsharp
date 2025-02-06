@@ -494,6 +494,7 @@ type EntityFlags(flags: int64) =
 
     member x.Flags = flags
 
+
 exception UndefinedName of 
     depth: int * 
     error: (string -> string) * 

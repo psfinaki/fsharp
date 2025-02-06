@@ -341,7 +341,7 @@ let nullableSlotFull (x: 'T) : NonNullSlot<'T> = x
 type cache<'T when 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
-let cached cache (resF) =
+let inline cached cache ([<InlineIfLambda>] resF) =
     match box cache.cacheVal with
     | null ->
         let res = resF()
