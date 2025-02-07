@@ -5902,10 +5902,13 @@ type PickledCcuInfo =
 
     override _.ToString() = "PickledCcuInfo(...)"
 
-type PickledTcInfo = {
+type PickledTcInfo1 = {
     MainMethodAttrs: Attribs
     NetModuleAttrs: Attribs
     AssemblyAttrs: Attribs
+}
+
+type PickledTcInfo2 = {
     DeclaredImpl: CheckedImplFile
 }
 

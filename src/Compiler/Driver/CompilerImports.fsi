@@ -72,21 +72,40 @@ val EncodeOptimizationData:
     isIncrementalBuild: bool ->
         ILResource list
 
-val GetTypecheckingData:
+val GetTypecheckingData1:
     file: string *
     ilScopeRef: ILScopeRef *
     ilModule: ILModuleDef option *
     byteReaderA: (unit -> ReadOnlyByteMemory) *
     byteReaderB: (unit -> ReadOnlyByteMemory) option ->
-        PickledDataWithReferences<PickledTcInfo>
+        PickledDataWithReferences<PickledTcInfo1>
 
-val EncodeTypecheckingData:
+
+val GetTypecheckingData2:
+    file: string *
+    ilScopeRef: ILScopeRef *
+    ilModule: ILModuleDef option *
+    byteReaderA: (unit -> ReadOnlyByteMemory) *
+    byteReaderB: (unit -> ReadOnlyByteMemory) option ->
+        PickledDataWithReferences<PickledTcInfo2>
+
+
+val EncodeTypecheckingData1:
     tcConfig: TcConfig *
     tcGlobals: TcGlobals *
     generatedCcu: CcuThunk *
     outfile: string *
     isIncrementalBuild: bool *
-    tcInfo: PickledTcInfo ->
+    tcInfo: PickledTcInfo1 ->
+        ILResource list
+
+val EncodeTypecheckingData2:
+    tcConfig: TcConfig *
+    tcGlobals: TcGlobals *
+    generatedCcu: CcuThunk *
+    outfile: string *
+    isIncrementalBuild: bool *
+    tcInfo: PickledTcInfo2 ->
         ILResource list
 
 [<RequireQualifiedAccess>]

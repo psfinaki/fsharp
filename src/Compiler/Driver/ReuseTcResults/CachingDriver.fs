@@ -27,6 +27,7 @@ type CachingDriver(tcConfig: TcConfig) =
 
     let outputDir = tcConfig.outputDir |> Option.defaultValue ""
     let tcDataFilePath = Path.Combine(outputDir, FSharpTcDataResourceName)
+    let tcAuxResourceFilePath = Path.Combine(outputDir, "tcaux")
     let tcResourceFilePath = Path.Combine(outputDir, "tc")
     
     [<Literal>]
@@ -145,43 +146,53 @@ type CachingDriver(tcConfig: TcConfig) =
             false
 
     member _.ReuseTcResults (inputs: ParsedInput list) (tcInitialState: TcState) =
+        let bytes = File.ReadAllBytes(tcAuxResourceFilePath)
+        let memory = ByteMemory.FromArray(bytes)
+        let byteReaderA () = ReadOnlyByteMemory(memory)
 
-        let mutable mainMethodAttrs: Attribs = []
-        let mutable netModuleAttrs: Attribs = []
-        let mutable assemblyAttrs: Attribs = []
-        let mutable declaredImpls: CheckedImplFile list = []
+        let byteReaderB = None
 
-        inputs |> List.iteri (fun i _ ->
-            let bytes = File.ReadAllBytes($"{tcResourceFilePath}{i}")
-            let memory = ByteMemory.FromArray(bytes)
-            let byteReaderA () = ReadOnlyByteMemory(memory)
+        let tcInfo1 =
+            GetTypecheckingData1(
+                "", // assembly.FileName,
+                ILScopeRef.Local, // assembly.ILScopeRef,
+                None, //assembly.RawMetadata.TryGetILModuleDef(),
+                byteReaderA,
+                byteReaderB
+            )
 
-            let byteReaderB = None
+        let rawData = tcInfo1.RawData
 
-            let tcInfo =
-                GetTypecheckingData(
-                    "", // assembly.FileName,
-                    ILScopeRef.Local, // assembly.ILScopeRef,
-                    None, //assembly.RawMetadata.TryGetILModuleDef(),
-                    byteReaderA,
-                    byteReaderB
-                )
-
-            let rawData = tcInfo.RawData
-
-            mainMethodAttrs <- rawData.MainMethodAttrs
-            netModuleAttrs <- rawData.NetModuleAttrs
-            assemblyAttrs <- rawData.AssemblyAttrs
-            declaredImpls <- declaredImpls @ [rawData.DeclaredImpl])
-
-            
         let topAttrs: TopAttribs =
             {
-                mainMethodAttrs = mainMethodAttrs
-                netModuleAttrs = netModuleAttrs
-                assemblyAttrs = assemblyAttrs
+                mainMethodAttrs = rawData.MainMethodAttrs
+                netModuleAttrs = rawData.NetModuleAttrs
+                assemblyAttrs = rawData.AssemblyAttrs
             }
 
+        let declaredImpls =
+            inputs 
+            |> List.mapi (fun i _ ->
+                let bytes = File.ReadAllBytes($"{tcResourceFilePath}{i}")
+                let memory = ByteMemory.FromArray(bytes)
+                let byteReaderA () = ReadOnlyByteMemory(memory)
+
+                let byteReaderB = None
+
+                let tcInfo2 =
+                    GetTypecheckingData2(
+                        "", // assembly.FileName,
+                        ILScopeRef.Local, // assembly.ILScopeRef,
+                        None, //assembly.RawMetadata.TryGetILModuleDef(),
+                        byteReaderA,
+                        byteReaderB
+                    )
+
+                let rawData = tcInfo2.RawData
+
+                rawData.DeclaredImpl)
+
+            
         // need to understand if anything can be used here, pickling state is hard
         tcInitialState,
         topAttrs,
@@ -200,17 +211,28 @@ type CachingDriver(tcConfig: TcConfig) =
 
         writeThisTcData thisTcData
 
+        let tcInfo1 =
+            {
+                MainMethodAttrs = topAttrs.mainMethodAttrs
+                NetModuleAttrs = topAttrs.netModuleAttrs
+                AssemblyAttrs = topAttrs.assemblyAttrs
+            }
+
+        let encodedData =
+            EncodeTypecheckingData1(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo1)
+
+        let resource = encodedData[0].GetBytes().ToArray()
+        File.WriteAllBytes(tcAuxResourceFilePath, resource)
+
+
         declaredImpls |> List.iteri (fun i impl ->
-            let tcInfo =
+            let tcInfo2 =
                 {
-                    MainMethodAttrs = topAttrs.mainMethodAttrs
-                    NetModuleAttrs = topAttrs.netModuleAttrs
-                    AssemblyAttrs = topAttrs.assemblyAttrs
                     DeclaredImpl = impl
                 }
 
             let encodedData =
-                EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
+                EncodeTypecheckingData2(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo2)
 
             let resource = encodedData[0].GetBytes().ToArray()
             File.WriteAllBytes($"{tcResourceFilePath}{i}", resource))

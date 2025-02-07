@@ -337,7 +337,18 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
     else
         []
 
-let GetTypecheckingData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
+let GetTypecheckingData1 (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
+    
+    let memA = byteReaderA ()
+
+    let memB =
+        match byteReaderB with
+        | None -> ByteMemory.Empty.AsReadOnly()
+        | Some br -> br ()
+
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcInfo1 memA memB
+
+let GetTypecheckingData2 (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
 
     let memA = byteReaderA ()
 
@@ -346,9 +357,10 @@ let GetTypecheckingData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
         | None -> ByteMemory.Empty.AsReadOnly()
         | Some br -> br ()
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcInfo memA memB
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcInfo2 memA memB
 
-let WriteTypecheckingData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, tcInfo) =
+
+let WriteTypecheckingData1 (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, tcInfo1) =
 
     // need to understand the naming and if we even want two resources here...
     let rName = "FSharpTypecheckingData"
@@ -362,18 +374,37 @@ let WriteTypecheckingData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, 
         ccu
         (rName + ccu.AssemblyName)
         (rNameB + ccu.AssemblyName)
-        pickleTcInfo
-        tcInfo
+        pickleTcInfo1
+        tcInfo1
 
-let EncodeTypecheckingData (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo) =
+
+let WriteTypecheckingData2 (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, tcInfo2) =
+
+    // need to understand the naming and if we even want two resources here...
+    let rName = "FSharpTypecheckingData"
+    let rNameB = "FSharpTypecheckingDataB"
+
+    PickleToResource
+        inMem
+        fileName
+        tcGlobals
+        tcConfig.compressMetadata
+        ccu
+        (rName + ccu.AssemblyName)
+        (rNameB + ccu.AssemblyName)
+        pickleTcInfo2
+        tcInfo2
+
+
+let EncodeTypecheckingData1 (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo1) =
     let r1, r2 =
-        WriteTypecheckingData(
+        WriteTypecheckingData1(
             tcConfig, 
             tcGlobals,
             outfile, 
             isIncrementalBuild, 
             generatedCcu,
-            tcInfo)
+            tcInfo1)
 
     let resources =
         [
@@ -384,6 +415,27 @@ let EncodeTypecheckingData (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile
         ]
 
     resources
+
+let EncodeTypecheckingData2 (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo2) =
+    let r1, r2 =
+        WriteTypecheckingData2(
+            tcConfig, 
+            tcGlobals,
+            outfile, 
+            isIncrementalBuild, 
+            generatedCcu,
+            tcInfo2)
+
+    let resources =
+        [
+            r1
+            match r2 with
+            | None -> ()
+            | Some r -> r
+        ]
+
+    resources
+
 
 exception AssemblyNotResolved of originalName: string * range: range
 
