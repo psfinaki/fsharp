@@ -151,7 +151,7 @@ type CachingDriver(tcConfig: TcConfig) =
         let mutable assemblyAttrs: Attribs = []
         let mutable declaredImpls: CheckedImplFile list = []
 
-        for i = 0 to inputs.Length - 1 do
+        inputs |> List.iteri (fun i _ ->
             let bytes = File.ReadAllBytes($"{tcResourceFilePath}{i}")
             let memory = ByteMemory.FromArray(bytes)
             let byteReaderA () = ReadOnlyByteMemory(memory)
@@ -172,7 +172,7 @@ type CachingDriver(tcConfig: TcConfig) =
             mainMethodAttrs <- rawData.MainMethodAttrs
             netModuleAttrs <- rawData.NetModuleAttrs
             assemblyAttrs <- rawData.AssemblyAttrs
-            declaredImpls <- declaredImpls @ [rawData.DeclaredImpl]
+            declaredImpls <- declaredImpls @ [rawData.DeclaredImpl])
 
             
         let topAttrs: TopAttribs =
@@ -200,19 +200,17 @@ type CachingDriver(tcConfig: TcConfig) =
 
         writeThisTcData thisTcData
 
-        for i = 0 to declaredImpls.Length - 1 do
-            let declaredImpl = declaredImpls[i]
-            
+        declaredImpls |> List.iteri (fun i impl ->
             let tcInfo =
                 {
                     MainMethodAttrs = topAttrs.mainMethodAttrs
                     NetModuleAttrs = topAttrs.netModuleAttrs
                     AssemblyAttrs = topAttrs.assemblyAttrs
-                    DeclaredImpl = declaredImpl
+                    DeclaredImpl = impl
                 }
 
             let encodedData =
                 EncodeTypecheckingData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
 
             let resource = encodedData[0].GetBytes().ToArray()
-            File.WriteAllBytes($"{tcResourceFilePath}{i}", resource)
+            File.WriteAllBytes($"{tcResourceFilePath}{i}", resource))
