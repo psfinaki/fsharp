@@ -84,8 +84,8 @@ val internal p_ty: pickler<TType>
 val internal pickleCcuInfo: pickler<PickledCcuInfo>
 
 /// Serialize typechecking info
-val internal pickleTcInfo1: pickler<PickledTcInfo1>
-val internal pickleTcInfo2: pickler<PickledTcInfo2>
+val internal pickleTcInfo: pickler<PickledTcInfo>
+val internal pickleCheckedImplFile: pickler<CheckedImplFile>
 
 /// Serialize an arbitrary object using the given pickler
 val pickleObjWithDanglingCcus:
@@ -150,8 +150,8 @@ val internal u_ty: unpickler<TType>
 val internal unpickleCcuInfo: ReaderState -> PickledCcuInfo
 
 /// Deserialize typechecking info
-val internal unpickleTcInfo1: ReaderState -> PickledTcInfo1
-val internal unpickleTcInfo2: ReaderState -> PickledTcInfo2
+val internal unpickleTcInfo: ReaderState -> PickledTcInfo
+val internal unpickleCheckedImplFile: ReaderState -> CheckedImplFile
 
 /// Deserialize an arbitrary object which may have holes referring to other compilation units
 val internal unpickleObjWithDanglingCcus:

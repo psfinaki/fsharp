@@ -337,7 +337,7 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
     else
         []
 
-let GetTypecheckingData1 (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
+let GetTypecheckingDataTcInfo (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
     
     let memA = byteReaderA ()
 
@@ -346,9 +346,9 @@ let GetTypecheckingData1 (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) 
         | None -> ByteMemory.Empty.AsReadOnly()
         | Some br -> br ()
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcInfo1 memA memB
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcInfo memA memB
 
-let GetTypecheckingData2 (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
+let GetTypecheckingDataCheckedImplFile (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
 
     let memA = byteReaderA ()
 
@@ -357,28 +357,10 @@ let GetTypecheckingData2 (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) 
         | None -> ByteMemory.Empty.AsReadOnly()
         | Some br -> br ()
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcInfo2 memA memB
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCheckedImplFile memA memB
 
 
-let WriteTypecheckingData1 (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, tcInfo1) =
-
-    // need to understand the naming and if we even want two resources here...
-    let rName = "FSharpTypecheckingData"
-    let rNameB = "FSharpTypecheckingDataB"
-
-    PickleToResource
-        inMem
-        fileName
-        tcGlobals
-        tcConfig.compressMetadata
-        ccu
-        (rName + ccu.AssemblyName)
-        (rNameB + ccu.AssemblyName)
-        pickleTcInfo1
-        tcInfo1
-
-
-let WriteTypecheckingData2 (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, tcInfo2) =
+let WriteTypecheckingDataTcInfo (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, tcInfo) =
 
     // need to understand the naming and if we even want two resources here...
     let rName = "FSharpTypecheckingData"
@@ -392,19 +374,37 @@ let WriteTypecheckingData2 (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu,
         ccu
         (rName + ccu.AssemblyName)
         (rNameB + ccu.AssemblyName)
-        pickleTcInfo2
-        tcInfo2
+        pickleTcInfo
+        tcInfo
 
 
-let EncodeTypecheckingData1 (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo1) =
+let WriteTypecheckingDataCheckedImplFile (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, checkedImplFile) =
+
+    // need to understand the naming and if we even want two resources here...
+    let rName = "FSharpTypecheckingData"
+    let rNameB = "FSharpTypecheckingDataB"
+
+    PickleToResource
+        inMem
+        fileName
+        tcGlobals
+        tcConfig.compressMetadata
+        ccu
+        (rName + ccu.AssemblyName)
+        (rNameB + ccu.AssemblyName)
+        pickleCheckedImplFile
+        checkedImplFile
+
+
+let EncodeTypecheckingDataTcInfo (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo) =
     let r1, r2 =
-        WriteTypecheckingData1(
+        WriteTypecheckingDataTcInfo(
             tcConfig, 
             tcGlobals,
             outfile, 
             isIncrementalBuild, 
             generatedCcu,
-            tcInfo1)
+            tcInfo)
 
     let resources =
         [
@@ -416,15 +416,15 @@ let EncodeTypecheckingData1 (tcConfig: TcConfig, tcGlobals, generatedCcu, outfil
 
     resources
 
-let EncodeTypecheckingData2 (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo2) =
+let EncodeTypecheckingDataCheckedImplFile (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, checkedImplFile) =
     let r1, r2 =
-        WriteTypecheckingData2(
+        WriteTypecheckingDataCheckedImplFile(
             tcConfig, 
             tcGlobals,
             outfile, 
             isIncrementalBuild, 
             generatedCcu,
-            tcInfo2)
+            checkedImplFile)
 
     let resources =
         [

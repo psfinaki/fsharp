@@ -152,8 +152,8 @@ type CachingDriver(tcConfig: TcConfig) =
 
         let byteReaderB = None
 
-        let tcInfo1 =
-            GetTypecheckingData1(
+        let tcInfo =
+            GetTypecheckingDataTcInfo(
                 "", // assembly.FileName,
                 ILScopeRef.Local, // assembly.ILScopeRef,
                 None, //assembly.RawMetadata.TryGetILModuleDef(),
@@ -161,7 +161,7 @@ type CachingDriver(tcConfig: TcConfig) =
                 byteReaderB
             )
 
-        let rawData = tcInfo1.RawData
+        let rawData: PickledTcInfo = tcInfo.RawData
 
         let topAttrs: TopAttribs =
             {
@@ -180,7 +180,7 @@ type CachingDriver(tcConfig: TcConfig) =
                 let byteReaderB = None
 
                 let tcInfo2 =
-                    GetTypecheckingData2(
+                    GetTypecheckingDataCheckedImplFile(
                         "", // assembly.FileName,
                         ILScopeRef.Local, // assembly.ILScopeRef,
                         None, //assembly.RawMetadata.TryGetILModuleDef(),
@@ -188,11 +188,8 @@ type CachingDriver(tcConfig: TcConfig) =
                         byteReaderB
                     )
 
-                let rawData = tcInfo2.RawData
+                tcInfo2.RawData)
 
-                rawData.DeclaredImpl)
-
-            
         // need to understand if anything can be used here, pickling state is hard
         tcInitialState,
         topAttrs,
@@ -219,20 +216,15 @@ type CachingDriver(tcConfig: TcConfig) =
             }
 
         let encodedData =
-            EncodeTypecheckingData1(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo1)
+            EncodeTypecheckingDataTcInfo(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo1)
 
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcAuxResourceFilePath, resource)
 
 
         declaredImpls |> List.iteri (fun i impl ->
-            let tcInfo2 =
-                {
-                    DeclaredImpl = impl
-                }
-
             let encodedData =
-                EncodeTypecheckingData2(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo2)
+                EncodeTypecheckingDataCheckedImplFile(tcConfig, tcGlobals, tcState.Ccu, outfile, false, impl)
 
             let resource = encodedData[0].GetBytes().ToArray()
             File.WriteAllBytes($"{tcResourceFilePath}{i}", resource))

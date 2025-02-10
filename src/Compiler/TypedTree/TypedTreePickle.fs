@@ -4382,7 +4382,7 @@ let pickleModuleOrNamespace mspec st = p_entity_spec mspec st
 let pickleCcuInfo (minfo: PickledCcuInfo) st =
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations, ()) st
 
-let pickleTcInfo1 (tcInfo: PickledTcInfo1) (st: WriterState) =
+let pickleTcInfo (tcInfo: PickledTcInfo) (st: WriterState) =
     p_tup3
         p_attribs
         p_attribs
@@ -4390,8 +4390,8 @@ let pickleTcInfo1 (tcInfo: PickledTcInfo1) (st: WriterState) =
         (tcInfo.MainMethodAttrs, tcInfo.NetModuleAttrs, tcInfo.AssemblyAttrs)
         st
 
-let pickleTcInfo2 (tcInfo: PickledTcInfo2) (st: WriterState) =
-    p_checked_impl_file tcInfo.DeclaredImpl st
+let pickleCheckedImplFile (checkedImplFile: CheckedImplFile) (st: WriterState) =
+    p_checked_impl_file checkedImplFile st
 
 let unpickleModuleOrNamespace st = u_entity_spec st
 
@@ -4400,7 +4400,7 @@ let unpickleCcuInfo st =
     { mspec=a; compileTimeWorkingDir=b; usesQuotations=c }
 
 
-let unpickleTcInfo1 st : PickledTcInfo1 =
+let unpickleTcInfo st : PickledTcInfo =
     let mainMethodAttrs, netModuleAttrs, assemblyAttrs =
         u_tup3
             u_attribs
@@ -4414,9 +4414,5 @@ let unpickleTcInfo1 st : PickledTcInfo1 =
         AssemblyAttrs = assemblyAttrs
     }
 
-let unpickleTcInfo2 st : PickledTcInfo2 =
-    let declaredImpl = u_checked_impl_file st
-
-    {
-        DeclaredImpl = declaredImpl
-    }
+let unpickleCheckedImplFile st : CheckedImplFile =
+    u_checked_impl_file st

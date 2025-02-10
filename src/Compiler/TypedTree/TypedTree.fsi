@@ -4301,13 +4301,10 @@ type PickledCcuInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
-type PickledTcInfo1 =
+type PickledTcInfo =
     { MainMethodAttrs: Attribs
       NetModuleAttrs: Attribs
       AssemblyAttrs: Attribs }
-
-type PickledTcInfo2 =
-    { DeclaredImpl: CheckedImplFile }
 
 /// Represents a set of free local values. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.

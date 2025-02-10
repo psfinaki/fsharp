@@ -5902,14 +5902,10 @@ type PickledCcuInfo =
 
     override _.ToString() = "PickledCcuInfo(...)"
 
-type PickledTcInfo1 = {
+type PickledTcInfo = {
     MainMethodAttrs: Attribs
     NetModuleAttrs: Attribs
     AssemblyAttrs: Attribs
-}
-
-type PickledTcInfo2 = {
-    DeclaredImpl: CheckedImplFile
 }
 
 /// Represents a set of free local values. Computed and cached by later phases
