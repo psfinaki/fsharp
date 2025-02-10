@@ -18,8 +18,22 @@ open FSharp.Compiler.AbstractIL.IL
 type TcData =
     {
         CmdLine: string array
-        //Graph: string array
         References: string array
+    }
+
+type GraphLine = 
+    {
+        Index: int
+        FileName: string
+        Stamp: int64
+    }
+
+type Graph = GraphLine array
+
+type GraphComparisonResult =
+    {
+        CanReuseFileNames: string array
+        CannotReuseFileNames: string array
     }
 
 [<Sealed>]
@@ -76,15 +90,26 @@ type CachingDriver(tcConfig: TcConfig) =
         else
             None
 
-    let writeThisGraph (graph: string array) =
+    let writeThisGraph (graph: Graph) =
         use tcDataFile = FileSystem.OpenFileForWriteShim graphFilePath
 
-        tcDataFile.WriteAllLines graph
+        graph
+        |> Array.map (fun line -> sprintf "%i,%s,%i" line.Index line.FileName line.Stamp)
+        |> tcDataFile.WriteAllLines
 
-    let readPrevGraph () =
+    let readPrevGraph () : Graph option =
         if FileSystem.FileExistsShim graphFilePath then
             use graphFile = FileSystem.OpenFileForReadShim graphFilePath
-            Some (graphFile.ReadAllLines())
+            graphFile.ReadAllLines()
+            |> Array.map (fun line ->
+                let parts = line.Split(',') |> Array.toList
+                {
+                    Index = int (parts[0])
+                    FileName = parts[1]
+                    Stamp = int64 (parts[2])
+                }
+            )
+            |> Some
         else
             None
 
@@ -110,22 +135,46 @@ type CachingDriver(tcConfig: TcConfig) =
         let filePairs = FilePairMap sourceFiles
         let graph, _ = DependencyResolution.mkGraph filePairs sourceFiles
 
-        let list = List<string>()
+        let list = List<GraphLine>()
 
         for KeyValue(idx, _) in graph do
             let fileName = sourceFiles[idx].FileName
             let lastWriteTime = FileSystem.GetLastWriteTimeShim fileName
-            list.Add(sprintf "%i,%s,%i" idx fileName lastWriteTime.Ticks)
+            let graphLine = {
+                Index = idx
+                FileName = fileName
+                Stamp = lastWriteTime.Ticks
+            }
 
-        for KeyValue(idx, deps) in graph do
-            for depIdx in deps do
-                list.Add $"%i{idx} --> %i{depIdx}"
+            list.Add(graphLine)
+
+        //for KeyValue(idx, deps) in graph do
+        //    for depIdx in deps do
+        //        list.Add $"%i{idx} --> %i{depIdx}"
 
         list.ToArray()
 
     let getThisCompilationReferences = Seq.map formatAssemblyReference >> Seq.toArray
 
-    member _.CanReuseTcResults inputs =
+    let compareGraphs (thisGraph: Graph) (baseGraph: Graph) =
+        let canReuse = ResizeArray<string>()
+        let cannotReuse = ResizeArray<string>()
+
+        for thisGraphLine in thisGraph do
+            let baseGraphLineOpt = baseGraph |> Seq.tryFind (fun line -> line.FileName = thisGraphLine.FileName)
+            match baseGraphLineOpt with
+            | Some baseGraphLine when baseGraphLine.Stamp = thisGraphLine.Stamp ->
+                canReuse.Add(thisGraphLine.FileName)
+            | _ -> 
+                cannotReuse.Add(thisGraphLine.FileName)
+
+        {
+            CanReuseFileNames = canReuse.ToArray()
+            CannotReuseFileNames = cannotReuse.ToArray()
+        }
+
+
+    member _.CanReuseTcResults (inputs: ParsedInput list) =
         let prevTcDataOpt = readPrevTcData ()
 
         let thisTcData =
@@ -145,10 +194,10 @@ type CachingDriver(tcConfig: TcConfig) =
                 let thisGraph = getThisCompilationGraph inputs
                 match prevGraphOpt with
                 | Some prevGraph ->
-                    if prevGraph = thisGraph then
-                        Some inputs
-                    else
-                        Some []
+                    let result = compareGraphs thisGraph prevGraph
+                    inputs
+                    |> List.where (fun input -> result.CanReuseFileNames |> Seq.contains input.FileName)
+                    |> Some
                 | None -> None
             else
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
