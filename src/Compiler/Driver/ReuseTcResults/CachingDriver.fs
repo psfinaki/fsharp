@@ -183,8 +183,9 @@ type CachingDriver(tcConfig: TcConfig) =
 
         let declaredImpls =
             inputs 
-            |> List.mapi (fun i _ ->
-                let bytes = File.ReadAllBytes($"{tcResourceFilePath}{i}")
+            |> List.map (fun implFile ->
+                let fileName = Path.GetFileNameWithoutExtension(implFile.FileName)
+                let bytes = File.ReadAllBytes($"{tcResourceFilePath}{fileName}")
                 let memory = ByteMemory.FromArray(bytes)
                 let byteReaderA () = ReadOnlyByteMemory(memory)
 
@@ -231,9 +232,10 @@ type CachingDriver(tcConfig: TcConfig) =
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcAuxResourceFilePath, resource)
 
-        declaredImpls |> List.iteri (fun i impl ->
+        declaredImpls |> List.iter (fun impl ->
             let encodedData =
                 EncodeTypecheckingDataCheckedImplFile(tcConfig, tcGlobals, tcState.Ccu, outfile, false, impl)
 
+            let fileName = Path.GetFileNameWithoutExtension(impl.QualifiedNameOfFile.Range.FileName)
             let resource = encodedData[0].GetBytes().ToArray()
-            File.WriteAllBytes($"{tcResourceFilePath}{i}", resource))
+            File.WriteAllBytes($"{tcResourceFilePath}{fileName}", resource))
