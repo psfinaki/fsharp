@@ -167,9 +167,11 @@ let TypeCheck
         if tcConfig.reuseTcResults = ReuseTcResults.On then
             let cachingDriver = CachingDriver(tcConfig)
 
-            if cachingDriver.CanReuseTcResults(inputs) = Some true then
+            let cacheOpt = cachingDriver.CanReuseTcResults(inputs)
+            match cacheOpt with
+            | Some cache when cache.Length > 0 ->
                 cachingDriver.ReuseTcResults inputs tcInitialState
-            else
+            | _ ->
                 let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
                     CheckClosedInputSet(
                         ctok,

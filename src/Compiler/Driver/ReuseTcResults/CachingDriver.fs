@@ -144,8 +144,12 @@ type CachingDriver(tcConfig: TcConfig) =
                 let prevGraphOpt = readPrevGraph ()
                 let thisGraph = getThisCompilationGraph inputs
                 match prevGraphOpt with
-                | Some prevGraph -> Some (prevGraph = thisGraph)
-                | None -> Some false
+                | Some prevGraph ->
+                    if prevGraph = thisGraph then
+                        Some inputs
+                    else
+                        Some []
+                | None -> None
             else
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
                 None
