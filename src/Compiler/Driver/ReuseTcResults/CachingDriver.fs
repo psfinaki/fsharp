@@ -150,20 +150,18 @@ type CachingDriver(tcConfig: TcConfig) =
         let memory = ByteMemory.FromArray(bytes)
         let byteReaderA () = ReadOnlyByteMemory(memory)
 
-        let byteReaderB = None
-
         let tcInfo =
             GetTypecheckingDataTcInfo(
                 "", // assembly.FileName,
                 ILScopeRef.Local, // assembly.ILScopeRef,
                 None, //assembly.RawMetadata.TryGetILModuleDef(),
                 byteReaderA,
-                byteReaderB
+                None
             )
 
-        let rawData: PickledTcInfo = tcInfo.RawData
+        let rawData = tcInfo.RawData
 
-        let topAttrs: TopAttribs =
+        let topAttrs =
             {
                 mainMethodAttrs = rawData.MainMethodAttrs
                 netModuleAttrs = rawData.NetModuleAttrs
@@ -177,18 +175,16 @@ type CachingDriver(tcConfig: TcConfig) =
                 let memory = ByteMemory.FromArray(bytes)
                 let byteReaderA () = ReadOnlyByteMemory(memory)
 
-                let byteReaderB = None
-
-                let tcInfo2 =
+                let tcInfo =
                     GetTypecheckingDataCheckedImplFile(
                         "", // assembly.FileName,
                         ILScopeRef.Local, // assembly.ILScopeRef,
                         None, //assembly.RawMetadata.TryGetILModuleDef(),
                         byteReaderA,
-                        byteReaderB
+                        None
                     )
 
-                tcInfo2.RawData)
+                tcInfo.RawData)
 
         // need to understand if anything can be used here, pickling state is hard
         tcInitialState,
@@ -197,7 +193,6 @@ type CachingDriver(tcConfig: TcConfig) =
         // this is quite definitely wrong, need to figure out what to do with the environment
         tcInitialState.TcEnvFromImpls
     
-
     member _.CacheTcResults(tcState: TcState, topAttrs: TopAttribs, declaredImpls: CheckedImplFile list, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
         let thisTcData =
             {
@@ -208,7 +203,7 @@ type CachingDriver(tcConfig: TcConfig) =
 
         writeThisTcData thisTcData
 
-        let tcInfo1 =
+        let tcInfo =
             {
                 MainMethodAttrs = topAttrs.mainMethodAttrs
                 NetModuleAttrs = topAttrs.netModuleAttrs
@@ -216,11 +211,10 @@ type CachingDriver(tcConfig: TcConfig) =
             }
 
         let encodedData =
-            EncodeTypecheckingDataTcInfo(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo1)
+            EncodeTypecheckingDataTcInfo(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
 
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcAuxResourceFilePath, resource)
-
 
         declaredImpls |> List.iteri (fun i impl ->
             let encodedData =
