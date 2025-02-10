@@ -18,7 +18,7 @@ open FSharp.Compiler.AbstractIL.IL
 type TcData =
     {
         CmdLine: string array
-        Graph: string array
+        //Graph: string array
         References: string array
     }
 
@@ -27,14 +27,12 @@ type CachingDriver(tcConfig: TcConfig) =
 
     let outputDir = tcConfig.outputDir |> Option.defaultValue ""
     let tcDataFilePath = Path.Combine(outputDir, FSharpTcDataResourceName)
+    let graphFilePath = Path.Combine(outputDir, "graph")
     let tcAuxResourceFilePath = Path.Combine(outputDir, "tcaux")
     let tcResourceFilePath = Path.Combine(outputDir, "tc")
     
     [<Literal>]
     let CmdLineHeader = "CMDLINE"
-
-    [<Literal>]
-    let GraphHeader = "GRAPH"
 
     [<Literal>]
     let ReferencesHeader = "REFERENCES"
@@ -45,8 +43,6 @@ type CachingDriver(tcConfig: TcConfig) =
         let lines = ResizeArray<string>()
         lines.Add $"BEGIN {CmdLineHeader}"
         lines.AddRange tcData.CmdLine
-        lines.Add $"BEGIN {GraphHeader}"
-        lines.AddRange tcData.Graph
         lines.Add $"BEGIN {ReferencesHeader}"
         lines.AddRange tcData.References
 
@@ -57,7 +53,6 @@ type CachingDriver(tcConfig: TcConfig) =
             use tcDataFile = FileSystem.OpenFileForReadShim tcDataFilePath
 
             let cmdLine = ResizeArray<string>()
-            let graph = ResizeArray<string>()
             let refs = ResizeArray<string>()
 
             let mutable currentHeader = ""
@@ -69,17 +64,27 @@ type CachingDriver(tcConfig: TcConfig) =
                 | line ->
                     match currentHeader with
                     | CmdLineHeader -> cmdLine.Add line
-                    | GraphHeader -> graph.Add line
                     | ReferencesHeader -> refs.Add line
                     | _ -> invalidOp "broken tc cache")
 
             Some
                 {
                     CmdLine = cmdLine.ToArray()
-                    Graph = graph.ToArray()
                     References = refs.ToArray()
                 }
 
+        else
+            None
+
+    let writeThisGraph (graph: string array) =
+        use tcDataFile = FileSystem.OpenFileForWriteShim graphFilePath
+
+        tcDataFile.WriteAllLines graph
+
+    let readPrevGraph () =
+        if FileSystem.FileExistsShim graphFilePath then
+            use graphFile = FileSystem.OpenFileForReadShim graphFilePath
+            Some (graphFile.ReadAllLines())
         else
             None
 
@@ -126,7 +131,6 @@ type CachingDriver(tcConfig: TcConfig) =
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
-                Graph = getThisCompilationGraph inputs
                 References = getThisCompilationReferences tcConfig.referencedDLLs
             }
 
@@ -136,14 +140,19 @@ type CachingDriver(tcConfig: TcConfig) =
 
             if prevTcData = thisTcData then
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheHit []
-                true
+
+                let prevGraphOpt = readPrevGraph ()
+                let thisGraph = getThisCompilationGraph inputs
+                match prevGraphOpt with
+                | Some prevGraph -> Some (prevGraph = thisGraph)
+                | None -> Some false
             else
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
-                false
+                None
 
         | None ->
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
-            false
+            None
 
     member _.ReuseTcResults (inputs: ParsedInput list) (tcInitialState: TcState) =
         let bytes = File.ReadAllBytes(tcAuxResourceFilePath)
@@ -197,11 +206,13 @@ type CachingDriver(tcConfig: TcConfig) =
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
-                Graph = getThisCompilationGraph inputs
                 References = getThisCompilationReferences tcConfig.referencedDLLs
             }
 
         writeThisTcData thisTcData
+
+        let thisGraph = getThisCompilationGraph inputs
+        writeThisGraph thisGraph
 
         let tcInfo =
             {

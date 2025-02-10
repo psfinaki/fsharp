@@ -158,6 +158,8 @@ printfn $"{M1.helloWorld}" """
             |> shouldSucceed
             |> fun r -> ILChecker.generateIL r.Output.OutputPath.Value []
 
+        File.WriteAllText(tempPath2, code2) 
+
         let actual =
             cUnit
             |> compileExisting
