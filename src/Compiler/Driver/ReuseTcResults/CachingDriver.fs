@@ -195,9 +195,9 @@ type CachingDriver(tcConfig: TcConfig) =
                 match prevGraphOpt with
                 | Some prevGraph ->
                     let result = compareGraphs thisGraph prevGraph
-                    inputs
-                    |> List.where (fun input -> result.CanReuseFileNames |> Seq.contains input.FileName)
-                    |> Some
+                    let canReuse = inputs |> List.where (fun input -> result.CanReuseFileNames |> Seq.contains input.FileName)
+                    let cannotReuse = inputs |> List.where (fun input -> result.CannotReuseFileNames |> Seq.contains input.FileName)
+                    Some (canReuse, cannotReuse)
                 | None -> None
             else
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []

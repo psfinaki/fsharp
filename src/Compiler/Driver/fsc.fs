@@ -169,8 +169,28 @@ let TypeCheck
 
             let cacheOpt = cachingDriver.CanReuseTcResults(inputs)
             match cacheOpt with
-            | Some cache when cache.Length > 0 ->
-                cachingDriver.ReuseTcResults cache tcInitialState
+            | Some (canReuse, _) when canReuse.Length = inputs.Length ->
+                cachingDriver.ReuseTcResults canReuse tcInitialState
+            | Some (canReuse, cannotReuse) when canReuse.Length > 0 ->
+
+                let tcState, topAttrs, declaredImpls1, tcEnvAtEndOfLastFile = cachingDriver.ReuseTcResults canReuse tcInitialState
+
+                let _, _, declaredImpls2, _ = CheckClosedInputSet(
+                        ctok,
+                        diagnosticsLogger.CheckForErrors,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        None,
+                        tcInitialState,
+                        eagerFormat,
+                        cannotReuse
+                    )
+
+                let declaredImpls = declaredImpls1 @ declaredImpls2
+
+                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+
             | _ ->
                 let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
                     CheckClosedInputSet(
