@@ -84,6 +84,7 @@ val internal p_ty: pickler<TType>
 val internal pickleCcuInfo: pickler<PickledCcuInfo>
 
 /// Serialize typechecking info
+val internal pickleTcState: pickler<PickledTcState>
 val internal pickleTcInfo: pickler<PickledTcInfo>
 val internal pickleCheckedImplFile: pickler<CheckedImplFile>
 
@@ -150,6 +151,7 @@ val internal u_ty: unpickler<TType>
 val internal unpickleCcuInfo: ReaderState -> PickledCcuInfo
 
 /// Deserialize typechecking info
+val internal unpickleTcState: ReaderState -> PickledTcState
 val internal unpickleTcInfo: ReaderState -> PickledTcInfo
 val internal unpickleCheckedImplFile: ReaderState -> CheckedImplFile
 
