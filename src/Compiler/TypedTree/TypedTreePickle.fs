@@ -4402,7 +4402,7 @@ let unpickleCcuInfo st =
     let a, b, c, _space = u_tup4 unpickleModuleOrNamespace u_string u_bool (u_space 3) st
     { mspec=a; compileTimeWorkingDir=b; usesQuotations=c }
 
-let unpickleTcState st : PickledTcState =
+let unpickleTcState (st: ReaderState) : PickledTcState =
     { Temp = true }
 
 let unpickleTcInfo st : PickledTcInfo =
