@@ -146,6 +146,17 @@ val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlo
 /// Represents the incremental type checking state for a set of inputs
 [<Sealed>]
 type TcState =
+    {
+        tcsCcu: CcuThunk
+        tcsTcSigEnv: TcEnv
+        tcsTcImplEnv: TcEnv
+        tcsCreatesGeneratedProvidedTypes: bool
+        tcsRootSigs: RootSigs
+        tcsRootImpls: RootImpls
+        tcsCcuSig: ModuleOrNamespaceType
+        tcsImplicitOpenDeclarations: OpenDeclaration list
+    }
+
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
 

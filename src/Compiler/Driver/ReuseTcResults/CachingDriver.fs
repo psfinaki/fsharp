@@ -222,8 +222,18 @@ type CachingDriver(tcConfig: TcConfig) =
                 None
             )
 
-        let _ = data.RawData
-        Unchecked.defaultof<_>
+        let _rawData = data.RawData
+
+        {
+            tcsCcu = Unchecked.defaultof<_>
+            tcsTcSigEnv = Unchecked.defaultof<_>
+            tcsTcImplEnv = Unchecked.defaultof<_>
+            tcsCreatesGeneratedProvidedTypes = Unchecked.defaultof<_>
+            tcsRootSigs = Unchecked.defaultof<_>
+            tcsRootImpls = Unchecked.defaultof<_>
+            tcsCcuSig = Unchecked.defaultof<_>
+            tcsImplicitOpenDeclarations = Unchecked.defaultof<_>
+        }
 
     member private _.ReuseTopAttrs() =
         let bytes = File.ReadAllBytes(tcAuxResourceFilePath)
