@@ -222,10 +222,10 @@ type CachingDriver(tcConfig: TcConfig) =
                 None
             )
 
-        let _rawData = data.RawData
+        let rawData = data.RawData
 
         {
-            tcsCcu = Unchecked.defaultof<_>
+            tcsCcu = rawData.TcsCcu
             tcsTcSigEnv = Unchecked.defaultof<_>
             tcsTcImplEnv = Unchecked.defaultof<_>
             tcsCreatesGeneratedProvidedTypes = Unchecked.defaultof<_>
@@ -284,8 +284,12 @@ type CachingDriver(tcConfig: TcConfig) =
         declaredImpls
     
     member private _.CacheTcState(tcState: TcState, tcGlobals, outfile) =
+        let pickledTcState = {
+            TcsCcu = tcState.tcsCcu
+        }
+
         let encodedData =
-            EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, { Temp = true })
+            EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, pickledTcState)
 
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcStateFilePath, resource)

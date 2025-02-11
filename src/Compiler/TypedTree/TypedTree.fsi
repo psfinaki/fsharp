@@ -4307,7 +4307,7 @@ type PickledTcInfo =
       AssemblyAttrs: Attribs }
 
 type PickledTcState =
-    { Temp: bool }
+    { TcsCcu: CcuThunk }
 
 /// Represents a set of free local values. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.

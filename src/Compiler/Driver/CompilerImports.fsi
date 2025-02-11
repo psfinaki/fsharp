@@ -102,7 +102,7 @@ val EncodeTypecheckingDataTcState:
     generatedCcu: CcuThunk *
     outfile: string *
     isIncrementalBuild: bool *
-    tcInfo: PickledTcState ->
+    tcState: PickledTcState ->
         ILResource list
 
 val EncodeTypecheckingDataTcInfo:

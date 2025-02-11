@@ -5909,7 +5909,7 @@ type PickledTcInfo = {
 }
 
 type PickledTcState = {
-    Temp: bool
+    TcsCcu: CcuThunk
 }
 
 /// Represents a set of free local values. Computed and cached by later phases

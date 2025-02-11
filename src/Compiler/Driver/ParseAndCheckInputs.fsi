@@ -143,8 +143,13 @@ val ParseInputFiles:
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
 val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv * OpenDeclaration list
 
+open Internal.Utilities.Collections
+
+type RootSigs = Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
+
+type RootImpls = Zset<QualifiedNameOfFile>
+
 /// Represents the incremental type checking state for a set of inputs
-[<Sealed>]
 type TcState =
     {
         tcsCcu: CcuThunk

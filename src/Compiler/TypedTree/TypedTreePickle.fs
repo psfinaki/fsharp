@@ -4403,7 +4403,7 @@ let unpickleCcuInfo st =
     { mspec=a; compileTimeWorkingDir=b; usesQuotations=c }
 
 let unpickleTcState (st: ReaderState) : PickledTcState =
-    { Temp = true }
+    { TcsCcu = Unchecked.defaultof<_> }
 
 let unpickleTcInfo st : PickledTcInfo =
     let mainMethodAttrs, netModuleAttrs, assemblyAttrs =
