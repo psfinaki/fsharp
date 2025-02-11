@@ -4384,6 +4384,9 @@ let pickleCcuInfo (minfo: PickledCcuInfo) st =
 
 let pickleTcState (tcState: PickledTcState) (st: WriterState) =
     p_ccuref_new tcState.TcsCcu st
+    p_bool tcState.TcsCreatesGeneratedProvidedTypes st
+    p_modul_typ_new tcState.TcsCcuSig st
+    p_list p_open_decl tcState.TcsImplicitOpenDeclarations st
     
 let pickleTcInfo (tcInfo: PickledTcInfo) (st: WriterState) =
     p_tup3
@@ -4404,8 +4407,16 @@ let unpickleCcuInfo st =
 
 let unpickleTcState (st: ReaderState) : PickledTcState =
     let tcsCcu = u_ccuref_new st
+    let tcsCreatesGeneratedProvidedTypes = u_bool st
+    let tcsCcuSig = u_modul_typ_new st
+    let tcsImplicitOpenDeclarations = u_list u_open_decl st
 
-    { TcsCcu = tcsCcu }
+    { 
+        TcsCcu = tcsCcu
+        TcsCreatesGeneratedProvidedTypes = tcsCreatesGeneratedProvidedTypes
+        TcsCcuSig = tcsCcuSig
+        TcsImplicitOpenDeclarations = tcsImplicitOpenDeclarations 
+    }
 
 let unpickleTcInfo st : PickledTcInfo =
     let mainMethodAttrs, netModuleAttrs, assemblyAttrs =

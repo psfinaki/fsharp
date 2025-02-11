@@ -226,13 +226,13 @@ type CachingDriver(tcConfig: TcConfig) =
 
         {
             tcsCcu = rawData.TcsCcu
+            tcsCreatesGeneratedProvidedTypes = rawData.TcsCreatesGeneratedProvidedTypes
             tcsTcSigEnv = Unchecked.defaultof<_>
             tcsTcImplEnv = Unchecked.defaultof<_>
-            tcsCreatesGeneratedProvidedTypes = Unchecked.defaultof<_>
             tcsRootSigs = Unchecked.defaultof<_>
             tcsRootImpls = Unchecked.defaultof<_>
-            tcsCcuSig = Unchecked.defaultof<_>
-            tcsImplicitOpenDeclarations = Unchecked.defaultof<_>
+            tcsCcuSig = rawData.TcsCcuSig
+            tcsImplicitOpenDeclarations = rawData.TcsImplicitOpenDeclarations
         }
 
     member private _.ReuseTopAttrs() =
@@ -286,6 +286,9 @@ type CachingDriver(tcConfig: TcConfig) =
     member private _.CacheTcState(tcState: TcState, tcGlobals, outfile) =
         let pickledTcState = {
             TcsCcu = tcState.tcsCcu
+            TcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes
+            TcsCcuSig = tcState.tcsCcuSig
+            TcsImplicitOpenDeclarations = tcState.tcsImplicitOpenDeclarations
         }
 
         let encodedData =

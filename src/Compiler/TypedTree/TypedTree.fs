@@ -5910,6 +5910,9 @@ type PickledTcInfo = {
 
 type PickledTcState = {
     TcsCcu: CcuThunk
+    TcsCreatesGeneratedProvidedTypes: bool
+    TcsCcuSig: ModuleOrNamespaceType
+    TcsImplicitOpenDeclarations: OpenDeclaration list
 }
 
 /// Represents a set of free local values. Computed and cached by later phases
