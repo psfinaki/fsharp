@@ -4383,8 +4383,8 @@ let pickleCcuInfo (minfo: PickledCcuInfo) st =
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations, ()) st
 
 let pickleTcState (tcState: PickledTcState) (st: WriterState) =
-    ()
-
+    p_ccuref_new tcState.TcsCcu st
+    
 let pickleTcInfo (tcInfo: PickledTcInfo) (st: WriterState) =
     p_tup3
         p_attribs
@@ -4403,7 +4403,9 @@ let unpickleCcuInfo st =
     { mspec=a; compileTimeWorkingDir=b; usesQuotations=c }
 
 let unpickleTcState (st: ReaderState) : PickledTcState =
-    { TcsCcu = Unchecked.defaultof<_> }
+    let tcsCcu = u_ccuref_new st
+
+    { TcsCcu = tcsCcu }
 
 let unpickleTcInfo st : PickledTcInfo =
     let mainMethodAttrs, netModuleAttrs, assemblyAttrs =
