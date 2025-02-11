@@ -207,6 +207,9 @@ type CachingDriver(tcConfig: TcConfig) =
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
             None
 
+    member private _.ReuseTcState() : TcState =
+        Unchecked.defaultof<_>
+
     member private _.ReuseTopAttrs() =
         let bytes = File.ReadAllBytes(tcAuxResourceFilePath)
         let memory = ByteMemory.FromArray(bytes)
@@ -247,12 +250,17 @@ type CachingDriver(tcConfig: TcConfig) =
         tcInfo.RawData
 
     member this.ReuseTcResults (inputs: ParsedInput list) =
+        let tcState = this.ReuseTcState()
         let topAttrs = this.ReuseTopAttrs()
         let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
 
+        tcState,
         topAttrs,
         declaredImpls
     
+    member private _.CacheTcState(tcState: TcState, tcGlobals, outfile) =
+        ()
+
     member private _.CacheTopAttrs(tcState: TcState, topAttrs: TopAttribs, tcGlobals, outfile) =
         let tcInfo =
             {
@@ -288,5 +296,6 @@ type CachingDriver(tcConfig: TcConfig) =
         writeThisGraph thisGraph
 
 
+        this.CacheTcState(tcState, tcGlobals, outfile)
         this.CacheTopAttrs(tcState, topAttrs, tcGlobals, outfile)
-        declaredImpls |> List.map (fun impl -> this.CacheDeclaredImpl(tcState, impl, tcGlobals, outfile))
+        declaredImpls |> List.iter (fun impl -> this.CacheDeclaredImpl(tcState, impl, tcGlobals, outfile))
