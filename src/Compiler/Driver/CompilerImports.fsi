@@ -72,6 +72,14 @@ val EncodeOptimizationData:
     isIncrementalBuild: bool ->
         ILResource list
 
+val GetTypecheckingDataTcState:
+    file: string *
+    ilScopeRef: ILScopeRef *
+    ilModule: ILModuleDef option *
+    byteReaderA: (unit -> ReadOnlyByteMemory) *
+    byteReaderB: (unit -> ReadOnlyByteMemory) option ->
+        PickledDataWithReferences<PickledTcState>
+
 val GetTypecheckingDataTcInfo:
     file: string *
     ilScopeRef: ILScopeRef *
@@ -79,7 +87,6 @@ val GetTypecheckingDataTcInfo:
     byteReaderA: (unit -> ReadOnlyByteMemory) *
     byteReaderB: (unit -> ReadOnlyByteMemory) option ->
         PickledDataWithReferences<PickledTcInfo>
-
 
 val GetTypecheckingDataCheckedImplFile:
     file: string *
@@ -89,6 +96,14 @@ val GetTypecheckingDataCheckedImplFile:
     byteReaderB: (unit -> ReadOnlyByteMemory) option ->
         PickledDataWithReferences<CheckedImplFile>
 
+val EncodeTypecheckingDataTcState:
+    tcConfig: TcConfig *
+    tcGlobals: TcGlobals *
+    generatedCcu: CcuThunk *
+    outfile: string *
+    isIncrementalBuild: bool *
+    tcInfo: PickledTcState ->
+        ILResource list
 
 val EncodeTypecheckingDataTcInfo:
     tcConfig: TcConfig *

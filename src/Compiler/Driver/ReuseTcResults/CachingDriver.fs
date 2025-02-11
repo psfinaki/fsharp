@@ -43,6 +43,7 @@ type CachingDriver(tcConfig: TcConfig) =
     let tcDataFilePath = Path.Combine(outputDir, FSharpTcDataResourceName)
     let graphFilePath = Path.Combine(outputDir, "graph")
     let tcAuxResourceFilePath = Path.Combine(outputDir, "tcaux")
+    let tcStateFilePath = Path.Combine(outputDir, "tcstate")
     let tcResourceFilePath = Path.Combine(outputDir, "tc")
     
     [<Literal>]
@@ -208,6 +209,20 @@ type CachingDriver(tcConfig: TcConfig) =
             None
 
     member private _.ReuseTcState() : TcState =
+        let bytes = File.ReadAllBytes(tcStateFilePath)
+        let memory = ByteMemory.FromArray(bytes)
+        let byteReaderA () = ReadOnlyByteMemory(memory)
+
+        let data =
+            GetTypecheckingDataTcState(
+                "", // assembly.FileName,
+                ILScopeRef.Local, // assembly.ILScopeRef,
+                None, //assembly.RawMetadata.TryGetILModuleDef(),
+                byteReaderA,
+                None
+            )
+
+        let _ = data.RawData
         Unchecked.defaultof<_>
 
     member private _.ReuseTopAttrs() =
@@ -215,7 +230,7 @@ type CachingDriver(tcConfig: TcConfig) =
         let memory = ByteMemory.FromArray(bytes)
         let byteReaderA () = ReadOnlyByteMemory(memory)
 
-        let tcInfo =
+        let data =
             GetTypecheckingDataTcInfo(
                 "", // assembly.FileName,
                 ILScopeRef.Local, // assembly.ILScopeRef,
@@ -224,7 +239,7 @@ type CachingDriver(tcConfig: TcConfig) =
                 None
             )
 
-        let rawData = tcInfo.RawData
+        let rawData = data.RawData
 
         {
             mainMethodAttrs = rawData.MainMethodAttrs
@@ -238,7 +253,7 @@ type CachingDriver(tcConfig: TcConfig) =
         let memory = ByteMemory.FromArray(bytes)
         let byteReaderA () = ReadOnlyByteMemory(memory)
 
-        let tcInfo =
+        let data =
             GetTypecheckingDataCheckedImplFile(
                 "", // assembly.FileName,
                 ILScopeRef.Local, // assembly.ILScopeRef,
@@ -247,7 +262,7 @@ type CachingDriver(tcConfig: TcConfig) =
                 None
             )
 
-        tcInfo.RawData
+        data.RawData
 
     member this.ReuseTcResults (inputs: ParsedInput list) =
         let tcState = this.ReuseTcState()
@@ -259,7 +274,11 @@ type CachingDriver(tcConfig: TcConfig) =
         declaredImpls
     
     member private _.CacheTcState(tcState: TcState, tcGlobals, outfile) =
-        ()
+        let encodedData =
+            EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, { Temp = true })
+
+        let resource = encodedData[0].GetBytes().ToArray()
+        File.WriteAllBytes(tcStateFilePath, resource)
 
     member private _.CacheTopAttrs(tcState: TcState, topAttrs: TopAttribs, tcGlobals, outfile) =
         let tcInfo =

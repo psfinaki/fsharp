@@ -4306,6 +4306,9 @@ type PickledTcInfo =
       NetModuleAttrs: Attribs
       AssemblyAttrs: Attribs }
 
+type PickledTcState =
+    { Temp: bool }
+
 /// Represents a set of free local values. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.
 type FreeLocals = Zset<Val>
