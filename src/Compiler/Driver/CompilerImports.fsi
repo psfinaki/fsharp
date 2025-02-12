@@ -53,6 +53,18 @@ val IsReflectedDefinitionsResource: ILResource -> bool
 val GetResourceNameAndSignatureDataFuncs:
     ILResource list -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
+val PickleToResource:
+    inMem: bool ->
+    file: string ->
+    g: TcGlobals ->
+    compress: bool ->
+    scope: CcuThunk ->
+    rName: string ->
+    rNameB: string ->
+    p: ('a -> WriterState -> unit) ->
+    x: 'a ->
+        ILResource * ILResource option
+
 /// Encode the F# interface data into a set of IL attributes and resources
 val EncodeSignatureData:
     tcConfig: TcConfig *
@@ -70,57 +82,6 @@ val EncodeOptimizationData:
     exportRemapping: Remap *
     (CcuThunk * #CcuOptimizationInfo) *
     isIncrementalBuild: bool ->
-        ILResource list
-
-val GetTypecheckingDataTcState:
-    file: string *
-    ilScopeRef: ILScopeRef *
-    ilModule: ILModuleDef option *
-    byteReaderA: (unit -> ReadOnlyByteMemory) *
-    byteReaderB: (unit -> ReadOnlyByteMemory) option ->
-        PickledDataWithReferences<PickledTcState>
-
-val GetTypecheckingDataTcInfo:
-    file: string *
-    ilScopeRef: ILScopeRef *
-    ilModule: ILModuleDef option *
-    byteReaderA: (unit -> ReadOnlyByteMemory) *
-    byteReaderB: (unit -> ReadOnlyByteMemory) option ->
-        PickledDataWithReferences<PickledTcInfo>
-
-val GetTypecheckingDataCheckedImplFile:
-    file: string *
-    ilScopeRef: ILScopeRef *
-    ilModule: ILModuleDef option *
-    byteReaderA: (unit -> ReadOnlyByteMemory) *
-    byteReaderB: (unit -> ReadOnlyByteMemory) option ->
-        PickledDataWithReferences<CheckedImplFile>
-
-val EncodeTypecheckingDataTcState:
-    tcConfig: TcConfig *
-    tcGlobals: TcGlobals *
-    generatedCcu: CcuThunk *
-    outfile: string *
-    isIncrementalBuild: bool *
-    tcState: PickledTcState ->
-        ILResource list
-
-val EncodeTypecheckingDataTcInfo:
-    tcConfig: TcConfig *
-    tcGlobals: TcGlobals *
-    generatedCcu: CcuThunk *
-    outfile: string *
-    isIncrementalBuild: bool *
-    tcInfo: PickledTcInfo ->
-        ILResource list
-
-val EncodeTypecheckingDataCheckedImplFile:
-    tcConfig: TcConfig *
-    tcGlobals: TcGlobals *
-    generatedCcu: CcuThunk *
-    outfile: string *
-    isIncrementalBuild: bool *
-    checkedImplFile: CheckedImplFile ->
         ILResource list
 
 [<RequireQualifiedAccess>]

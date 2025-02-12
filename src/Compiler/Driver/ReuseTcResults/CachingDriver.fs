@@ -1,4 +1,4 @@
-module internal FSharp.Compiler.ReuseTcResults
+module internal FSharp.Compiler.ReuseTcResults.CachingDriver
 
 open System.Collections.Generic
 open System.IO
@@ -12,7 +12,7 @@ open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTree
-open CompilerImports
+open FSharp.Compiler.ReuseTcResults.Imports
 open FSharp.Compiler.AbstractIL.IL
 
 type TcData =
