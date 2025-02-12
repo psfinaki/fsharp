@@ -13,11 +13,11 @@ open FSharp.Compiler.TypedTreePickle
 let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     // tcEnv.eNameResEnv
     // tcEnv.eUngeneralizableItems
-    p_list p_ident tcEnv.ePath
-    // tcEnv.eCompPath
-    // tcEnv.eAccessPath
+    p_list p_ident tcEnv.ePath st
+    p_cpath tcEnv.eCompPath st
+    p_cpath tcEnv.eAccessPath st
     // tcEnv.eAccessRights
-    // tcEnv.eInternalsVisibleCompPaths
+    p_list p_cpath tcEnv.eInternalsVisibleCompPaths st
     // tcEnv.eModuleOrNamespaceTypeAccumulator
     // tcEnv.eContextInfo
     // tcEnv.eFamilyType
@@ -26,7 +26,6 @@ let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     // tcEnv.eLambdaArgInfos
     p_bool tcEnv.eIsControlFlow
     // tcEnv.eCachedImplicitYieldExpressions
-    ()
 
 let pickleTcState (tcState: TcState) (st: WriterState) =
     p_ccuref_new tcState.tcsCcu st
@@ -55,10 +54,10 @@ let u_tc_env (st: ReaderState) : TcEnv =
     // eNameResEnv
     // eUngeneralizableItems
     let ePath = u_list u_ident st
-    // eCompPath
-    // eAccessPath
+    let eCompPath = u_cpath st
+    let eAccessPath = u_cpath st
     // eAccessRights
-    // eInternalsVisibleCompPaths
+    let eInternalsVisibleCompPaths = u_list u_cpath st
     // eModuleOrNamespaceTypeAccumulator
     // eContextInfo
     // eFamilyType
@@ -72,10 +71,10 @@ let u_tc_env (st: ReaderState) : TcEnv =
         eNameResEnv = Unchecked.defaultof<_>
         eUngeneralizableItems = Unchecked.defaultof<_>
         ePath = ePath
-        eCompPath = Unchecked.defaultof<_>
-        eAccessPath = Unchecked.defaultof<_>
+        eCompPath = eCompPath
+        eAccessPath = eAccessPath
         eAccessRights = Unchecked.defaultof<_>
-        eInternalsVisibleCompPaths = Unchecked.defaultof<_>
+        eInternalsVisibleCompPaths = eInternalsVisibleCompPaths
         eModuleOrNamespaceTypeAccumulator = Unchecked.defaultof<_>
         eContextInfo = Unchecked.defaultof<_>
         eFamilyType = Unchecked.defaultof<_>
