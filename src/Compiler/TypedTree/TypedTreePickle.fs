@@ -4402,6 +4402,7 @@ let pickleTcState (tcState: PickledTcState) (st: WriterState) =
     p_ccuref_new tcState.TcsCcu st
     p_bool tcState.TcsCreatesGeneratedProvidedTypes st
     (p_list p_tcs_root_sig) tcState.TcsRootSigs st
+    p_list p_qualified_name_of_file tcState.TcsRootImpls st
     p_modul_typ_new tcState.TcsCcuSig st
     p_list p_open_decl tcState.TcsImplicitOpenDeclarations st
     
@@ -4426,6 +4427,7 @@ let unpickleTcState (st: ReaderState) : PickledTcState =
     let tcsCcu = u_ccuref_new st
     let tcsCreatesGeneratedProvidedTypes = u_bool st
     let tcsRootSigs = u_list u_tcs_root_sig st
+    let tcsRootImpls = u_list u_qualified_name_of_file st
     let tcsCcuSig = u_modul_typ_new st
     let tcsImplicitOpenDeclarations = u_list u_open_decl st
 
@@ -4433,6 +4435,7 @@ let unpickleTcState (st: ReaderState) : PickledTcState =
         TcsCcu = tcsCcu
         TcsCreatesGeneratedProvidedTypes = tcsCreatesGeneratedProvidedTypes
         TcsRootSigs = tcsRootSigs
+        TcsRootImpls = tcsRootImpls
         TcsCcuSig = tcsCcuSig
         TcsImplicitOpenDeclarations = tcsImplicitOpenDeclarations 
     }

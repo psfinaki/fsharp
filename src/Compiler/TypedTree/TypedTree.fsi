@@ -4310,6 +4310,7 @@ type PickledTcState =
     { TcsCcu: CcuThunk
       TcsCreatesGeneratedProvidedTypes: bool
       TcsRootSigs: (QualifiedNameOfFile * ModuleOrNamespaceType) list
+      TcsRootImpls: QualifiedNameOfFile list
       TcsCcuSig: ModuleOrNamespaceType
       TcsImplicitOpenDeclarations: OpenDeclaration list }
 
