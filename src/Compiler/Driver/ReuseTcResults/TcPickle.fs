@@ -1,5 +1,7 @@
 ﻿module internal FSharp.Compiler.ReuseTcResults.TcPickle
 
+open FSharp.Compiler.CheckDeclarations
+
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
 
@@ -14,12 +16,12 @@ let pickleTcState (tcState: PickledTcState) (st: WriterState) =
     p_modul_typ_new tcState.TcsCcuSig st
     p_list p_open_decl tcState.TcsImplicitOpenDeclarations st
     
-let pickleTcInfo (tcInfo: PickledTcInfo) (st: WriterState) =
+let pickleTcInfo (tcInfo: TopAttribs) (st: WriterState) =
     p_tup3
         p_attribs
         p_attribs
         p_attribs
-        (tcInfo.MainMethodAttrs, tcInfo.NetModuleAttrs, tcInfo.AssemblyAttrs)
+        (tcInfo.mainMethodAttrs, tcInfo.netModuleAttrs, tcInfo.assemblyAttrs)
         st
 
 let pickleCheckedImplFile (checkedImplFile: CheckedImplFile) (st: WriterState) =
@@ -46,7 +48,7 @@ let unpickleTcState (st: ReaderState) : PickledTcState =
         TcsImplicitOpenDeclarations = tcsImplicitOpenDeclarations 
     }
 
-let unpickleTcInfo st : PickledTcInfo =
+let unpickleTcInfo st : TopAttribs =
     let mainMethodAttrs, netModuleAttrs, assemblyAttrs =
         u_tup3
             u_attribs
@@ -55,9 +57,9 @@ let unpickleTcInfo st : PickledTcInfo =
             st
 
     {
-        MainMethodAttrs = mainMethodAttrs
-        NetModuleAttrs = netModuleAttrs
-        AssemblyAttrs = assemblyAttrs
+        mainMethodAttrs = mainMethodAttrs
+        netModuleAttrs = netModuleAttrs
+        assemblyAttrs = assemblyAttrs
     }
 
 let unpickleCheckedImplFile st : CheckedImplFile =

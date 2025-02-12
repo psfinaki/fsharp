@@ -5902,12 +5902,6 @@ type PickledCcuInfo =
 
     override _.ToString() = "PickledCcuInfo(...)"
 
-type PickledTcInfo = {
-    MainMethodAttrs: Attribs
-    NetModuleAttrs: Attribs
-    AssemblyAttrs: Attribs
-}
-
 type PickledTcState = {
     TcsCcu: CcuThunk
     TcsCreatesGeneratedProvidedTypes: bool

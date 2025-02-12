@@ -4301,11 +4301,6 @@ type PickledCcuInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
-type PickledTcInfo =
-    { MainMethodAttrs: Attribs
-      NetModuleAttrs: Attribs
-      AssemblyAttrs: Attribs }
-
 type PickledTcState =
     { TcsCcu: CcuThunk
       TcsCreatesGeneratedProvidedTypes: bool

@@ -249,13 +249,7 @@ type CachingDriver(tcConfig: TcConfig) =
                 None
             )
 
-        let rawData = data.RawData
-
-        {
-            mainMethodAttrs = rawData.MainMethodAttrs
-            netModuleAttrs = rawData.NetModuleAttrs
-            assemblyAttrs = rawData.AssemblyAttrs
-        }
+        data.RawData
 
     member private _.ReuseDeclaredImpl (implFile: ParsedInput) =
         let fileName = Path.GetFileNameWithoutExtension(implFile.FileName)
@@ -300,15 +294,8 @@ type CachingDriver(tcConfig: TcConfig) =
         File.WriteAllBytes(tcStateFilePath, resource)
 
     member private _.CacheTopAttrs(tcState: TcState, topAttrs: TopAttribs, tcGlobals, outfile) =
-        let tcInfo =
-            {
-                MainMethodAttrs = topAttrs.mainMethodAttrs
-                NetModuleAttrs = topAttrs.netModuleAttrs
-                AssemblyAttrs = topAttrs.assemblyAttrs
-            }
-
         let encodedData =
-            EncodeTypecheckingDataTcInfo(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcInfo)
+            EncodeTypecheckingDataTcInfo(tcConfig, tcGlobals, tcState.Ccu, outfile, false, topAttrs)
 
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcAuxResourceFilePath, resource)
