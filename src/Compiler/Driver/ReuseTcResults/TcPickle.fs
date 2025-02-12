@@ -1,5 +1,6 @@
 ﻿module internal FSharp.Compiler.ReuseTcResults.TcPickle
 
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.ParseAndCheckInputs
 
@@ -8,6 +9,24 @@ open FSharp.Compiler.TypedTreePickle
 
 
 // pickling 
+
+let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
+    // tcEnv.eNameResEnv
+    // tcEnv.eUngeneralizableItems
+    p_list p_ident tcEnv.ePath
+    // tcEnv.eCompPath
+    // tcEnv.eAccessPath
+    // tcEnv.eAccessRights
+    // tcEnv.eInternalsVisibleCompPaths
+    // tcEnv.eModuleOrNamespaceTypeAccumulator
+    // tcEnv.eContextInfo
+    // tcEnv.eFamilyType
+    // tcEnv.eCtorInfo
+    p_option p_string tcEnv.eCallerMemberName
+    // tcEnv.eLambdaArgInfos
+    p_bool tcEnv.eIsControlFlow
+    // tcEnv.eCachedImplicitYieldExpressions
+    ()
 
 let pickleTcState (tcState: TcState) (st: WriterState) =
     p_ccuref_new tcState.tcsCcu st
@@ -31,6 +50,41 @@ let pickleCheckedImplFile (checkedImplFile: CheckedImplFile) (st: WriterState) =
 
 // unpickling
 
+
+let u_tc_env (st: ReaderState) : TcEnv =
+    // eNameResEnv
+    // eUngeneralizableItems
+    let ePath = u_list u_ident st
+    // eCompPath
+    // eAccessPath
+    // eAccessRights
+    // eInternalsVisibleCompPaths
+    // eModuleOrNamespaceTypeAccumulator
+    // eContextInfo
+    // eFamilyType
+    // eCtorInfo
+    let eCallerMemberName = u_option u_string st
+    // eLambdaArgInfos
+    let eIsControlFlow = u_bool st
+    // eCachedImplicitYieldExpressions
+
+    {
+        eNameResEnv = Unchecked.defaultof<_>
+        eUngeneralizableItems = Unchecked.defaultof<_>
+        ePath = ePath
+        eCompPath = Unchecked.defaultof<_>
+        eAccessPath = Unchecked.defaultof<_>
+        eAccessRights = Unchecked.defaultof<_>
+        eInternalsVisibleCompPaths = Unchecked.defaultof<_>
+        eModuleOrNamespaceTypeAccumulator = Unchecked.defaultof<_>
+        eContextInfo = Unchecked.defaultof<_>
+        eFamilyType = Unchecked.defaultof<_>
+        eCtorInfo = Unchecked.defaultof<_>
+        eCallerMemberName = eCallerMemberName
+        eLambdaArgInfos = Unchecked.defaultof<_>
+        eIsControlFlow = eIsControlFlow
+        eCachedImplicitYieldExpressions = Unchecked.defaultof<_>
+    }
 
 let unpickleTcState (st: ReaderState) : TcState =
     let tcsCcu = u_ccuref_new st
