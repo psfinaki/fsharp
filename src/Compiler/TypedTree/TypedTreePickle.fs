@@ -1626,7 +1626,6 @@ let u_trait st =
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
     TTrait (a, b, c, d, e, ref None, ref f)
 
-
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
 
 let p_measure_con tcref st = p_byte 0 st; p_tcref "measure" tcref st

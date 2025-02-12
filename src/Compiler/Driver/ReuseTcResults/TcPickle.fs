@@ -1,14 +1,78 @@
 ﻿module internal FSharp.Compiler.ReuseTcResults.TcPickle
 
+open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.ParseAndCheckInputs
 
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
+open Internal.Utilities.Collections
 
 
 // pickling 
+
+let p_ungeneralizable_item (x: UngeneralizableItem) st =
+    p_bool x.WillNeverHaveFreeTypars st
+    p_list p_entity_spec_new (x.CachedFreeLocalTycons.ToList()) st
+    p_list p_Val_new (x.CachedFreeTraitSolutions.ToList()) st
+
+let p_context_info (x: ContextInfo) st =
+    match x with
+    | ContextInfo.NoContext ->
+        p_byte 0 st
+    | ContextInfo.IfExpression range ->
+        p_byte 1 st
+        p_range range st
+    | ContextInfo.OmittedElseBranch range ->
+        p_byte 2 st
+        p_range range st
+    | ContextInfo.ElseBranchResult range ->
+        p_byte 3 st
+        p_range range st
+    | ContextInfo.RecordFields ->
+        p_byte 4 st
+    | ContextInfo.TupleInRecordFields ->
+        p_byte 5 st
+    | ContextInfo.CollectionElement (bool, range) ->
+        p_byte 6 st
+        p_bool bool st
+        p_range range st
+    | ContextInfo.ReturnInComputationExpression ->
+        p_byte 7 st
+    | ContextInfo.YieldInComputationExpression ->
+        p_byte 8 st
+    | ContextInfo.RuntimeTypeTest bool ->
+        p_byte 9 st
+        p_bool bool st
+    | ContextInfo.DowncastUsedInsteadOfUpcast bool ->
+        p_byte 10 st
+        p_bool bool st
+    | ContextInfo.FollowingPatternMatchClause range ->
+        p_byte 11 st
+        p_range range st
+    | ContextInfo.PatternMatchGuard range ->
+        p_byte 12 st
+        p_range range st
+    | ContextInfo.SequenceExpression ttype ->
+        p_byte 13 st
+        p_ty_new ttype st
+
+let p_safe_init_data (x: SafeInitData) st =
+    match x with
+    | SafeInitField (recdFieldRef, recdField) ->
+        p_byte 0 st
+        p_rfref recdFieldRef st
+        p_recdfield_spec recdField st
+    | NoSafeInitInfo ->
+        p_byte 1 st
+
+let p_ctor_info (x: CtorInfo) st =
+    p_int x.ctorShapeCounter st
+    p_option p_Val_new x.safeThisValOpt st
+    p_safe_init_data x.safeInitInfo st
+    p_bool x.ctorIsImplicit st
 
 let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     // tcEnv.eNameResEnv
@@ -18,12 +82,12 @@ let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     p_cpath tcEnv.eAccessPath st
     // tcEnv.eAccessRights
     p_list p_cpath tcEnv.eInternalsVisibleCompPaths st
-    // tcEnv.eModuleOrNamespaceTypeAccumulator
-    // tcEnv.eContextInfo
-    // tcEnv.eFamilyType
-    // tcEnv.eCtorInfo
-    p_option p_string tcEnv.eCallerMemberName
-    // tcEnv.eLambdaArgInfos
+    p_modul_typ_new tcEnv.eModuleOrNamespaceTypeAccumulator.Value st
+    p_context_info tcEnv.eContextInfo st
+    p_option p_tcref_new tcEnv.eFamilyType st
+    p_option p_ctor_info tcEnv.eCtorInfo st
+    p_option p_string tcEnv.eCallerMemberName st
+    p_list (p_list (p_ArgReprInfo)) tcEnv.eLambdaArgInfos st
     p_bool tcEnv.eIsControlFlow
     // tcEnv.eCachedImplicitYieldExpressions
 
@@ -49,40 +113,104 @@ let pickleCheckedImplFile (checkedImplFile: CheckedImplFile) (st: WriterState) =
 
 // unpickling
 
+let u_context_info st : ContextInfo =
+    let tag = u_byte st 
+    match tag with
+    | 0 -> ContextInfo.NoContext
+    | 1 -> 
+        let range = u_range st
+        ContextInfo.IfExpression range
+    | 2 ->
+        let range = u_range st 
+        ContextInfo.OmittedElseBranch range
+    | 3 -> 
+        let range = u_range st
+        ContextInfo.ElseBranchResult range
+    | 4 -> ContextInfo.RecordFields
+    | 5 -> ContextInfo.TupleInRecordFields
+    | 6 -> 
+        let bool = u_bool st
+        let range = u_range st
+        ContextInfo.CollectionElement (bool, range)
+    | 7 -> ContextInfo.ReturnInComputationExpression
+    | 8 -> ContextInfo.YieldInComputationExpression
+    | 9 -> 
+        let bool = u_bool st
+        ContextInfo.RuntimeTypeTest bool 
+    | 10 ->
+        let bool = u_bool st
+        ContextInfo.DowncastUsedInsteadOfUpcast bool
+    | 11 -> 
+        let range = u_range st
+        ContextInfo.FollowingPatternMatchClause range
+    | 12 ->
+        let range = u_range st
+        ContextInfo.PatternMatchGuard range
+    | 13 -> 
+        let ttype = u_ty_new st
+        ContextInfo.SequenceExpression ttype
+    | _ -> 
+        ufailwith st "u_context_info"
+
+let u_safe_init_data st : SafeInitData =
+    let tag = u_byte st
+    match tag with
+    | 0 -> 
+        let recdFieldRef = u_rfref st
+        let recdField = u_recdfield_spec st
+        SafeInitField (recdFieldRef, recdField)
+    | 1 ->
+        NoSafeInitInfo
+    | _ ->
+        ufailwith st "u_safe_init_data"
+
+let u_ctor_info st : CtorInfo =
+    let ctorShapeCounter = u_int st
+    let safeThisValOpt = u_option u_Val_new st
+    let safeInitInfo = u_safe_init_data st
+    let ctorIsImplicit = u_bool st
+
+    {
+        ctorShapeCounter = ctorShapeCounter
+        safeThisValOpt = safeThisValOpt
+        safeInitInfo = safeInitInfo
+        ctorIsImplicit = ctorIsImplicit
+    }
+
 
 let u_tc_env (st: ReaderState) : TcEnv =
     // eNameResEnv
-    // eUngeneralizableItems
+    //let eUngeneralizableItems
     let ePath = u_list u_ident st
     let eCompPath = u_cpath st
     let eAccessPath = u_cpath st
     // eAccessRights
     let eInternalsVisibleCompPaths = u_list u_cpath st
-    // eModuleOrNamespaceTypeAccumulator
-    // eContextInfo
-    // eFamilyType
-    // eCtorInfo
+    let eModuleOrNamespaceTypeAccumulator = u_modul_typ_new st
+    let eContextInfo = u_context_info st
+    let eFamilyType = u_option u_tcref_new st
+    let eCtorInfo = u_option u_ctor_info st
     let eCallerMemberName = u_option u_string st
-    // eLambdaArgInfos
+    let eLambdaArgInfos = u_list (u_list u_ArgReprInfo) st
     let eIsControlFlow = u_bool st
     // eCachedImplicitYieldExpressions
 
     {
         eNameResEnv = Unchecked.defaultof<_>
-        eUngeneralizableItems = Unchecked.defaultof<_>
+        eUngeneralizableItems = List.empty
         ePath = ePath
         eCompPath = eCompPath
         eAccessPath = eAccessPath
-        eAccessRights = Unchecked.defaultof<_>
+        eAccessRights = AccessibleFromEverywhere
         eInternalsVisibleCompPaths = eInternalsVisibleCompPaths
-        eModuleOrNamespaceTypeAccumulator = Unchecked.defaultof<_>
-        eContextInfo = Unchecked.defaultof<_>
-        eFamilyType = Unchecked.defaultof<_>
-        eCtorInfo = Unchecked.defaultof<_>
+        eModuleOrNamespaceTypeAccumulator = ref eModuleOrNamespaceTypeAccumulator
+        eContextInfo = eContextInfo
+        eFamilyType = eFamilyType
+        eCtorInfo = eCtorInfo
         eCallerMemberName = eCallerMemberName
-        eLambdaArgInfos = Unchecked.defaultof<_>
+        eLambdaArgInfos = eLambdaArgInfos
         eIsControlFlow = eIsControlFlow
-        eCachedImplicitYieldExpressions = Unchecked.defaultof<_>
+        eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural)
     }
 
 let unpickleTcState (st: ReaderState) : TcState =
