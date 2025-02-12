@@ -4301,14 +4301,6 @@ type PickledCcuInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
-type PickledTcState =
-    { TcsCcu: CcuThunk
-      TcsCreatesGeneratedProvidedTypes: bool
-      TcsRootSigs: (QualifiedNameOfFile * ModuleOrNamespaceType) list
-      TcsRootImpls: QualifiedNameOfFile list
-      TcsCcuSig: ModuleOrNamespaceType
-      TcsImplicitOpenDeclarations: OpenDeclaration list }
-
 /// Represents a set of free local values. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.
 type FreeLocals = Zset<Val>

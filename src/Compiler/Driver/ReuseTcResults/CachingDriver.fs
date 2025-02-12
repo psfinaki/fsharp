@@ -222,18 +222,7 @@ type CachingDriver(tcConfig: TcConfig) =
                 None
             )
 
-        let rawData = data.RawData
-
-        {
-            tcsCcu = rawData.TcsCcu
-            tcsCreatesGeneratedProvidedTypes = rawData.TcsCreatesGeneratedProvidedTypes
-            tcsTcSigEnv = Unchecked.defaultof<_>
-            tcsTcImplEnv = Unchecked.defaultof<_>
-            tcsRootSigs = RootSigs.FromList(qnameOrder, rawData.TcsRootSigs)
-            tcsRootImpls = RootImpls.Create(qnameOrder, rawData.TcsRootImpls)
-            tcsCcuSig = rawData.TcsCcuSig
-            tcsImplicitOpenDeclarations = rawData.TcsImplicitOpenDeclarations
-        }
+        data.RawData
 
     member private _.ReuseTopAttribs() =
         let bytes = File.ReadAllBytes(tcAuxResourceFilePath)
@@ -278,17 +267,8 @@ type CachingDriver(tcConfig: TcConfig) =
         declaredImpls
     
     member private _.CacheTcState(tcState: TcState, tcGlobals, outfile) =
-        let pickledTcState = {
-            TcsCcu = tcState.tcsCcu
-            TcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes
-            TcsRootSigs = tcState.tcsRootSigs.ToList()
-            TcsRootImpls = tcState.tcsRootImpls.ToList()
-            TcsCcuSig = tcState.tcsCcuSig
-            TcsImplicitOpenDeclarations = tcState.tcsImplicitOpenDeclarations
-        }
-
         let encodedData =
-            EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, pickledTcState)
+            EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcState)
 
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcStateFilePath, resource)
