@@ -3,6 +3,7 @@
 /// Contains logic to coordinate the parsing and checking of one or a group of files
 module internal FSharp.Compiler.ParseAndCheckInputs
 
+open System.Collections.Generic
 open System.IO
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckBasics
@@ -148,6 +149,8 @@ open Internal.Utilities.Collections
 type RootSigs = Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
 
 type RootImpls = Zset<QualifiedNameOfFile>
+
+val qnameOrder: IComparer<QualifiedNameOfFile>
 
 /// Represents the incremental type checking state for a set of inputs
 type TcState =

@@ -229,9 +229,8 @@ type CachingDriver(tcConfig: TcConfig) =
             tcsCreatesGeneratedProvidedTypes = rawData.TcsCreatesGeneratedProvidedTypes
             tcsTcSigEnv = Unchecked.defaultof<_>
             tcsTcImplEnv = Unchecked.defaultof<_>
-            // not sure about default
-            tcsRootSigs = RootSigs.FromList(Comparer.Default, rawData.TcsRootSigs)
-            tcsRootImpls = RootImpls.Create(Comparer.Default, rawData.TcsRootImpls)
+            tcsRootSigs = RootSigs.FromList(qnameOrder, rawData.TcsRootSigs)
+            tcsRootImpls = RootImpls.Create(qnameOrder, rawData.TcsRootImpls)
             tcsCcuSig = rawData.TcsCcuSig
             tcsImplicitOpenDeclarations = rawData.TcsImplicitOpenDeclarations
         }
