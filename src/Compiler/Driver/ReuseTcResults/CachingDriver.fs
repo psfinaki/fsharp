@@ -235,13 +235,13 @@ type CachingDriver(tcConfig: TcConfig) =
             tcsImplicitOpenDeclarations = rawData.TcsImplicitOpenDeclarations
         }
 
-    member private _.ReuseTopAttrs() =
+    member private _.ReuseTopAttribs() =
         let bytes = File.ReadAllBytes(tcAuxResourceFilePath)
         let memory = ByteMemory.FromArray(bytes)
         let byteReaderA () = ReadOnlyByteMemory(memory)
 
         let data =
-            GetTypecheckingDataTcInfo(
+            GetTypecheckingDataTopAttribs(
                 "", // assembly.FileName,
                 ILScopeRef.Local, // assembly.ILScopeRef,
                 None, //assembly.RawMetadata.TryGetILModuleDef(),
@@ -270,11 +270,11 @@ type CachingDriver(tcConfig: TcConfig) =
 
     member this.ReuseTcResults (inputs: ParsedInput list) =
         let tcState = this.ReuseTcState()
-        let topAttrs = this.ReuseTopAttrs()
+        let topAttribs = this.ReuseTopAttribs()
         let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
 
         tcState,
-        topAttrs,
+        topAttribs,
         declaredImpls
     
     member private _.CacheTcState(tcState: TcState, tcGlobals, outfile) =
@@ -293,9 +293,9 @@ type CachingDriver(tcConfig: TcConfig) =
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcStateFilePath, resource)
 
-    member private _.CacheTopAttrs(tcState: TcState, topAttrs: TopAttribs, tcGlobals, outfile) =
+    member private _.CacheTopAttribs(tcState: TcState, topAttribs: TopAttribs, tcGlobals, outfile) =
         let encodedData =
-            EncodeTypecheckingDataTcInfo(tcConfig, tcGlobals, tcState.Ccu, outfile, false, topAttrs)
+            EncodeTypecheckingDataTopAttribs(tcConfig, tcGlobals, tcState.Ccu, outfile, false, topAttribs)
 
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcAuxResourceFilePath, resource)
@@ -308,7 +308,7 @@ type CachingDriver(tcConfig: TcConfig) =
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes($"{tcResourceFilePath}{fileName}", resource)
 
-    member this.CacheTcResults(tcState: TcState, topAttrs: TopAttribs, declaredImpls: CheckedImplFile list, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
+    member this.CacheTcResults(tcState: TcState, topAttribs: TopAttribs, declaredImpls: CheckedImplFile list, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
@@ -322,5 +322,5 @@ type CachingDriver(tcConfig: TcConfig) =
 
 
         this.CacheTcState(tcState, tcGlobals, outfile)
-        this.CacheTopAttrs(tcState, topAttrs, tcGlobals, outfile)
+        this.CacheTopAttribs(tcState, topAttribs, tcGlobals, outfile)
         declaredImpls |> List.iter (fun impl -> this.CacheDeclaredImpl(tcState, impl, tcGlobals, outfile))

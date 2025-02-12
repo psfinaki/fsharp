@@ -18,7 +18,7 @@ let GetTypecheckingDataTcState (file, ilScopeRef, ilModule, byteReaderA, byteRea
 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcState memA memB
 
-let GetTypecheckingDataTcInfo (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
+let GetTypecheckingDataTopAttribs (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
     
     let memA = byteReaderA ()
 
@@ -27,7 +27,7 @@ let GetTypecheckingDataTcInfo (file, ilScopeRef, ilModule, byteReaderA, byteRead
         | None -> ByteMemory.Empty.AsReadOnly()
         | Some br -> br ()
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcInfo memA memB
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTopAttribs memA memB
 
 let GetTypecheckingDataCheckedImplFile (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
 
@@ -60,7 +60,7 @@ let WriteTypecheckingDataTcState (tcConfig: TcConfig, tcGlobals, fileName, inMem
         tcState
 
 
-let WriteTypecheckingDataTcInfo (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, tcInfo) =
+let WriteTypecheckingDataTopAttribs (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, topAttribs) =
 
     // need to understand the naming and if we even want two resources here...
     let rName = "FSharpTypecheckingData"
@@ -74,8 +74,8 @@ let WriteTypecheckingDataTcInfo (tcConfig: TcConfig, tcGlobals, fileName, inMem,
         ccu
         (rName + ccu.AssemblyName)
         (rNameB + ccu.AssemblyName)
-        pickleTcInfo
-        tcInfo
+        pickleTopAttribs
+        topAttribs
 
 
 let WriteTypecheckingDataCheckedImplFile (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu, checkedImplFile) =
@@ -118,15 +118,15 @@ let EncodeTypecheckingDataTcState (tcConfig: TcConfig, tcGlobals, generatedCcu, 
     resources
 
 
-let EncodeTypecheckingDataTcInfo (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, tcInfo) =
+let EncodeTypecheckingDataTopAttribs (tcConfig: TcConfig, tcGlobals, generatedCcu, outfile, isIncrementalBuild, topAttrs) =
     let r1, r2 =
-        WriteTypecheckingDataTcInfo(
+        WriteTypecheckingDataTopAttribs(
             tcConfig, 
             tcGlobals,
             outfile, 
             isIncrementalBuild, 
             generatedCcu,
-            tcInfo)
+            topAttrs)
 
     let resources =
         [

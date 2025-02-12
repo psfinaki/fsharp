@@ -16,7 +16,7 @@ let pickleTcState (tcState: PickledTcState) (st: WriterState) =
     p_modul_typ_new tcState.TcsCcuSig st
     p_list p_open_decl tcState.TcsImplicitOpenDeclarations st
     
-let pickleTcInfo (tcInfo: TopAttribs) (st: WriterState) =
+let pickleTopAttribs (tcInfo: TopAttribs) (st: WriterState) =
     p_tup3
         p_attribs
         p_attribs
@@ -48,7 +48,7 @@ let unpickleTcState (st: ReaderState) : PickledTcState =
         TcsImplicitOpenDeclarations = tcsImplicitOpenDeclarations 
     }
 
-let unpickleTcInfo st : TopAttribs =
+let unpickleTopAttribs st : TopAttribs =
     let mainMethodAttrs, netModuleAttrs, assemblyAttrs =
         u_tup3
             u_attribs
