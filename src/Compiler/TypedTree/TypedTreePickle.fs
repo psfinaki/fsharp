@@ -2765,6 +2765,13 @@ and p_expr_new (expr: Expr) st =
     
 and p_exprs_new = p_list p_expr_new
 
+and p_tcs_root_sig (qualifiedNameOfFile, moduleOrNamespaceType) st =
+    p_tup2
+        p_qualified_name_of_file
+        p_modul_typ_new
+        (qualifiedNameOfFile, moduleOrNamespaceType)
+        st
+
 and p_module_or_namespace_contents (x: ModuleOrNamespaceContents) st =
     match x with
     | TMDefs defs -> 
@@ -3751,6 +3758,15 @@ and u_expr_new st : Expr =
   
 and u_exprs_new = u_list u_expr_new
 
+and u_tcs_root_sig st =
+    let qualifiedNameOfFile, moduleOrNamespaceType = 
+        u_tup2
+            u_qualified_name_of_file
+            u_modul_typ_new
+            st
+
+    qualifiedNameOfFile, moduleOrNamespaceType 
+
 and u_module_or_namespace_contents st : ModuleOrNamespaceContents =
     let tag = u_byte st
     match tag with
@@ -4381,10 +4397,11 @@ let pickleModuleOrNamespace mspec st = p_entity_spec mspec st
 
 let pickleCcuInfo (minfo: PickledCcuInfo) st =
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations, ()) st
-
+        
 let pickleTcState (tcState: PickledTcState) (st: WriterState) =
     p_ccuref_new tcState.TcsCcu st
     p_bool tcState.TcsCreatesGeneratedProvidedTypes st
+    (p_list p_tcs_root_sig) tcState.TcsRootSigs st
     p_modul_typ_new tcState.TcsCcuSig st
     p_list p_open_decl tcState.TcsImplicitOpenDeclarations st
     
@@ -4408,12 +4425,14 @@ let unpickleCcuInfo st =
 let unpickleTcState (st: ReaderState) : PickledTcState =
     let tcsCcu = u_ccuref_new st
     let tcsCreatesGeneratedProvidedTypes = u_bool st
+    let tcsRootSigs = u_list u_tcs_root_sig st
     let tcsCcuSig = u_modul_typ_new st
     let tcsImplicitOpenDeclarations = u_list u_open_decl st
 
     { 
         TcsCcu = tcsCcu
         TcsCreatesGeneratedProvidedTypes = tcsCreatesGeneratedProvidedTypes
+        TcsRootSigs = tcsRootSigs
         TcsCcuSig = tcsCcuSig
         TcsImplicitOpenDeclarations = tcsImplicitOpenDeclarations 
     }

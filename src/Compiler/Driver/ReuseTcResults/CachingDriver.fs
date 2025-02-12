@@ -229,7 +229,8 @@ type CachingDriver(tcConfig: TcConfig) =
             tcsCreatesGeneratedProvidedTypes = rawData.TcsCreatesGeneratedProvidedTypes
             tcsTcSigEnv = Unchecked.defaultof<_>
             tcsTcImplEnv = Unchecked.defaultof<_>
-            tcsRootSigs = Unchecked.defaultof<_>
+            // not sure about default
+            tcsRootSigs = RootSigs.FromList(Comparer.Default, rawData.TcsRootSigs)
             tcsRootImpls = Unchecked.defaultof<_>
             tcsCcuSig = rawData.TcsCcuSig
             tcsImplicitOpenDeclarations = rawData.TcsImplicitOpenDeclarations
@@ -284,9 +285,11 @@ type CachingDriver(tcConfig: TcConfig) =
         declaredImpls
     
     member private _.CacheTcState(tcState: TcState, tcGlobals, outfile) =
+        let x = tcState.tcsRootSigs.ToList()
         let pickledTcState = {
             TcsCcu = tcState.tcsCcu
             TcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes
+            TcsRootSigs = tcState.tcsRootSigs.ToList()
             TcsCcuSig = tcState.tcsCcuSig
             TcsImplicitOpenDeclarations = tcState.tcsImplicitOpenDeclarations
         }

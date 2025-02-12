@@ -5911,6 +5911,7 @@ type PickledTcInfo = {
 type PickledTcState = {
     TcsCcu: CcuThunk
     TcsCreatesGeneratedProvidedTypes: bool
+    TcsRootSigs: (QualifiedNameOfFile * ModuleOrNamespaceType) list
     TcsCcuSig: ModuleOrNamespaceType
     TcsImplicitOpenDeclarations: OpenDeclaration list
 }
