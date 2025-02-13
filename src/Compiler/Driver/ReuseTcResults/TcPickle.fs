@@ -112,7 +112,7 @@ let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     // tcEnv.eCachedImplicitYieldExpressions
 
 let pickleTcState (tcState: TcState) (st: WriterState) =
-    p_ccuref tcState.tcsCcu st
+    p_ccuref_new tcState.tcsCcu st
     p_tc_env tcState.tcsTcSigEnv st
     p_tc_env tcState.tcsTcImplEnv st
     p_bool tcState.tcsCreatesGeneratedProvidedTypes st
@@ -247,7 +247,7 @@ let u_tc_env (st: ReaderState) : TcEnv =
     }
 
 let unpickleTcState (st: ReaderState) : TcState =
-    let tcsCcu = u_ccuref st
+    let tcsCcu = u_ccuref_new st
     let tcsTcSigEnv = u_tc_env st
     let tcsTcImplEnv = u_tc_env st
     let tcsCreatesGeneratedProvidedTypes = u_bool st
