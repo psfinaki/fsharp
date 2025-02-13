@@ -258,7 +258,7 @@ val CheckClosedInputSet:
     tcState: TcState *
     eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) *
     inputs: ParsedInput list ->
-        TcState * TopAttribs * CheckedImplFile list * TcEnv
+        TcState * TopAttribs * CheckedImplFile list * TcEnv * TcState array
 
 /// Check a single input and finish the checking
 val CheckOneInputAndFinish:

@@ -174,16 +174,16 @@ let TypeCheck
                 tcInitialState, topAttrs, declaredImpls, tcInitialState.TcEnvFromImpls
             | Some (canReuse, cannotReuse) when canReuse.Length > 0 ->
 
-                let tempState, topAttrs, declaredImpls1 = cachingDriver.ReuseTcResults canReuse
+                let states, topAttrs, declaredImpls1 = cachingDriver.ReuseTcResults canReuse
 
-                let tcState, _, declaredImpls2, tcEnvAtEndOfLastFile = CheckClosedInputSet(
+                let tcState, _, declaredImpls2, tcEnvAtEndOfLastFile, _tcStates = CheckClosedInputSet(
                         ctok,
                         diagnosticsLogger.CheckForErrors,
                         tcConfig,
                         tcImports,
                         tcGlobals,
                         None,
-                        tempState,
+                        states |> Array.last,
                         eagerFormat,
                         cannotReuse
                     )
@@ -193,7 +193,7 @@ let TypeCheck
                 tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
             | _ ->
-                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile =
+                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, tcStates =
                     CheckClosedInputSet(
                         ctok,
                         diagnosticsLogger.CheckForErrors,
@@ -206,10 +206,10 @@ let TypeCheck
                         inputs
                     )
 
-                cachingDriver.CacheTcResults(tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
+                cachingDriver.CacheTcResults(tcStates |> Array.toList, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
                 tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
         else
-            CheckClosedInputSet(
+            let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, _tcStates = CheckClosedInputSet(
                 ctok,
                 diagnosticsLogger.CheckForErrors,
                 tcConfig,
@@ -220,6 +220,8 @@ let TypeCheck
                 eagerFormat,
                 inputs
             )
+
+            tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
     with exn ->
         errorRecovery exn rangeStartup

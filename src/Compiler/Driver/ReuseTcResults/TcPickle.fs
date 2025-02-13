@@ -16,11 +16,6 @@ open Internal.Utilities.Library
 
 // pickling 
 
-let p_ungeneralizable_item (x: UngeneralizableItem) st =
-    p_bool x.WillNeverHaveFreeTypars st
-    p_list p_entity_spec_new (x.CachedFreeLocalTycons.ToList()) st
-    p_list p_Val_new (x.CachedFreeTraitSolutions.ToList()) st
-
 let p_context_info (x: ContextInfo) st =
     match x with
     | ContextInfo.NoContext ->
@@ -60,7 +55,7 @@ let p_context_info (x: ContextInfo) st =
         p_range range st
     | ContextInfo.SequenceExpression ttype ->
         p_byte 13 st
-        p_ty_new ttype st
+        p_ty ttype st
 
 let p_safe_init_data (x: SafeInitData) st =
     match x with
@@ -73,13 +68,13 @@ let p_safe_init_data (x: SafeInitData) st =
 
 let p_ctor_info (x: CtorInfo) st =
     p_int x.ctorShapeCounter st
-    p_option p_Val_new x.safeThisValOpt st
+    p_option p_Val x.safeThisValOpt st
     p_safe_init_data x.safeInitInfo st
     p_bool x.ctorIsImplicit st
 
 let p_module_and_namespace (s: string, l: ModuleOrNamespaceRef list) st =
     p_string s st
-    p_list p_tcref_new l st
+    p_list (p_tcref "test") l st
 
 let p_name_resolution_env (env: NameResolutionEnv) st =
     // eDisplayEnv
@@ -107,9 +102,9 @@ let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     p_cpath tcEnv.eAccessPath st
     // tcEnv.eAccessRights
     p_list p_cpath tcEnv.eInternalsVisibleCompPaths st
-    p_modul_typ_new tcEnv.eModuleOrNamespaceTypeAccumulator.Value st
+    p_modul_typ tcEnv.eModuleOrNamespaceTypeAccumulator.Value st
     p_context_info tcEnv.eContextInfo st
-    p_option p_tcref_new tcEnv.eFamilyType st
+    p_option (p_tcref "test") tcEnv.eFamilyType st
     p_option p_ctor_info tcEnv.eCtorInfo st
     p_option p_string tcEnv.eCallerMemberName st
     p_list (p_list (p_ArgReprInfo)) tcEnv.eLambdaArgInfos st
@@ -117,13 +112,13 @@ let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     // tcEnv.eCachedImplicitYieldExpressions
 
 let pickleTcState (tcState: TcState) (st: WriterState) =
-    p_ccuref_new tcState.tcsCcu st
+    p_ccuref tcState.tcsCcu st
     p_tc_env tcState.tcsTcSigEnv st
     p_tc_env tcState.tcsTcImplEnv st
     p_bool tcState.tcsCreatesGeneratedProvidedTypes st
     (p_list p_tcs_root_sig) (tcState.tcsRootSigs.ToList()) st
     p_list p_qualified_name_of_file (tcState.tcsRootImpls.ToList()) st
-    p_modul_typ_new tcState.tcsCcuSig st
+    p_modul_typ tcState.tcsCcuSig st
     p_list p_open_decl tcState.tcsImplicitOpenDeclarations st
     
 let pickleTopAttribs (tcInfo: TopAttribs) (st: WriterState) =
@@ -174,7 +169,7 @@ let u_context_info st : ContextInfo =
         let range = u_range st
         ContextInfo.PatternMatchGuard range
     | 13 -> 
-        let ttype = u_ty_new st
+        let ttype = u_ty st
         ContextInfo.SequenceExpression ttype
     | _ -> 
         ufailwith st "u_context_info"
@@ -193,7 +188,7 @@ let u_safe_init_data st : SafeInitData =
 
 let u_ctor_info st : CtorInfo =
     let ctorShapeCounter = u_int st
-    let safeThisValOpt = u_option u_Val_new st
+    let safeThisValOpt = u_option u_Val st
     let safeInitInfo = u_safe_init_data st
     let ctorIsImplicit = u_bool st
 
@@ -206,7 +201,7 @@ let u_ctor_info st : CtorInfo =
 
 let u_module_and_namespace st : string * ModuleOrNamespaceRef list =
     let s = u_string st
-    let l = u_list u_tcref_new st
+    let l = u_list u_tcref st
     s, l
 
 let u_name_resolution_env st : NameResolutionEnv =
@@ -224,9 +219,9 @@ let u_tc_env (st: ReaderState) : TcEnv =
     let eAccessPath = u_cpath st
     // eAccessRights
     let eInternalsVisibleCompPaths = u_list u_cpath st
-    let eModuleOrNamespaceTypeAccumulator = u_modul_typ_new st
+    let eModuleOrNamespaceTypeAccumulator = u_modul_typ st
     let eContextInfo = u_context_info st
-    let eFamilyType = u_option u_tcref_new st
+    let eFamilyType = u_option u_tcref st
     let eCtorInfo = u_option u_ctor_info st
     let eCallerMemberName = u_option u_string st
     let eLambdaArgInfos = u_list (u_list u_ArgReprInfo) st
@@ -252,13 +247,13 @@ let u_tc_env (st: ReaderState) : TcEnv =
     }
 
 let unpickleTcState (st: ReaderState) : TcState =
-    let tcsCcu = u_ccuref_new st
+    let tcsCcu = u_ccuref st
     let tcsTcSigEnv = u_tc_env st
     let tcsTcImplEnv = u_tc_env st
     let tcsCreatesGeneratedProvidedTypes = u_bool st
     let tcsRootSigs = u_list u_tcs_root_sig st
     let tcsRootImpls = u_list u_qualified_name_of_file st
-    let tcsCcuSig = u_modul_typ_new st
+    let tcsCcuSig = u_modul_typ st
     let tcsImplicitOpenDeclarations = u_list u_open_decl st
 
     { 

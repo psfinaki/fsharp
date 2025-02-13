@@ -208,8 +208,8 @@ type CachingDriver(tcConfig: TcConfig) =
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
             None
 
-    member private _.ReuseTcState() : TcState =
-        let bytes = File.ReadAllBytes(tcStateFilePath)
+    member private _.ReuseTcState (name: string) : TcState =
+        let bytes = File.ReadAllBytes($"{tcStateFilePath}{name}")
         let memory = ByteMemory.FromArray(bytes)
         let byteReaderA () = ReadOnlyByteMemory(memory)
 
@@ -258,20 +258,20 @@ type CachingDriver(tcConfig: TcConfig) =
         data.RawData
 
     member this.ReuseTcResults (inputs: ParsedInput list) =
-        let tcState = this.ReuseTcState()
+        let tcStates = inputs |> List.map (fun input -> this.ReuseTcState (Path.GetFileNameWithoutExtension(input.FileName))) |> List.toArray
         let topAttribs = this.ReuseTopAttribs()
         let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
 
-        tcState,
+        tcStates,
         topAttribs,
         declaredImpls
     
-    member private _.CacheTcState(tcState: TcState, tcGlobals, outfile) =
+    member private _.CacheTcState(name: string, tcState: TcState, tcGlobals, outfile) =
         let encodedData =
             EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcState)
 
         let resource = encodedData[0].GetBytes().ToArray()
-        File.WriteAllBytes(tcStateFilePath, resource)
+        File.WriteAllBytes($"{tcStateFilePath}{name}", resource)
 
     member private _.CacheTopAttribs(tcState: TcState, topAttribs: TopAttribs, tcGlobals, outfile) =
         let encodedData =
@@ -288,7 +288,7 @@ type CachingDriver(tcConfig: TcConfig) =
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes($"{tcResourceFilePath}{fileName}", resource)
 
-    member this.CacheTcResults(tcState: TcState, topAttribs: TopAttribs, declaredImpls: CheckedImplFile list, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
+    member this.CacheTcResults(tcStates: TcState list, topAttribs: TopAttribs, declaredImpls: CheckedImplFile list, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
@@ -300,7 +300,7 @@ type CachingDriver(tcConfig: TcConfig) =
         let thisGraph = getThisCompilationGraph inputs
         writeThisGraph thisGraph
 
-
-        this.CacheTcState(tcState, tcGlobals, outfile)
-        this.CacheTopAttribs(tcState, topAttribs, tcGlobals, outfile)
-        declaredImpls |> List.iter (fun impl -> this.CacheDeclaredImpl(tcState, impl, tcGlobals, outfile))
+        let pairs = List.zip tcStates inputs
+        pairs |> List.iter (fun (state, input) -> this.CacheTcState(Path.GetFileNameWithoutExtension(input.FileName), state, tcGlobals, outfile))
+        this.CacheTopAttribs(tcStates |> List.last, topAttribs, tcGlobals, outfile)
+        declaredImpls |> List.iteri (fun i impl -> this.CacheDeclaredImpl(tcStates[i], impl, tcGlobals, outfile))

@@ -1477,14 +1477,26 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
 
     tcState, declaredImpls, ccuContents
 
-let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
-    (tcState, inputs)
-    ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt))
-
 open FSharp.Compiler.GraphChecking
 
 type State = TcState * bool
 type FinalFileResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+
+let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) : (FinalFileResult list * TcState * TcState array) =
+    let checkOneInputEntry = CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)
+    let mutable state = tcState
+    let states = new ResizeArray<TcState>()
+
+    let results = 
+        inputs 
+        |> List.map (fun input -> 
+            let result, newState = checkOneInputEntry state input
+            state <- newState  // Update state for the next iteration
+            states.Add(newState)
+            result)
+
+    (results, state, states.ToArray())
+
 
 /// Auxiliary type for re-using signature information in TcEnvFromImpls.
 ///
@@ -1833,7 +1845,7 @@ let CheckMultipleInputsUsingGraphMode
         TcState *
         (PhasedDiagnostic -> PhasedDiagnostic) *
         ParsedInput list)
-    : FinalFileResult list * TcState =
+    : FinalFileResult list * TcState * TcState array =
     use cts = new CancellationTokenSource()
 
     let sourceFiles: FileInProject array =
@@ -1928,7 +1940,7 @@ let CheckMultipleInputsUsingGraphMode
                 partialResult, state)
         )
 
-    UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
+    let results, tcState = UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
         let inputsWithLoggers =
             inputsWithLoggers
@@ -1959,10 +1971,12 @@ let CheckMultipleInputsUsingGraphMode
 
         partialResults, tcState)
 
+    results, tcState, [||]
+
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
 
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
-    let results, tcState =
+    let results, tcState, states =
         match tcConfig.typeCheckingConfig.Mode with
         | TypeCheckingMode.Graph when (not tcConfig.isInteractive && not tcConfig.compilingFSharpCore) ->
             CheckMultipleInputsUsingGraphMode(
@@ -1985,4 +1999,4 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
         CheckClosedInputSetFinish(implFiles, tcState)
 
     tcState.Ccu.Deref.Contents <- ccuContents
-    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+    tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, states
