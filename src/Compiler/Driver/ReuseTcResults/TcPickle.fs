@@ -4,11 +4,14 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
 
 
 // pickling 
@@ -74,8 +77,30 @@ let p_ctor_info (x: CtorInfo) st =
     p_safe_init_data x.safeInitInfo st
     p_bool x.ctorIsImplicit st
 
+let p_module_and_namespace (s: string, l: ModuleOrNamespaceRef list) st =
+    p_string s st
+    p_list p_tcref_new l st
+
+let p_name_resolution_env (env: NameResolutionEnv) st =
+    // eDisplayEnv
+    // eUnqualifiedItems
+    // eUnqualifiedEnclosingTypeInsts
+    // ePatItems
+    let _x = env.eModulesAndNamespaces |> Map.toList
+    (p_list p_module_and_namespace) (env.eModulesAndNamespaces |> Map.toList) st
+    // eFullyQualifiedModulesAndNamespaces
+    // eFieldLabels
+    // eUnqualifiedRecordOrUnionTypeInsts
+    // eTyconsByAccessNames
+    // eFullyQualifiedTyconsByAccessNames
+    // eTyconsByDemangledNameAndArity
+    // eFullyQualifiedTyconsByDemangledNameAndArity
+    // eIndexedExtensionMembers
+    // eUnindexedExtensionMembers
+    // eTypars
+    
 let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
-    // tcEnv.eNameResEnv
+    p_name_resolution_env tcEnv.eNameResEnv st
     // tcEnv.eUngeneralizableItems
     p_list p_ident tcEnv.ePath st
     p_cpath tcEnv.eCompPath st
@@ -177,9 +202,20 @@ let u_ctor_info st : CtorInfo =
         ctorIsImplicit = ctorIsImplicit
     }
 
+let u_module_and_namespace st : string * ModuleOrNamespaceRef list =
+    let s = u_string st
+    let l = u_list u_tcref_new st
+    s, l
+
+let u_name_resolution_env st : NameResolutionEnv =
+    let eModulesAndNamespaces : NameMultiMap<ModuleOrNamespaceRef> = u_list u_module_and_namespace st |> Map.ofList
+
+    let g : TcGlobals = Unchecked.defaultof<_>
+    { NameResolutionEnv.Empty g with
+        eModulesAndNamespaces = eModulesAndNamespaces }
 
 let u_tc_env (st: ReaderState) : TcEnv =
-    // eNameResEnv
+    let eNameResEnv = u_name_resolution_env st
     //let eUngeneralizableItems
     let ePath = u_list u_ident st
     let eCompPath = u_cpath st
@@ -196,7 +232,7 @@ let u_tc_env (st: ReaderState) : TcEnv =
     // eCachedImplicitYieldExpressions
 
     {
-        eNameResEnv = Unchecked.defaultof<_>
+        eNameResEnv = eNameResEnv
         eUngeneralizableItems = List.empty
         ePath = ePath
         eCompPath = eCompPath
