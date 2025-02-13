@@ -113,11 +113,13 @@ let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     p_option p_ctor_info tcEnv.eCtorInfo st
     p_option p_string tcEnv.eCallerMemberName st
     p_list (p_list (p_ArgReprInfo)) tcEnv.eLambdaArgInfos st
-    p_bool tcEnv.eIsControlFlow
+    p_bool tcEnv.eIsControlFlow st
     // tcEnv.eCachedImplicitYieldExpressions
 
 let pickleTcState (tcState: TcState) (st: WriterState) =
     p_ccuref_new tcState.tcsCcu st
+    p_tc_env tcState.tcsTcSigEnv st
+    p_tc_env tcState.tcsTcImplEnv st
     p_bool tcState.tcsCreatesGeneratedProvidedTypes st
     (p_list p_tcs_root_sig) (tcState.tcsRootSigs.ToList()) st
     p_list p_qualified_name_of_file (tcState.tcsRootImpls.ToList()) st
@@ -251,6 +253,8 @@ let u_tc_env (st: ReaderState) : TcEnv =
 
 let unpickleTcState (st: ReaderState) : TcState =
     let tcsCcu = u_ccuref_new st
+    let tcsTcSigEnv = u_tc_env st
+    let tcsTcImplEnv = u_tc_env st
     let tcsCreatesGeneratedProvidedTypes = u_bool st
     let tcsRootSigs = u_list u_tcs_root_sig st
     let tcsRootImpls = u_list u_qualified_name_of_file st
@@ -260,8 +264,8 @@ let unpickleTcState (st: ReaderState) : TcState =
     { 
         tcsCcu = tcsCcu
         tcsCreatesGeneratedProvidedTypes = tcsCreatesGeneratedProvidedTypes
-        tcsTcSigEnv = Unchecked.defaultof<_>
-        tcsTcImplEnv = Unchecked.defaultof<_>
+        tcsTcSigEnv = tcsTcSigEnv
+        tcsTcImplEnv = tcsTcImplEnv
         tcsRootSigs = RootSigs.FromList(qnameOrder, tcsRootSigs)
         tcsRootImpls = RootImpls.Create(qnameOrder, tcsRootImpls)
         tcsCcuSig = tcsCcuSig
