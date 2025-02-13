@@ -6,7 +6,7 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-
+open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreePickle
@@ -76,12 +76,33 @@ let p_module_and_namespace (s: string, l: ModuleOrNamespaceRef list) st =
     p_string s st
     p_list (p_tcref "test") l st
 
+let p_union_case_info (UnionCaseInfo (typeInst, ucref)) st =
+    p_tys typeInst st
+    p_ucref ucref st
+
+let p_item (x: Item) st =
+    match x with
+    | Item.Value vref -> 
+        p_byte 0 st
+        p_vref "test" vref st
+    | Item.UnqualifiedType tcrefs ->
+        p_byte 1 st
+        p_list (p_tcref "test") tcrefs st
+    | Item.UnionCase (unionCaseInfo, hasAttrs) ->
+        p_byte 2 st
+        p_union_case_info unionCaseInfo st
+        p_bool hasAttrs st
+    | Item.ExnCase tcref ->
+        p_byte 3 st
+        p_tcref "test" tcref st
+    | _ ->
+        ()
+
 let p_name_resolution_env (env: NameResolutionEnv) st =
     // eDisplayEnv
-    // eUnqualifiedItems
+    p_Map p_string p_item env.eUnqualifiedItems st
     // eUnqualifiedEnclosingTypeInsts
     // ePatItems
-    let _x = env.eModulesAndNamespaces |> Map.toList
     (p_list p_module_and_namespace) (env.eModulesAndNamespaces |> Map.toList) st
     // eFullyQualifiedModulesAndNamespaces
     // eFieldLabels
@@ -204,11 +225,38 @@ let u_module_and_namespace st : string * ModuleOrNamespaceRef list =
     let l = u_list u_tcref st
     s, l
 
+let u_union_case_info st =
+    let typeInst = u_tys st
+    let ucref = u_ucref st
+    UnionCaseInfo (typeInst, ucref)
+
+let u_item st : Item = 
+    let tag = u_byte st
+    match tag with
+    | 0 -> 
+        let vref = u_vref st
+        Item.Value vref
+    | 1 ->
+        let tcrefs = u_list u_tcref st
+        Item.UnqualifiedType tcrefs
+
+    | 2 -> 
+        let unionCaseInfo = u_union_case_info st
+        let hasAttrs = u_bool st
+        Item.UnionCase (unionCaseInfo, hasAttrs)
+    | 3 -> 
+        let tcref = u_tcref st
+        Item.ExnCase tcref
+    | _ -> 
+        ufailwith st "u_item"
+
 let u_name_resolution_env st : NameResolutionEnv =
+    let eUnqualifiedItems = u_Map u_string u_item st
     let eModulesAndNamespaces : NameMultiMap<ModuleOrNamespaceRef> = u_list u_module_and_namespace st |> Map.ofList
 
     let g : TcGlobals = Unchecked.defaultof<_>
     { NameResolutionEnv.Empty g with
+        eUnqualifiedItems = eUnqualifiedItems
         eModulesAndNamespaces = eModulesAndNamespaces }
 
 let u_tc_env (st: ReaderState) : TcEnv =
