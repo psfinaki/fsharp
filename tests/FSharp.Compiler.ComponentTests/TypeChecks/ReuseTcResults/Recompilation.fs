@@ -126,15 +126,23 @@ printfn $"{M1.helloWorld}" """
 
         Assert.True(outcome)
 
-    [<Fact>]
-    let ``Multiple files - partial TC info reuse`` () =
+    [<Theory>]
+    [<InlineData(
+        """
+module M1
+let test1 = 42 """, 
+        """
+module M2
+let test2 = M1.test1 """)>]
+    [<InlineData(
+        """
+module M1
+let helloWorld = "hello world!" """, 
+        """
+module M2
+printfn $"{M1.helloWorld}" """)>]
+    let ``Multiple files - partial TC info reuse`` (code1: string) (code2: string) =
         let tempDir = createTemporaryDirectory().FullName
-
-        let code1 = """module M1
-let test1 = 42 """
-
-        let code2 = """module M2
-let test2 = M1.test1 """
 
         let fileName1 = "File0"
         let fileName2 = "File1"
