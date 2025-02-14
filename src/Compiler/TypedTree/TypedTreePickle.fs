@@ -1025,7 +1025,7 @@ and p_ILTypeDef (x: ILTypeDef) st =
     //x.Properties
     p_ILTypeDefAdditionalFlags x.Flags st
     //x.SecurityDeclsStored
-    //x.CustomAttrsStored
+    //x.CustomAttrsStored st
     //p_il
     //p_int32 x.MetadataIndex st
 
@@ -1070,7 +1070,8 @@ let u_ILTypeDef st : ILTypeDef =
     let properties = Unchecked.defaultof<_>
     let additionalFlags = u_ILTypeDefAdditionalFlags st
     let securityDeclsStored = ILSecurityDecls([||])
-    let customAttrsStored = Unchecked.defaultof<_>
+    // todo: fill this in
+    let customAttrsStored = ILAttributesStored.Given (ILAttributes.Empty)
 
     ILTypeDef(name,
         attributes,
