@@ -140,7 +140,7 @@ let pickleTcState (tcState: TcState) (st: WriterState) =
     p_bool tcState.tcsCreatesGeneratedProvidedTypes st
     (p_list p_tcs_root_sig) (tcState.tcsRootSigs.ToList()) st
     p_list p_qualified_name_of_file (tcState.tcsRootImpls.ToList()) st
-    p_modul_typ tcState.tcsCcuSig st
+    p_modul_typ_new tcState.tcsCcuSig st
     p_list p_open_decl tcState.tcsImplicitOpenDeclarations st
     
 let pickleTopAttribs (tcInfo: TopAttribs) (st: WriterState) =
@@ -304,7 +304,7 @@ let unpickleTcState (st: ReaderState) : TcState =
     let tcsCreatesGeneratedProvidedTypes = u_bool st
     let tcsRootSigs = u_list u_tcs_root_sig st
     let tcsRootImpls = u_list u_qualified_name_of_file st
-    let tcsCcuSig = u_modul_typ st
+    let tcsCcuSig = u_modul_typ_new st
     let tcsImplicitOpenDeclarations = u_list u_open_decl st
 
     { 

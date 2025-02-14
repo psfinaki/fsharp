@@ -2524,10 +2524,13 @@ let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))
         | id2 :: rest2 ->
-            modrefs
-            |> CollectResults2 atMostOne (fun (depth, modref, mty) ->
-                let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange, modref)
-                f resInfo (depth+1) id.idRange modref mty id2 rest2)
+            let r = 
+                modrefs
+                |> CollectResults2 atMostOne (fun (depth, modref, mty) ->
+                    let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange, modref)
+                    let r = f resInfo (depth+1) id.idRange modref mty id2 rest2
+                    r)
+            r
     | Exception err -> Exception err
 
 //-------------------------------------------------------------------------
@@ -3215,8 +3218,21 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
               let moduleSearch ad () =
-                 ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl ShouldNotifySink.No
-                     (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
+                let r =
+                     ResolveLongIdentAsModuleOrNamespaceThen 
+                        sink 
+                        ResultCollectionSettings.AtMostOneResult 
+                        ncenv.amap 
+                        m 
+                        fullyQualified 
+                        nenv 
+                        ad 
+                        id 
+                        rest 
+                        isOpenDecl 
+                        ShouldNotifySink.No
+                        (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
+                r
 
               // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
               // This seems strange since we would expect in the vast majority of cases tcrefs is empty here.
@@ -3245,7 +3261,11 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         | false, _ -> NoResultsOrUsefulErrors
                         | true, res -> OneSuccess (ResolutionInfo.Empty, ResolveUnqualifiedItem ncenv nenv m res, rest)
 
-                moduleSearch ad () +++ tyconSearch ad +++ envSearch
+                let r1 = moduleSearch ad ()
+                let r2 = tyconSearch ad
+                let r3 = envSearch
+                r1 +++ r2 +++ r3
+                //moduleSearch ad () +++ tyconSearch ad +++ envSearch
 
               let res =
                   match AtMostOneResult m search with
