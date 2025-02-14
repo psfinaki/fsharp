@@ -77,7 +77,7 @@ let p_module_and_namespace (s: string, l: ModuleOrNamespaceRef list) st =
     p_list (p_tcref "test") l st
 
 let p_union_case_info (UnionCaseInfo (typeInst, ucref)) st =
-    p_tys typeInst st
+    p_tys_new typeInst st
     p_ucref ucref st
 
 let p_item (x: Item) st =
@@ -227,7 +227,7 @@ let u_module_and_namespace st : string * ModuleOrNamespaceRef list =
     s, l
 
 let u_union_case_info st =
-    let typeInst = u_tys st
+    let typeInst = u_tys_new st
     let ucref = u_ucref st
     UnionCaseInfo (typeInst, ucref)
 
