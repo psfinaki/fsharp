@@ -131,10 +131,10 @@ printfn $"{M1.helloWorld}" """
         let tempDir = createTemporaryDirectory().FullName
 
         let code1 = """module M1
-let helloWorld = "hello world!" """
+let test1 = 42 """
 
         let code2 = """module M2
-printfn $"{M1.helloWorld}" """
+let test2 = M1.test1 """
 
         let fileName1 = "File0"
         let fileName2 = "File1"
