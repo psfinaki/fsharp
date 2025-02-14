@@ -5357,7 +5357,8 @@ and TcExpr (cenv: cenv) ty (env: TcEnv) tpenv (synExpr: SynExpr) =
     // Note the try/with can lead to tail-recursion problems for iterated constructs, e.g. let... in...
     // So be careful!
     try
-        TcExprNoRecover cenv ty env tpenv synExpr
+        let r = TcExprNoRecover cenv ty env tpenv synExpr
+        r
     with RecoverableException exn ->
         let m = synExpr.Range
         // Error recovery - return some rubbish expression, but replace/annotate

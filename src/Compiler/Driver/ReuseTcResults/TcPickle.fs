@@ -85,7 +85,7 @@ let p_item (x: Item) st =
     | Item.Value vref -> 
         p_byte 0 st
         p_vref "test" vref st
-        p_non_null_slot p_Val vref.binding st
+        p_non_null_slot p_Val_new vref.binding st
     | Item.UnqualifiedType tcrefs ->
         p_byte 1 st
         p_list (p_tcref "test") tcrefs st
@@ -236,7 +236,7 @@ let u_item st : Item =
     match tag with
     | 0 -> 
         let vref = u_vref st
-        let binding = u_non_null_slot u_Val st
+        let binding = u_non_null_slot u_Val_new st
         vref.binding <- binding
         Item.Value vref
     | 1 ->
