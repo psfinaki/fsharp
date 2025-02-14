@@ -149,9 +149,10 @@ printfn $"{M1.helloWorld}" """
             FsFromPath tempPath1
             |> withAdditionalSourceFile (SourceCodeFileKind.Create tempPath2)
             |> withReuseTcResults
+            |> withNoInterfaceData
             |> withOptions [ "--compressmetadata-" ]
             |> withOptions [ "--optimize-" ]
-
+            
         let expected =
             cUnit
             |> compileExisting
