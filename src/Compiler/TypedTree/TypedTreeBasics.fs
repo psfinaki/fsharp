@@ -469,14 +469,6 @@ let primEntityRefEq compilingFSharpCore fslibCcu (x: EntityRef) (y: EntityRef) =
     x === y ||
     
     if x.IsResolved && y.IsResolved && not compilingFSharpCore then
-
-        let binding1 = x.ResolvedTarget
-        let binding2 = y.ResolvedTarget
-        let _b1 = box binding1
-        let _b2 = box binding2
-
-        let _t = _b1 = _b2
-
         x.ResolvedTarget === y.ResolvedTarget 
     elif not x.IsLocalRef && not y.IsLocalRef &&
         (// Two tcrefs with identical paths are always equal

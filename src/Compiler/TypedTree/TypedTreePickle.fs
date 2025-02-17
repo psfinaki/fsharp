@@ -2330,53 +2330,33 @@ and p_tcaug p st =
        p.tcaug_abstract,
        space) st
 
-and p_adhoc (s: string, vref: ValRef) st =
-    p_string s st
-    p_vref "adhoc" vref st
-    //p_non_null_slot p_Val vref.binding st
-
 and p_tcaug_new (p: TyconAugmentation) st =
-    (p_option 
-        (p_tup2 (p_vref "compare_obj") (p_vref "compare")))
-        p.tcaug_compare 
-        st
-
-    (p_option 
-        (p_vref "compare_withc")) 
-        p.tcaug_compare_withc 
-        st
-
-    (p_option 
-        (p_tup3 
-            (p_vref "hash_obj") 
-            (p_vref "hash_withc") 
-            (p_vref "equals_withc"))) 
-            (p.tcaug_hash_and_equals_withc |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)))
-            st
-
-    (p_option
-        (p_tup2 
-            (p_vref "hash") 
-            (p_vref "equals")))
-            p.tcaug_equals
-            st
-
-    let adhocs = 
-        p.tcaug_adhoc_list
-        |> ResizeArray.toList
-        // Explicit impls of interfaces only get kept in the adhoc list
-        // in order to get check the well-formedness of an interface.
-        // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
-        // does not work correctly (they may get incorrectly relinked to a default member)
-        |> List.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
-        |> List.map (fun (_, vref) -> vref.LogicalName, vref)
-    
-    p_list p_adhoc adhocs st
-
-    (p_list (p_tup3 p_ty_new p_bool p_dummy_range)) p.tcaug_interfaces st
-    (p_option p_ty_new) p.tcaug_super st
-    p_bool p.tcaug_abstract st
-    (p_space 1) space st
+    p_tup9
+      (p_option (p_tup2 (p_vref "compare_obj") (p_vref "compare")))
+      (p_option (p_vref "compare_withc"))
+      (p_option (p_tup3 (p_vref "hash_obj") (p_vref "hash_withc") (p_vref "equals_withc")))
+      (p_option (p_tup2 (p_vref "hash") (p_vref "equals")))
+      (p_list (p_tup2 p_string (p_vref "adhoc")))
+      (p_list (p_tup3 p_ty_new p_bool p_dummy_range))
+      (p_option p_ty_new)
+      p_bool
+      (p_space 1)
+      (p.tcaug_compare,
+       p.tcaug_compare_withc,
+       p.tcaug_hash_and_equals_withc |> Option.map (fun (v1, v2, v3, _) -> (v1, v2, v3)),
+       p.tcaug_equals,
+       (p.tcaug_adhoc_list
+           |> ResizeArray.toList
+           // Explicit impls of interfaces only get kept in the adhoc list
+           // in order to get check the well-formedness of an interface.
+           // Keeping them across assembly boundaries is not valid, because relinking their ValRefs
+           // does not work correctly (they may get incorrectly relinked to a default member)
+           |> List.filter (fun (isExplicitImpl, _) -> not isExplicitImpl)
+           |> List.map (fun (_, vref) -> vref.LogicalName, vref)),
+       p.tcaug_interfaces,
+       p.tcaug_super,
+       p.tcaug_abstract,
+       space) st
 
 and p_entity_spec x st = p_osgn_decl st.oentities p_entity_spec_data x st
 
@@ -3102,65 +3082,57 @@ and u_entity_spec_data st : Entity =
     }
 
 and u_entity_spec_data_new st : Entity =
-    let x1 = u_tyar_specs_new st
-    let x2a = u_string st
-    let x2b = (u_option u_string) st
-    let x2c = u_range st
-    let stamp = u_stamp st
-    let x3 = (u_option u_pubpath) st
-    let (x4a, x4b) = (u_tup2 u_access u_access) st
-    let x6 = u_attribs st
-    let x7 = u_tycon_repr_new st
-    let x8 = (u_option u_ty_new) st
-    let x9 = u_tcaug_new st
-    let _x10 = u_string st
-    let x10b = u_kind st
-    let x11 = u_int64 st
-    let x12 = (u_option u_cpath ) st
-    let x13 = (u_lazy u_modul_typ_new) st
-    let x14 = u_exnc_repr st
-    let x15 = (u_used_space1 u_xmldoc) st
+    let x1, x2a, x2b, x2c, stamp, x3, (x4a, x4b), x6, x7, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
+       u_tup18
+          u_tyar_specs_new
+          u_string
+          (u_option u_string)
+          u_range
+          u_stamp
+          (u_option u_pubpath)
+          (u_tup2 u_access u_access)
+          u_attribs
+          u_tycon_repr_new
+          (u_option u_ty_new)
+          u_tcaug_new
+          u_string
+          u_kind
+          u_int64
+          (u_option u_cpath )
+          (u_lazy u_modul_typ_new)
+          u_exnc_repr
+          (u_used_space1 u_xmldoc)
+          st
     // We use a bit that was unused in the F# 2.0 format to indicate two possible representations in the F# 3.0 tycon_repr format
     //let x7 = x7f (x11 &&& EntityFlags.ReservedBitForPickleFormatTyconReprFlag <> 0L)
     //let x11 = x11 &&& ~~~EntityFlags.ReservedBitForPickleFormatTyconReprFlag
 
-    let entity : Entity = 
-        { 
-        entity_typars=LazyWithContext.NotLazy x1
-        entity_stamp=stamp
-        entity_logical_name=x2a
-        entity_range=x2c
-        entity_pubpath=x3
-        entity_attribs=x6
-        entity_tycon_repr=x7 false
-        entity_tycon_tcaug=x9
-        entity_flags=EntityFlags x11
-        entity_cpath=x12
-        entity_modul_type=MaybeLazy.Lazy x13
-        entity_il_repr_cache=newCache()
-        entity_opt_data=
-            match x2b, x10b, x15, x8, x4a, x4b, x14 with
-                | None, TyparKind.Type, None, None, TAccess [], TAccess [], TExnNone -> None
-                | _ ->
-                    Some { Entity.NewEmptyEntityOptData() with
-                               entity_compiled_name = x2b
-                               entity_kind = x10b
-                               entity_xmldoc= defaultArg x15 XmlDoc.Empty
-                               entity_xmldocsig = System.String.Empty
-                               entity_tycon_abbrev = x8
-                               entity_accessibility = x4a
-                               entity_tycon_repr_accessibility = x4b
-                               entity_exn_info = x14 }
-      }
-
-    let _a = entity.TypeContents
-    let _b = _a.tcaug_adhoc 
-    let _c =        
-        _b 
-        |> NameMultiMap.rangeReversingEachBucket 
-        |> List.filter (fun vref -> not vref.IsCompilerGenerated)
-
-    entity
+    { entity_typars=LazyWithContext.NotLazy x1
+      entity_stamp=stamp
+      entity_logical_name=x2a
+      entity_range=x2c
+      entity_pubpath=x3
+      entity_attribs=x6
+      entity_tycon_repr=x7 false
+      entity_tycon_tcaug=x9
+      entity_flags=EntityFlags x11
+      entity_cpath=x12
+      entity_modul_type=MaybeLazy.Lazy x13
+      entity_il_repr_cache=newCache()
+      entity_opt_data=
+        match x2b, x10b, x15, x8, x4a, x4b, x14 with
+        | None, TyparKind.Type, None, None, TAccess [], TAccess [], TExnNone -> None
+        | _ ->
+            Some { Entity.NewEmptyEntityOptData() with
+                       entity_compiled_name = x2b
+                       entity_kind = x10b
+                       entity_xmldoc= defaultArg x15 XmlDoc.Empty
+                       entity_xmldocsig = System.String.Empty
+                       entity_tycon_abbrev = x8
+                       entity_accessibility = x4a
+                       entity_tycon_repr_accessibility = x4b
+                       entity_exn_info = x14 }
+    }
 
 and u_tcaug st =
     let a1, a2, a3, b2, c, d, e, g, _space =
@@ -3189,25 +3161,19 @@ and u_tcaug st =
      tcaug_closed=true
      tcaug_abstract=g}
 
-and u_adhoc st = 
-    let s = u_string st
-    let vref = u_vref st
-    //let binding = u_non_null_slot u_Val st
-    //vref.binding <- binding
-
-    s, vref
-
 and u_tcaug_new st : TyconAugmentation =
-    let a1 =  (u_option (u_tup2 u_vref u_vref)) st
-    let a2 = (u_option u_vref) st
-    let a3 =  (u_option (u_tup3 u_vref u_vref u_vref)) st
-    let b2 = (u_option (u_tup2 u_vref u_vref)) st
-    let c =  (u_list u_adhoc) st
-    let d =  (u_list (u_tup3 u_ty_new u_bool u_dummy_range)) st
-    let e =  (u_option u_ty_new) st
-    let g =  u_bool st
-    let space = (u_space 1) st
-
+    let a1, a2, a3, b2, c, d, e, g, _space =
+      u_tup9
+        (u_option (u_tup2 u_vref u_vref))
+        (u_option u_vref)
+        (u_option (u_tup3 u_vref u_vref u_vref))
+        (u_option (u_tup2 u_vref u_vref))
+        (u_list (u_tup2 u_string u_vref))
+        (u_list (u_tup3 u_ty_new u_bool u_dummy_range))
+        (u_option u_ty_new)
+        u_bool
+        (u_space 1)
+        st
     {tcaug_compare=a1
      tcaug_compare_withc=a2
      tcaug_hash_and_equals_withc=a3 |> Option.map (fun (v1, v2, v3) -> (v1, v2, v3, None))
