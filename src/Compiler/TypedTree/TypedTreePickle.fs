@@ -2635,7 +2635,7 @@ and p_ty_new (ty: TType) st : unit =
     | TType_forall (tps, r) ->
         p_byte 4 st
         p_tup2
-            p_typars
+            p_tyar_specs_new
             p_ty_new
             (tps, r)
             st
@@ -3546,7 +3546,7 @@ and u_tyar_spec_data_new st =
 and u_tyar_spec_new st =
     u_osgn_decl st.itypars u_tyar_spec_data_new st
 
-and u_tyar_specs_new = (u_list u_tyar_spec_new)
+and u_tyar_specs_new = u_list u_tyar_spec_new
 
 and u_ty_new st : TType =
     let tag = u_byte st
@@ -3592,7 +3592,7 @@ and u_ty_new st : TType =
     | 4 ->
         let (tps, r) =
             u_tup2
-                u_typars
+                u_tyar_specs_new
                 u_ty_new
                 st
 
