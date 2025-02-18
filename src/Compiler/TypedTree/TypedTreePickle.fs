@@ -1773,30 +1773,13 @@ let p_tyar_spec_data (x: Typar) st =
       p_xmldoc
       (x.typar_id, x.Attribs, int64 x.typar_flags.PickledBits, x.Constraints, x.XmlDoc) st
 
-let p_tyar_spec_data_new (x: Typar) st =
-    p_tup6
-      p_ident
-      p_attribs
-      p_int64
-      p_tyar_constraints
-      p_xmldoc
-      p_stamp
-      (x.typar_id, x.Attribs, int64 x.typar_flags.PickledBits, x.Constraints, x.XmlDoc, x.Stamp) st
-
 let p_tyar_spec (x: Typar) st =
     //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
     if x.IsFromError then warning(Error((0, "p_tyar_spec: from error"), x.Range))
     p_osgn_decl st.otypars p_tyar_spec_data x st
 
-let p_tyar_spec_new (x: Typar) st =
-    //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
-    if x.IsFromError then warning(Error((0, "p_tyar_spec: from error"), x.Range))
-    p_osgn_decl st.otypars p_tyar_spec_data_new x st
-
 
 let p_tyar_specs = (p_list p_tyar_spec)
-
-let p_tyar_specs_new = (p_list p_tyar_spec_new)
 
 let u_tyar_spec_data st =
     let a, c, d, e, g = u_tup5 u_ident u_attribs u_int64 u_tyar_constraints u_xmldoc st
@@ -1810,27 +1793,10 @@ let u_tyar_spec_data st =
         | doc, [], [] when doc.IsEmpty -> None
         | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e; typar_attribs = c;typar_is_contravariant = false } }
 
-let u_tyar_spec_data_new st =
-    let a, c, d, e, g, stamp = u_tup6 u_ident u_attribs u_int64 u_tyar_constraints u_xmldoc u_stamp st
-    { typar_id=a
-      typar_stamp=stamp
-      typar_flags=TyparFlags(int32 d)
-      typar_solution=None
-      typar_astype= Unchecked.defaultof<_>
-      typar_opt_data=
-        match g, e, c with
-        | doc, [], [] when doc.IsEmpty -> None
-        | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e; typar_attribs = c;typar_is_contravariant = false } }
-
 let u_tyar_spec st =
     u_osgn_decl st.itypars u_tyar_spec_data st
 
-let u_tyar_spec_new st =
-    u_osgn_decl st.itypars u_tyar_spec_data_new st
-
 let u_tyar_specs = (u_list u_tyar_spec)
-
-let u_tyar_specs_new = (u_list u_tyar_spec_new)
 
 let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
     let ty = stripTyparEqns ty
@@ -2616,6 +2582,22 @@ and p_nullness (nullness: Nullness) st =
 
 and p_typars = p_list p_tpref
 
+and p_tyar_spec_data_new (x: Typar) st =
+    p_ident x.typar_id st
+    p_attribs x.Attribs st
+    p_int64 (int64 x.typar_flags.PickledBits) st
+    p_tyar_constraints x.Constraints st
+    p_xmldoc x.XmlDoc st
+    p_stamp x.Stamp st
+    (p_option p_ty_new) x.Solution st
+
+and p_tyar_spec_new (x: Typar) st =
+    //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_tyar_spec: typar#%d is not rigid" x.Stamp, x.Range))
+    if x.IsFromError then warning(Error((0, "p_tyar_spec: from error"), x.Range))
+    p_osgn_decl st.otypars p_tyar_spec_data_new x st
+
+and p_tyar_specs_new = (p_list p_tyar_spec_new)
+
 and p_ty_new (ty: TType) st : unit =
     match ty with
     | TType_tuple (tupInfo, l) ->
@@ -2645,7 +2627,7 @@ and p_ty_new (ty: TType) st : unit =
     | TType_var (typar, nullness) -> 
         p_byte 3 st
         p_tup4
-            p_tpref
+            p_tpref 
             p_nullness
             (p_option p_ty_new)
             p_stamp
@@ -3542,6 +3524,31 @@ and u_nullness st =
     Nullness.Known nullnessInfo
 
 and u_typars = u_list u_tpref
+
+and u_tyar_spec_data_new st =
+    let typar_id = u_ident st
+    let attribs = u_attribs st
+    let flags = u_int64 st
+    let typar_constraints = u_tyar_constraints st
+    let xmldoc = u_xmldoc st
+    let stamp = u_stamp st
+    let solution = u_option u_ty_new st
+    
+    { typar_id=typar_id
+      typar_stamp=stamp
+      typar_flags=TyparFlags(int32 flags)
+      typar_solution=solution
+      typar_astype= Unchecked.defaultof<_>
+      typar_opt_data=
+        match xmldoc, typar_constraints, attribs with
+        | doc, [], [] when doc.IsEmpty -> None
+        | _ -> Some { typar_il_name = None; typar_xmldoc = xmldoc; typar_constraints = typar_constraints; typar_attribs = attribs;typar_is_contravariant = false } }
+
+
+and u_tyar_spec_new st =
+    u_osgn_decl st.itypars u_tyar_spec_data_new st
+
+and u_tyar_specs_new = (u_list u_tyar_spec_new)
 
 and u_ty_new st : TType =
     let tag = u_byte st
