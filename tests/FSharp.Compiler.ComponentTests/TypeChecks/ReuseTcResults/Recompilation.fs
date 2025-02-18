@@ -28,6 +28,11 @@ type Recompilation() =
     [<InlineData "let f = function | _ -> 42">]
     [<InlineData "Some 42">]
     [<InlineData "None">]
+    [<InlineData "42 |> Some">]
+    [<InlineData "let myTuple = 42, true">]
+    [<InlineData "let naturalNumbers = Seq.initInfinite id">]
+    [<InlineData "let applyTwice f x = f (f x)">]
+    [<InlineData "let mutable x = 42">]
 
     [<InlineData """namespace Test
 module M1 = ()""">]
@@ -41,13 +46,28 @@ printfn $"{x}" """>]
 let helloWorld = "hello world!" """>]
     [<InlineData """module M2
 printfn "hello world!" """>]
+    [<InlineData """let mutable x = 42
+x <- 43 """>]
 
     //[<InlineData "let x = []">]
-    //[<InlineData "let f x = x * x">]
     //[<InlineData "let f() = 42">]
     //[<InlineData "type DU = A of int">]
     //[<InlineData "type DU = A of int | B of string">]
     //[<InlineData "type R = { v: int }">]
+    //[<InlineData "if true then ()">]
+    //[<InlineData "if true then () else ()">]
+    //[<InlineData "let add a b = a + b">]
+    //[<InlineData "let addOne = fun x -> x + 1">]
+    //[<InlineData "let square n = n * n">]
+
+//    [<InlineData """
+//let rec factorial n =
+//    if n = 0 then 1
+//    else n * factorial (n - 1) """>]
+//    [<InlineData """
+//match true with 
+//| true -> ()
+//| false -> () """>]
     let ``Recompiles using restored TC info`` (code: string) =
         let fileName = getTemporaryFileName()
         let tempPath = $"{fileName}.fsx"
