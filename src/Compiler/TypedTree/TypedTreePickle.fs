@@ -2626,12 +2626,10 @@ and p_ty_new (ty: TType) st : unit =
 
     | TType_var (typar, nullness) -> 
         p_byte 3 st
-        p_tup4
-            p_tpref 
+        p_tup2
+            p_tyar_spec_new
             p_nullness
-            (p_option p_ty_new)
-            p_stamp
-            (typar, nullness, typar.Solution, typar.Stamp)
+            (typar, nullness)
             st
 
     | TType_forall (tps, r) ->
@@ -3583,16 +3581,12 @@ and u_ty_new st : TType =
         TType_fun (domainType, rangeType, nullness)
 
     | 3 ->
-        let (typar, nullness, solution, stamp) =
-            u_tup4
-                u_tpref
+        let (typar, nullness) =
+            u_tup2
+                u_tyar_spec_new
                 u_nullness
-                (u_option u_ty_new)
-                u_stamp
                 st
         
-        typar.typar_solution <- solution
-        typar.typar_stamp <- stamp
         TType_var (typar, nullness)
 
     | 4 ->
