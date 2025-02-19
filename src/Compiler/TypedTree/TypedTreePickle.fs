@@ -92,6 +92,34 @@ type Table<'T when 'T: not null> =
         rows= ResizeArray<_>(1000)
         count=0 }
 
+
+type Table2<'T> =
+    { name: string
+      tbl: Dictionary<'T, int>
+      mutable rows: ResizeArray<'T>
+      mutable count: int }
+
+    member tbl.AsArray = Seq.toArray tbl.rows
+    member tbl.Size = tbl.rows.Count
+    member tbl.Add x =
+        let n = tbl.count
+        tbl.count <- tbl.count + 1
+        tbl.tbl.[x] <- n
+        tbl.rows.Add x
+        n
+
+    member tbl.FindOrAdd x =
+        match tbl.tbl.TryGetValue x with
+        | true, res -> res
+        | _ -> tbl.Add x
+
+    static member Create n comp =
+      { name = n
+        tbl = Dictionary<'T, int>(1000, comp) // Bypass equality constraint
+        rows = ResizeArray<_>(1000)
+        count = 0 }
+
+
 [<NoEquality; NoComparison>]
 type InputTable<'T> =
     { itbl_name: string
@@ -133,6 +161,7 @@ type WriterState =
     opubpaths: Table<int[]>
     onlerefs: Table<int * int[]>
     osimpletys: Table<int>
+    onlerefs2: Table2<NonLocalEntityRef>
     oglobals : TcGlobals
     mutable isStructThisArgPos : bool
     ofile : string
@@ -169,6 +198,7 @@ type ReaderState =
     ipubpaths: InputTable<PublicPath>
     inlerefs: InputTable<NonLocalEntityRef>
     isimpletys: InputTable<TType>
+    inlerefs2: InputTable<NonLocalEntityRef>
     ifile: string
     iILModule : ILModuleDef option // the Abstract IL metadata for the DLL being read
   }
@@ -488,6 +518,9 @@ let u_osgn_decl (inMap: NodeInTable<_, _>) u st =
 //---------------------------------------------------------------------------
 
 let encode_uniq (tbl: Table<_>) key = tbl.FindOrAdd key
+
+let encode_uniq2 (tbl: Table2<_>) key = tbl.FindOrAdd key
+
 let lookup_uniq st tbl n =
     let arr = tbl.itbl_rows
     if n < 0 || n >= arr.Length then ufailwith st ("lookup_uniq in table "+tbl.itbl_name+" out of range, n = "+string n+ ", sizeof(tab) = " + string (Array.length arr))
@@ -688,6 +721,11 @@ let p_strings = p_list p_string
 // CCU References
 // A huge number of these occur in pickled F# data, so make them unique
 let encode_ccuref ccuTab (x: CcuThunk) = encode_uniq ccuTab x.AssemblyName
+
+let encode_ccuref2 ccuTab (x: NonLocalEntityRef) =
+    encode_uniq2 ccuTab x
+
+
 let lookup_ccuref st ccuTab x = lookup_uniq st ccuTab x
 let u_encoded_ccuref st =
     match u_byte st with
@@ -716,6 +754,7 @@ let encode_pubpath stringTab pubpathTab (PubPath a) = encode_uniq pubpathTab (Ar
 let p_encoded_pubpath = p_array p_int
 let p_pubpath x st = p_int (encode_pubpath st.ostrings st.opubpaths x) st
 
+
 // References to other modules
 // A huge number of these occur in pickled F# data, so make them unique
 let decode_nleref st ccuTab stringTab (n, arr) =
@@ -726,7 +765,15 @@ let decode_nleref st ccuTab stringTab (n, arr) =
 
 let lookup_nleref st nlerefTab x = lookup_uniq st nlerefTab x
 let u_encoded_nleref = u_tup2 u_int (u_array u_int)
-let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
+
+
+let u_nleref st = 
+    let code = u_int st
+    lookup_uniq st st.inlerefs code
+
+let u_nleref2 st = 
+    let code = u_int st
+    lookup_uniq st st.inlerefs2 code
 
 let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef) =
 #if !NO_TYPEPROVIDERS
@@ -754,6 +801,9 @@ let p_nleref x st =
     let code = encode_nleref st.occus st.ostrings st.onlerefs st.oscope x
     p_int code st
 
+let p_nleref2 nleref st = 
+    let code = encode_ccuref2 st.onlerefs2 nleref
+    p_int code st
 
 // Simple types are types like "int", represented as TType(Ref_nonlocal(..., "int"), []).
 // A huge number of these occur in pickled F# data, so make them unique.
@@ -764,14 +814,92 @@ let p_nleref x st =
 // those the KnownWithoutNull interpretation by default.
 let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], KnownAmbivalentToNull)
 let u_encoded_simpletyp st = u_int  st
+
+
 let u_simpletyp st = lookup_uniq st st.isimpletys (u_int st)
+
 let encode_simpletyp ccuTab stringTab nlerefTab simpleTyTab thisCcu a = encode_uniq simpleTyTab (encode_nleref ccuTab stringTab nlerefTab thisCcu a)
+
+let u_ccu_data_plain st : CcuData =
+    let fileName = u_option u_prim_string st
+    //p_ILScopeRef x.ILScopeRef st
+    //p_stamp x.Stamp st
+    let qualifiedName = u_option u_prim_string st
+    let sourceCodeDirectory = u_prim_string st
+    let isFSharp = u_bool st
+#if !NO_TYPEPROVIDERS
+    let isProviderGenerated = u_bool st
+#endif
+    let usesFSharp20PlusQuotations = u_bool st
+
+    {
+        FileName = fileName
+        ILScopeRef = Unchecked.defaultof<_>
+        Stamp = Unchecked.defaultof<_>
+        QualifiedName = qualifiedName
+        SourceCodeDirectory = sourceCodeDirectory
+        IsFSharp = isFSharp
+#if !NO_TYPEPROVIDERS
+        IsProviderGenerated = isProviderGenerated
+        InvalidateEvent = Unchecked.defaultof<_>
+        ImportProvidedType = Unchecked.defaultof<_>
+#endif
+        UsesFSharp20PlusQuotations = usesFSharp20PlusQuotations
+        Contents = Unchecked.defaultof<_>
+        TryGetILModuleDef = Unchecked.defaultof<_>
+        MemberSignatureEquality = Unchecked.defaultof<_>
+        TypeForwarders = Unchecked.defaultof<_>
+        XmlDocumentationInfo = Unchecked.defaultof<_>
+    }
+
+let u_ccu_thunk st : CcuThunk =
+    let name = u_prim_string st
+    let target = u_ccu_data_plain st
+    {
+        name = name
+        target = target
+    }
+
+let u_non_local_entity_ref st : NonLocalEntityRef =
+    let ccuThunk = u_ccu_thunk st
+    let strings = u_array u_prim_string st
+    NonLocalEntityRef (ccuThunk, strings)
+
 let p_encoded_simpletyp x st = p_int x st
+
+let p_ccu_data_plain (x: CcuData) st =
+    p_option p_prim_string x.FileName st
+    //p_ILScopeRef x.ILScopeRef st
+    //p_stamp x.Stamp st
+    p_option p_prim_string x.QualifiedName st
+    p_prim_string x.SourceCodeDirectory st
+    p_bool x.IsFSharp st
+#if !NO_TYPEPROVIDERS
+    p_bool x.IsProviderGenerated st
+#endif
+    p_bool x.UsesFSharp20PlusQuotations st
+
+let p_ccu_thunk (x: CcuThunk) st =
+    p_prim_string x.name st
+    p_ccu_data_plain x.target st
+
+let p_non_local_entity_ref (x: NonLocalEntityRef) st =
+    let (NonLocalEntityRef (ccuThunk, strings)) = x
+    p_ccu_thunk ccuThunk st
+    p_array p_prim_string strings st
+    
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletys st.oscope x) st
 
 /// Arbitrary value
 [<Literal>]
 let PickleBufferCapacity = 50000
+
+type CustomComparer() =
+    interface IEqualityComparer<NonLocalEntityRef> with
+        member _.Equals(a, b) = a.DisplayName = b.DisplayName  // Ignores actual equality
+        member _.GetHashCode(_) = 0   // Forces all keys into one "bucket"
+
+
 
 let pickleObjWithDanglingCcus inMem file g scope p x =
   let st1 =
@@ -793,6 +921,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         onlerefs=Table<_>.Create "onlerefs"
         opubpaths=Table<_>.Create "opubpaths"
         osimpletys=Table<_>.Create "osimpletys"
+        onlerefs2=Table2<_>.Create "onlerefs2" (CustomComparer())
         oglobals=g
         ofile=file
         oInMem=inMem
@@ -826,6 +955,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
        opubpaths=Table<_>.Create "opubpaths (fake)"
        onlerefs=Table<_>.Create "onlerefs (fake)"
        osimpletys=Table<_>.Create "osimpletys (fake)"
+       onlerefs2=Table2<_>.Create "onlerefs2 (fake)" (CustomComparer())
        oglobals=g
        ofile=file
        oInMem=inMem
@@ -879,12 +1009,13 @@ let pickleObjWithDanglingCcusNew inMem file g scope p x =
         onlerefs=Table<_>.Create "onlerefs"
         opubpaths=Table<_>.Create "opubpaths"
         osimpletys=Table<_>.Create "osimpletys"
+        onlerefs2=Table2<_>.Create "onlerefs2" (CustomComparer())
         oglobals=g
         ofile=file
         oInMem=inMem
         isStructThisArgPos = false }
 
-  let ccuNameTab,(ntycons, ntypars, nvals, nanoninfos, nccudatas),stringTab,pubpathTab,nlerefTab,simpleTyTab,phase1bytes,phase1bytesB =
+  let ccuNameTab,(ntycons, ntypars, nvals, nanoninfos, nccudatas),stringTab,pubpathTab,nlerefTab,simpleTyTab,onlerefs2,phase1bytes,phase1bytesB =
     p x st1
     let sizes =
       st1.oentities.Size,
@@ -892,7 +1023,7 @@ let pickleObjWithDanglingCcusNew inMem file g scope p x =
       st1.ovals.Size,
       st1.oanoninfos.Size,
       st1.occudatas.Size
-    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.AsMemory(), st1.osB
+    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.onlerefs2, st1.os.AsMemory(), st1.osB
 
   let st2 =
      { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
@@ -913,6 +1044,7 @@ let pickleObjWithDanglingCcusNew inMem file g scope p x =
        opubpaths=Table<_>.Create "opubpaths (fake)"
        onlerefs=Table<_>.Create "onlerefs (fake)"
        osimpletys=Table<_>.Create "osimpletys (fake)"
+       onlerefs2=Table2<_>.Create "onlerefs2 (fake)" (CustomComparer())
        oglobals=g
        ofile=file
        oInMem=inMem
@@ -927,13 +1059,14 @@ let pickleObjWithDanglingCcusNew inMem file g scope p x =
     if nanoninfos > 0 then
         p_int nanoninfos st2
     p_int nccudatas st2
-    p_tup5
+    p_tup6
         (p_array p_encoded_string)
         (p_array p_encoded_pubpath)
         (p_array p_encoded_nleref)
         (p_array p_encoded_simpletyp)
+        (p_array p_non_local_entity_ref)
         p_memory
-        (stringTab.AsArray, pubpathTab.AsArray, nlerefTab.AsArray, simpleTyTab.AsArray, phase1bytes)
+        (stringTab.AsArray, pubpathTab.AsArray, nlerefTab.AsArray, simpleTyTab.AsArray, onlerefs2.AsArray, phase1bytes)
         st2
     
     // The B stream should be empty in the second phase
@@ -975,6 +1108,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
          inlerefs = new_itbl "inlerefs (fake)" [| |]
          ipubpaths = new_itbl "ipubpaths (fake)" [| |]
          isimpletys = new_itbl "isimpletys (fake)" [| |]
+         inlerefs2 = new_itbl "inlerefs2 (fake)" [| |]
          ifile = file
          iILModule = ilModule }
     let ccuNameTab = u_array u_encoded_ccuref st2
@@ -1010,6 +1144,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
              ipubpaths = pubpathTab
              inlerefs = nlerefTab
              isimpletys = simpletypTab
+             inlerefs2 = new_itbl "inlerefs2 (fake)" [| |]
              ifile = file
              iILModule = ilModule }
         let res = u st1
@@ -1037,6 +1172,7 @@ let unpickleObjWithDanglingCcusNew file viewedScope (ilModule: ILModuleDef optio
          inlerefs = new_itbl "inlerefs (fake)" [| |]
          ipubpaths = new_itbl "ipubpaths (fake)" [| |]
          isimpletys = new_itbl "isimpletys (fake)" [| |]
+         inlerefs2 = new_itbl "inlerefs2 (fake)" [| |]
          ifile = file
          iILModule = ilModule }
     let ccuNameTab = u_array u_encoded_ccuref st2
@@ -1045,19 +1181,22 @@ let unpickleObjWithDanglingCcusNew file viewedScope (ilModule: ILModuleDef optio
     let ntypars, nvals = u_tup2 u_int u_int st2
     let nanoninfos = if z1 < 0 then u_int st2 else 0
     let nccudatas = u_int st2
-    let stringTab, pubpathTab, nlerefTab, simpleTyTab, phase1bytes =
-        u_tup5
+    let stringTab, pubpathTab, nlerefTab, simpleTyTab, nlerefsTab2, phase1bytes =
+        u_tup6
             (u_array u_encoded_string)
             (u_array u_encoded_pubpath)
             (u_array u_encoded_nleref)
             (u_array u_encoded_simpletyp)
+            (u_array u_non_local_entity_ref)
             u_byte_memory
             st2
-    let ccuTab       = new_itbl "iccus"       (Array.map CcuThunk.CreateDelayed ccuNameTab)
-    let stringTab    = new_itbl "istrings"    (Array.map decode_string stringTab)
-    let pubpathTab   = new_itbl "ipubpaths"   (Array.map (decode_pubpath st2 stringTab) pubpathTab)
-    let nlerefTab    = new_itbl "inlerefs"    (Array.map (decode_nleref st2 ccuTab stringTab) nlerefTab)
-    let simpletypTab = new_itbl "simpleTyTab" (Array.map (decode_simpletyp st2 ccuTab stringTab nlerefTab) simpleTyTab)
+    let ccuTab       = new_itbl "iccus"       (ccuNameTab |> Array.map CcuThunk.CreateDelayed)
+    let stringTab    = new_itbl "istrings"    (stringTab |> Array.map decode_string)
+    let pubpathTab   = new_itbl "ipubpaths"   (pubpathTab |> Array.map (decode_pubpath st2 stringTab))
+    let nlerefTab    = new_itbl "inlerefs"    (nlerefTab |> Array.map (decode_nleref st2 ccuTab stringTab))
+    let simpletypTab = new_itbl "simpleTyTab" (simpleTyTab |> Array.map (decode_simpletyp st2 ccuTab stringTab nlerefTab))
+    let nlerefTab2   = new_itbl "nlerefTab2"  nlerefsTab2
+
     let data =
         let st1 =
            { is = ByteStream.FromBytes (phase1bytes, 0, phase1bytes.Length)
@@ -1073,6 +1212,7 @@ let unpickleObjWithDanglingCcusNew file viewedScope (ilModule: ILModuleDef optio
              ipubpaths = pubpathTab
              inlerefs = nlerefTab
              isimpletys = simpletypTab
+             inlerefs2 = nlerefTab2
              ifile = file
              iILModule = ilModule }
         let res = u st1
@@ -1609,8 +1749,21 @@ let p_local_item_ref ctxt tab st = p_osgn_ref ctxt tab st
 
 let p_tcref ctxt (x: EntityRef) st =
     match x with
-    | ERefLocal x -> p_byte 0 st; p_local_item_ref ctxt st.oentities x st
-    | ERefNonLocal x -> p_byte 1 st; p_nleref x st
+    | ERefLocal x -> 
+        p_byte 0 st; 
+        p_local_item_ref ctxt st.oentities x st
+    | ERefNonLocal x -> 
+        p_byte 1 st; 
+        p_nleref x st
+
+let p_tcref2 ctxt (x: EntityRef) st =
+    match x with
+    | ERefLocal x -> 
+        p_byte 0 st; 
+        p_local_item_ref ctxt st.oentities x st
+    | ERefNonLocal x -> 
+        p_byte 1 st; 
+        p_nleref2 x st
 
 let p_ucref (UnionCaseRef(a, b)) st = p_tup2 (p_tcref "ucref") p_string (a, b) st
 
@@ -1622,9 +1775,27 @@ let u_local_item_ref tab st = u_osgn_ref tab st
 let u_tcref st =
     let tag = u_byte st
     match tag with
-    | 0 -> u_local_item_ref st.ientities  st |> ERefLocal
-    | 1 -> u_nleref                     st |> ERefNonLocal
+    | 0 -> 
+        let r = u_local_item_ref st.ientities st
+        ERefLocal r
+    | 1 -> 
+        let r = u_nleref st 
+        ERefNonLocal r
     | _ -> ufailwith st "u_item_ref"
+
+
+let u_tcref2 st =
+    let tag = u_byte st
+    match tag with
+    | 0 -> 
+        let r = u_local_item_ref st.ientities st
+        ERefLocal r
+    | 1 -> 
+        let r = u_nleref2 st 
+        ERefNonLocal r
+    | _ -> ufailwith st "u_item_ref"
+
+
 
 let u_ucref st  = let a, b = u_tup2 u_tcref u_string st in UnionCaseRef(a, b)
 
@@ -2796,13 +2967,10 @@ and p_ty_new (ty: TType) st : unit =
 
     | TType_app (tyconRef, typeInstantiation, nullness) ->
         p_byte 1 st
-        p_tup4
-            (p_tcref "app")
-            p_tys_new
-            p_nullness
-            (p_non_null_slot p_entity_spec_new)
-            (tyconRef, typeInstantiation, nullness, tyconRef.binding)
-            st
+        (p_tcref2 "app") tyconRef st
+        p_tys_new typeInstantiation st
+        p_nullness nullness st
+        //(p_non_null_slot p_entity_spec_new) tyconRef.binding st
 
     | TType_fun (domainType, rangeType, nullness) ->
         p_byte 2 st
@@ -3749,15 +3917,12 @@ and u_ty_new st : TType =
         TType_tuple (tupInfo, l)
 
     | 1 ->
-        let tyconRef, typeInstantiation, nullness, binding =
-            u_tup4
-                u_tcref
-                u_tys_new
-                u_nullness
-                (u_non_null_slot u_entity_spec_new)
-                st
+        let tyconRef = u_tcref2 st
+        let typeInstantiation = u_tys_new st
+        let nullness = u_nullness st
+        //let binding = u_non_null_slot u_entity_spec_new st
         
-        tyconRef.binding <- binding
+        //tyconRef.binding <- binding
         TType_app (tyconRef, typeInstantiation, nullness)
 
     | 2 ->
