@@ -2708,7 +2708,7 @@ and p_nleref_new (x: NonLocalEntityRef) st =
 
 and p_tcref_new (x: EntityRef) st =
     match x with
-    | ERefLocal x -> p_byte 0 st; p_local_item_ref "tcref" st.oentities x st
+    | ERefLocal x -> p_byte 0 st; p_entity_spec_new x st
     | ERefNonLocal x -> p_byte 1 st; p_nleref_new x st
 
 and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
@@ -3638,8 +3638,8 @@ and u_nleref_new st =
 and u_tcref_new st : EntityRef =
     let tag = u_byte st
     match tag with
-    | 0 -> u_local_item_ref st.ientities  st |> ERefLocal
-    | 1 -> u_nleref_new                     st |> ERefNonLocal
+    | 0 -> u_entity_spec_new st |> ERefLocal
+    | 1 -> u_nleref_new st |> ERefNonLocal
     | _ -> ufailwith st "u_item_ref"
 
 and u_nonlocal_val_ref_new st : NonLocalValOrMemberRef =
