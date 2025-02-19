@@ -2536,6 +2536,9 @@ and p_ccu_data (x: CcuData) st =
     p_bool x.UsesFSharp20PlusQuotations st
     p_entity_spec_data_new x.Contents st
 
+and p_ccu x st =
+    p_osgn_decl st.occudatas p_ccu_data x st
+
 and p_ccuref_new (x: CcuThunk) st =
     p_tup2
         p_ccu_data
@@ -3456,6 +3459,9 @@ and u_ccu_data st : CcuData =
         TypeForwarders = Unchecked.defaultof<_>
         XmlDocumentationInfo = Unchecked.defaultof<_>
     }
+
+and u_ccu st =
+    u_osgn_decl st.iccudatas u_ccu_data st
 
 and u_ccuref_new st : CcuThunk =
     let target, name = 
