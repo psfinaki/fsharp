@@ -7,6 +7,8 @@ open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.ReuseTcResults.TcResultsPickle
 
 
+
+
 let GetTypecheckingDataTcState (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
     
     let memA = byteReaderA ()
@@ -16,7 +18,7 @@ let GetTypecheckingDataTcState (file, ilScopeRef, ilModule, byteReaderA, byteRea
         | None -> ByteMemory.Empty.AsReadOnly()
         | Some br -> br ()
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTcState memA memB
+    unpickleObjWithDanglingCcusNew file ilScopeRef ilModule unpickleTcState memA memB
 
 let GetTypecheckingDataTopAttribs (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
     
@@ -27,7 +29,7 @@ let GetTypecheckingDataTopAttribs (file, ilScopeRef, ilModule, byteReaderA, byte
         | None -> ByteMemory.Empty.AsReadOnly()
         | Some br -> br ()
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleTopAttribs memA memB
+    unpickleObjWithDanglingCcusNew file ilScopeRef ilModule unpickleTopAttribs memA memB
 
 let GetTypecheckingDataCheckedImplFile (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
 
@@ -38,7 +40,7 @@ let GetTypecheckingDataCheckedImplFile (file, ilScopeRef, ilModule, byteReaderA,
         | None -> ByteMemory.Empty.AsReadOnly()
         | Some br -> br ()
 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCheckedImplFile memA memB
+    unpickleObjWithDanglingCcusNew file ilScopeRef ilModule unpickleCheckedImplFile memA memB
 
 
 
@@ -48,7 +50,7 @@ let WriteTypecheckingDataTcState (tcConfig: TcConfig, tcGlobals, fileName, inMem
     let rName = "FSharpTypecheckingData"
     let rNameB = "FSharpTypecheckingDataB"
 
-    PickleToResource
+    PickleToResourceNew
         inMem
         fileName
         tcGlobals
@@ -66,7 +68,7 @@ let WriteTypecheckingDataTopAttribs (tcConfig: TcConfig, tcGlobals, fileName, in
     let rName = "FSharpTypecheckingData"
     let rNameB = "FSharpTypecheckingDataB"
 
-    PickleToResource
+    PickleToResourceNew
         inMem
         fileName
         tcGlobals
@@ -84,7 +86,7 @@ let WriteTypecheckingDataCheckedImplFile (tcConfig: TcConfig, tcGlobals, fileNam
     let rName = "FSharpTypecheckingData"
     let rNameB = "FSharpTypecheckingDataB"
 
-    PickleToResource
+    PickleToResourceNew
         inMem
         fileName
         tcGlobals

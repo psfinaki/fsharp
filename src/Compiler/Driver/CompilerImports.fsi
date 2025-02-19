@@ -65,6 +65,19 @@ val PickleToResource:
     x: 'a ->
         ILResource * ILResource option
 
+
+val PickleToResourceNew:
+    inMem: bool ->
+    file: string ->
+    g: TcGlobals ->
+    compress: bool ->
+    scope: CcuThunk ->
+    rName: string ->
+    rNameB: string ->
+    p: ('a -> WriterState -> unit) ->
+    x: 'a ->
+        ILResource * ILResource option
+
 /// Encode the F# interface data into a set of IL attributes and resources
 val EncodeSignatureData:
     tcConfig: TcConfig *

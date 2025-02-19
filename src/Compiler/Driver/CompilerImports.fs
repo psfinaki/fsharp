@@ -192,6 +192,49 @@ let PickleToResource inMem file (g: TcGlobals) compress scope rName rNameB p x =
 
     resource, resourceB
 
+
+let PickleToResourceNew inMem file (g: TcGlobals) compress scope rName rNameB p x =
+    let file = PathMap.apply g.pathMap file
+
+    let bytes, bytesB = pickleObjWithDanglingCcusNew inMem file g scope p x
+    use bytes = bytes
+    use bytesB = bytesB
+    let bytes = ByteBufferToBytes compress bytes
+    let bytesB = ByteBufferToBytes compress bytesB
+    let byteStorage = ByteStorage.FromByteArray(bytes)
+
+    let byteStorageB =
+        if inMem then            
+            ByteStorage.FromMemoryAndCopy(bytesB.AsMemory(), useBackingMemoryMappedFile = true)
+        else
+            ByteStorage.FromByteArray(bytesB.AsMemory().ToArray())
+
+    let resource =
+        {
+            Name = rName
+            Location = ILResourceLocation.Local(byteStorage)
+            Access = ILResourceAccess.Public
+            CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+            MetadataIndex = NoMetadataIdx
+        }
+
+    let resourceB =
+        if bytesB.AsMemory().Length > 0 then
+            Some
+                {
+                    Name = rNameB
+                    Location = ILResourceLocation.Local(byteStorageB)
+                    Access = ILResourceAccess.Public
+                    CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+                    MetadataIndex = NoMetadataIdx
+                }
+        else
+            None
+
+    resource, resourceB
+
+
+
 let GetSignatureData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) : PickledDataWithReferences<PickledCcuInfo> =
     let memA = byteReaderA ()
 
