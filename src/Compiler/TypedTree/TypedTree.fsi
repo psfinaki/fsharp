@@ -4114,33 +4114,33 @@ type CcuData =
     {
 
         /// Holds the file name for the DLL, if any
-        FileName: string option
+        mutable FileName: string option
 
         /// Holds the data indicating how this assembly/module is referenced from the code being compiled.
-        ILScopeRef: ILScopeRef
+        mutable ILScopeRef: ILScopeRef
 
         /// A unique stamp for this DLL
-        Stamp: Stamp
+        mutable Stamp: Stamp
 
         /// The fully qualified assembly reference string to refer to this assembly. This is persisted in quotations
-        QualifiedName: string option
+        mutable QualifiedName: string option
 
         /// A hint as to where does the code for the CCU live (e.g what was the tcConfig.implicitIncludeDir at compilation time for this DLL?)
-        SourceCodeDirectory: string
+        mutable SourceCodeDirectory: string
 
         /// Indicates that this DLL was compiled using the F# compiler type has F# metadata
-        IsFSharp: bool
+        mutable IsFSharp: bool
 
 #if !NO_TYPEPROVIDERS
         /// Is the CCu an assembly injected by a type provider
-        IsProviderGenerated: bool
+        mutable IsProviderGenerated: bool
 
         /// Triggered when the contents of the CCU are invalidated
-        InvalidateEvent: IEvent<string>
+        mutable InvalidateEvent: IEvent<string>
 
         /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality
         /// logic in tastops.fs
-        ImportProvidedType: Tainted<ProvidedType> -> TType
+        mutable ImportProvidedType: Tainted<ProvidedType> -> TType
 #endif
 
         /// Indicates that this DLL uses pre-F#-4.0 quotation literals somewhere. This is used to implement a restriction on static linking
@@ -4151,16 +4151,22 @@ type CcuData =
 
         /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality
         /// logic in tastops.fs
-        TryGetILModuleDef: unit -> ILModuleDef option
+        mutable TryGetILModuleDef: unit -> ILModuleDef option
 
         /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality
         /// logic in tastops.fs
-        MemberSignatureEquality: TType -> TType -> bool
+        mutable MemberSignatureEquality: TType -> TType -> bool
 
         /// The table of .NET CLI type forwarders for this assembly
-        TypeForwarders: CcuTypeForwarderTable
-        XmlDocumentationInfo: XmlDocumentationInfo option
+        mutable TypeForwarders: CcuTypeForwarderTable
+        mutable XmlDocumentationInfo: XmlDocumentationInfo option
     }
+
+    static member NewUnlinked: unit -> CcuData
+
+    member Link: tg: CcuData -> unit
+
+    member IsLinked: bool
 
     override ToString: unit -> string
 

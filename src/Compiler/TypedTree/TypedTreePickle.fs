@@ -124,6 +124,7 @@ type WriterState =
     osB: ByteBuffer
     oscope: CcuThunk
     occus: Table<CcuReference>
+    occudatas: NodeOutTable<CcuData, CcuData>
     oentities: NodeOutTable<EntityData, Entity>
     otypars: NodeOutTable<TyparData, Typar>
     ovals: NodeOutTable<ValData, Val>
@@ -159,6 +160,7 @@ type ReaderState =
     isB: ByteStream
     iilscope: ILScopeRef
     iccus: InputTable<CcuThunk>
+    iccudatas: NodeInTable<CcuData, CcuData>
     ientities: NodeInTable<EntityData, Tycon>
     itypars: NodeInTable<TyparData, Typar>
     ivals: NodeInTable<ValData, Val>
@@ -691,7 +693,11 @@ let u_encoded_ccuref st =
     match u_byte st with
     | 0 -> u_prim_string st
     | n -> ufailwith st ("u_encoded_ccuref: found number " + string n)
-let u_ccuref st   = lookup_uniq st st.iccus (u_int st)
+
+let u_ccuref st   =
+    let n = u_int st
+    let result = lookup_uniq st st.iccus n
+    result
 
 
 let p_encoded_ccuref x st =
@@ -712,7 +718,12 @@ let p_pubpath x st = p_int (encode_pubpath st.ostrings st.opubpaths x) st
 
 // References to other modules
 // A huge number of these occur in pickled F# data, so make them unique
-let decode_nleref st ccuTab stringTab (a, b) = mkNonLocalEntityRef (lookup_ccuref st ccuTab a) (Array.map (lookup_string st stringTab) b)
+let decode_nleref st ccuTab stringTab (n, arr) =
+    let ccuThunk = lookup_ccuref st ccuTab n
+    let strings = arr |> Array.map (lookup_string st stringTab)
+    mkNonLocalEntityRef ccuThunk strings
+
+
 let lookup_nleref st nlerefTab x = lookup_uniq st nlerefTab x
 let u_encoded_nleref = u_tup2 u_int (u_array u_int)
 let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
@@ -731,11 +742,17 @@ let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef)
     ignore thisCcu
 #endif
 
-    let (NonLocalEntityRef(a, b)) = nleref
-    encode_uniq nlerefTab (encode_ccuref ccuTab a, Array.map (encode_string stringTab) b)
+    let (NonLocalEntityRef(ccuThunk, strings)) = nleref
+    let ccurefCode = encode_ccuref ccuTab ccuThunk
+    let stringCodes = strings |> Array.map (encode_string stringTab)
+    let key = ccurefCode, stringCodes
+    encode_uniq nlerefTab key
 
 let p_encoded_nleref = p_tup2 p_int (p_array p_int)
-let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.oscope x) st
+
+let p_nleref x st = 
+    let code = encode_nleref st.occus st.ostrings st.onlerefs st.oscope x
+    p_int code st
 
 
 // Simple types are types like "int", represented as TType(Ref_nonlocal(..., "int"), []).
@@ -762,6 +779,12 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         oscope=scope
         occus= Table<_>.Create "occus"
+        occudatas = NodeOutTable<_, _>.Create(
+            (fun ccu -> ccu.Stamp),
+            (fun ccu -> ccu.QualifiedName |> Option.defaultValue ""),
+            (fun _ -> range0),
+            id,
+            "occudatas")
         oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
         otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
         ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), id , "ovals")
@@ -789,6 +812,12 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
        osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
        oscope=scope
        occus= Table<_>.Create "occus (fake)"
+       occudatas = NodeOutTable<_, _>.Create(
+            (fun ccu -> ccu.Stamp),
+            (fun ccu -> ccu.QualifiedName |> Option.defaultValue ""),
+            (fun _ -> range0),
+            id,
+            "occudatas")
        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id, "otycons")
        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id, "otypars")
        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
@@ -849,6 +878,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
          isB = ByteStream.FromBytes (ByteMemory.FromArray([| |]).AsReadOnly(), 0, 0) 
          iilscope = viewedScope
          iccus = new_itbl "iccus (fake)" [| |]
+         iccudatas = NodeInTable<_, _>.Create(CcuData.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "iccudatas", 0)
          ientities = NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
          itypars = NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
          ivals = NodeInTable<_, _>.Create (Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
@@ -883,6 +913,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
              isB = ByteStream.FromBytes (phase1bytesB, 0, phase1bytesB.Length) 
              iccus = ccuTab
              iilscope = viewedScope
+             iccudatas = NodeInTable<_, _>.Create(CcuData.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "iccudatas", 0)
              ientities = NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
              itypars = NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
              ivals = NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
@@ -1547,6 +1578,7 @@ let p_MemberFlags (x: SynMemberFlags) st =
          x.IsOverrideOrExplicitImpl,
          x.IsFinal,
          x.MemberKind) st
+
 let u_MemberFlags st : SynMemberFlags=
     let x2, _x3UnusedBoolInFormat, x4, x5, x6, x7 = u_tup6 u_bool u_bool u_bool u_bool u_bool u_member_kind st
     { IsInstance=x2
