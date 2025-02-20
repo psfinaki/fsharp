@@ -77,7 +77,7 @@ let p_module_and_namespace (s: string, l: ModuleOrNamespaceRef list) st =
     p_list (p_tcref "test") l st
 
 let p_union_case_info (UnionCaseInfo (typeInst, ucref)) st =
-    p_tys_new typeInst st
+    p_tys typeInst st
     p_ucref ucref st
 
 let p_item (x: Item) st =
@@ -85,7 +85,7 @@ let p_item (x: Item) st =
     | Item.Value vref -> 
         p_byte 0 st
         p_vref "test" vref st
-        p_non_null_slot p_Val_new vref.binding st
+        p_non_null_slot p_Val vref.binding st
     | Item.UnqualifiedType tcrefs ->
         p_byte 1 st
         p_list (p_tcref "test") tcrefs st
@@ -134,13 +134,13 @@ let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     // tcEnv.eCachedImplicitYieldExpressions
 
 let pickleTcState (tcState: TcState) (st: WriterState) =
-    p_ccuref_new tcState.tcsCcu st
+    p_ccuref tcState.tcsCcu st
     p_tc_env tcState.tcsTcSigEnv st
     p_tc_env tcState.tcsTcImplEnv st
     p_bool tcState.tcsCreatesGeneratedProvidedTypes st
     (p_list p_tcs_root_sig) (tcState.tcsRootSigs.ToList()) st
     p_list p_qualified_name_of_file (tcState.tcsRootImpls.ToList()) st
-    p_modul_typ_new tcState.tcsCcuSig st
+    p_modul_typ tcState.tcsCcuSig st
     p_list p_open_decl tcState.tcsImplicitOpenDeclarations st
     
 let pickleTopAttribs (tcInfo: TopAttribs) (st: WriterState) =
@@ -227,7 +227,7 @@ let u_module_and_namespace st : string * ModuleOrNamespaceRef list =
     s, l
 
 let u_union_case_info st =
-    let typeInst = u_tys_new st
+    let typeInst = u_tys st
     let ucref = u_ucref st
     UnionCaseInfo (typeInst, ucref)
 
@@ -236,7 +236,7 @@ let u_item st : Item =
     match tag with
     | 0 -> 
         let vref = u_vref st
-        let binding = u_non_null_slot u_Val_new st
+        let binding = u_non_null_slot u_Val st
         vref.binding <- binding
         Item.Value vref
     | 1 ->
@@ -298,13 +298,13 @@ let u_tc_env (st: ReaderState) : TcEnv =
     }
 
 let unpickleTcState (st: ReaderState) : TcState =
-    let tcsCcu = u_ccuref_new st
+    let tcsCcu = u_ccuref st
     let tcsTcSigEnv = u_tc_env st
     let tcsTcImplEnv = u_tc_env st
     let tcsCreatesGeneratedProvidedTypes = u_bool st
     let tcsRootSigs = u_list u_tcs_root_sig st
     let tcsRootImpls = u_list u_qualified_name_of_file st
-    let tcsCcuSig = u_modul_typ_new st
+    let tcsCcuSig = u_modul_typ st
     let tcsImplicitOpenDeclarations = u_list u_open_decl st
 
     { 
