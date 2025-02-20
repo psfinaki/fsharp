@@ -1803,6 +1803,7 @@ let p_ty = p_ty2 false
 let p_tys = (p_list p_ty)
 
 let fill_p_attribs, p_attribs = p_hole()
+let fill_p_attribs_new, p_attribs_new = p_hole()
 
 // In F# 4.5, the type of the "this" pointer for structs is considered to be inref for the purposes of checking the implementation
 // of the struct.  However for backwards compat reasons we can't serialize this as the type.
@@ -1836,6 +1837,7 @@ let p_vrefs ctxt = p_list (p_vref ctxt)
 let fill_u_ty, u_ty = u_hole()
 let u_tys = (u_list u_ty)
 let fill_u_attribs, u_attribs = u_hole()
+let fill_u_attribs_new, u_attribs_new = u_hole()
 
 let u_nonlocal_val_ref st : NonLocalValOrMemberRef =
     let a = u_tcref st
@@ -2444,7 +2446,8 @@ let rec p_tycon_repr x st =
 #endif
 
     | TILObjectRepr (TILObjectReprData (_, _, td)) ->
-        error (Failure("Unexpected IL type definition"+td.Name))
+        //error (Failure("Unexpected IL type definition"+td.Name))
+        false
 
 and p_tycon_repr_new (x: TyconRepresentation) st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
@@ -2606,7 +2609,7 @@ and p_entity_spec_data_new (x: Entity) st =
     p_option p_pubpath x.entity_pubpath st
     p_access x.Accessibility st
     p_access  x.TypeReprAccessibility st
-    p_attribs x.entity_attribs st
+    p_attribs_new x.entity_attribs st
     let _ = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty x.TypeAbbrev st
     p_tcaug x.entity_tycon_tcaug st
@@ -2614,7 +2617,7 @@ and p_entity_spec_data_new (x: Entity) st =
     p_kind x.TypeOrMeasureKind st
     p_int64 x.entity_flags.Flags st
     p_option p_cpath x.entity_cpath st
-    p_maybe_lazy p_modul_typ_2 x.entity_modul_type st
+    p_maybe_lazy p_modul_typ x.entity_modul_type st
     p_exnc_repr x.ExceptionInfo st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2692,6 +2695,15 @@ and p_attribkind x st =
     | FSAttrib x -> p_byte 1 st; p_vref "attrib" x st
 
 and p_attrib (Attrib (tcref, kind, unnamedArgs, propVal, appliedtoagos, _targets, range)) st = // AttributeTargets are not preserved
+    (p_tcref "attrib") tcref st
+    p_attribkind kind st
+    (p_list p_attrib_expr) unnamedArgs st
+    (p_list p_attrib_arg) propVal st
+    p_bool appliedtoagos st
+    p_dummy_range range st
+
+
+and p_attrib_new (Attrib (tcref, kind, unnamedArgs, propVal, appliedtoagos, _targets, range)) st = // AttributeTargets are not preserved
     (p_tcref "attrib") tcref st
     p_attribkind kind st
     (p_list p_attrib_expr) unnamedArgs st
@@ -3146,7 +3158,7 @@ and p_checked_impl_file file st =
     p_tup8
         p_qualified_name_of_file
         p_pragmas
-        p_modul_typ_new
+        p_modul_typ
         p_checked_impl_file_contents
         p_bool
         p_bool
@@ -3454,7 +3466,7 @@ and u_entity_spec_data_new st : Entity =
           u_stamp
           (u_option u_pubpath)
           (u_tup2 u_access u_access)
-          u_attribs
+          u_attribs_new
           u_tycon_repr
           (u_option u_ty)
           u_tcaug
@@ -3462,7 +3474,7 @@ and u_entity_spec_data_new st : Entity =
           u_kind
           u_int64
           (u_option u_cpath )
-          (u_lazy u_modul_typ_2)
+          (u_lazy u_modul_typ)
           u_exnc_repr
           (u_used_space1 u_xmldoc)
           st
@@ -3572,6 +3584,15 @@ and u_attribkind st =
     | _ -> ufailwith st "u_attribkind"
 
 and u_attrib st : Attrib =
+    let tcref = u_tcref st
+    let kind = u_attribkind st
+    let unnamedArgs = u_list u_attrib_expr st
+    let propVal = u_list u_attrib_arg st
+    let appliedtoagos = u_bool st
+    let range = u_dummy_range st
+    Attrib(tcref, kind, unnamedArgs, propVal, appliedtoagos, None, range)  // AttributeTargets are not preserved
+
+and u_attrib_new st : Attrib =
     let tcref = u_tcref st
     let kind = u_attribkind st
     let unnamedArgs = u_list u_attrib_expr st
@@ -4196,7 +4217,7 @@ and u_checked_impl_file st =
         u_tup8
             u_qualified_name_of_file
             u_pragmas
-            u_modul_typ_new
+            u_modul_typ
             u_checked_impl_file_contents
             u_bool
             u_bool
@@ -4738,6 +4759,7 @@ let _ = fill_p_Exprs (p_list p_expr)
 let _ = fill_p_Expr_hole p_expr
 let _ = fill_p_Exprs (p_List p_expr)
 let _ = fill_p_attribs (p_list p_attrib)
+let _ = fill_p_attribs_new (p_list p_attrib_new)
 let _ = fill_p_Vals (p_list p_Val)
 
 let _ = fill_u_binds (u_List u_bind)
@@ -4746,6 +4768,7 @@ let _ = fill_u_constraints (u_list u_static_optimization_constraint)
 let _ = fill_u_Exprs (u_list u_expr)
 let _ = fill_u_Expr_hole u_expr
 let _ = fill_u_attribs (u_list u_attrib)
+let _ = fill_u_attribs_new (u_list u_attrib_new)
 let _ = fill_u_Vals (u_list u_Val)
 
 //---------------------------------------------------------------------------
