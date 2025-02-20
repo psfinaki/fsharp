@@ -2592,7 +2592,7 @@ and p_entity_spec_data (x: Entity) st =
         p_space 1 () st
 
 and p_entity_spec_data_new (x: Entity) st =
-    p_tyar_specs_new (x.entity_typars.Force(x.entity_range)) st
+    p_tyar_specs (x.entity_typars.Force(x.entity_range)) st
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
     p_range  x.entity_range st
@@ -2601,14 +2601,14 @@ and p_entity_spec_data_new (x: Entity) st =
     p_access x.Accessibility st
     p_access  x.TypeReprAccessibility st
     p_attribs x.entity_attribs st
-    let _ = p_tycon_repr_new x.entity_tycon_repr st
-    p_option p_ty_new x.TypeAbbrev st
-    p_tcaug_new x.entity_tycon_tcaug st
+    let _ = p_tycon_repr x.entity_tycon_repr st
+    p_option p_ty x.TypeAbbrev st
+    p_tcaug x.entity_tycon_tcaug st
     p_string System.String.Empty st
     p_kind x.TypeOrMeasureKind st
     p_int64 x.entity_flags.Flags st
     p_option p_cpath x.entity_cpath st
-    p_maybe_lazy p_modul_typ_new x.entity_modul_type st
+    //p_maybe_lazy p_modul_typ x.entity_modul_type st
     p_exnc_repr x.ExceptionInfo st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2849,7 +2849,7 @@ and p_ccu_data (x: CcuData) st =
     p_bool x.IsProviderGenerated st
 #endif
     p_bool x.UsesFSharp20PlusQuotations st
-    p_osgn_ref "test" st.oentities x.Contents st
+    p_osgn_decl st.oentities p_entity_spec_new x.Contents st
 
 
 and p_onloc (x: NonLocalEntityRef2) st =
@@ -3429,7 +3429,7 @@ and u_entity_spec_data st : Entity =
 and u_entity_spec_data_new st : Entity =
     let x1, x2a, x2b, x2c, stamp, x3, (x4a, x4b), x6, x7, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
        u_tup18
-          u_tyar_specs_new
+          u_tyar_specs
           u_string
           (u_option u_string)
           u_range
@@ -3437,14 +3437,14 @@ and u_entity_spec_data_new st : Entity =
           (u_option u_pubpath)
           (u_tup2 u_access u_access)
           u_attribs
-          u_tycon_repr_new
-          (u_option u_ty_new)
-          u_tcaug_new
+          u_tycon_repr
+          (u_option u_ty)
+          u_tcaug
           u_string
           u_kind
           u_int64
           (u_option u_cpath )
-          (u_lazy u_modul_typ_new)
+          (fun _ -> Unchecked.defaultof<_>)
           u_exnc_repr
           (u_used_space1 u_xmldoc)
           st
@@ -3462,7 +3462,7 @@ and u_entity_spec_data_new st : Entity =
       entity_tycon_tcaug=x9
       entity_flags=EntityFlags x11
       entity_cpath=x12
-      entity_modul_type=MaybeLazy.Lazy x13
+      entity_modul_type=x13
       entity_il_repr_cache=newCache()
       entity_opt_data=
         match x2b, x10b, x15, x8, x4a, x4b, x14 with
@@ -3768,7 +3768,7 @@ and u_ccu_data st : CcuData =
     let isProviderGenerated = u_bool st
 #endif
     let usesFSharp20PlusQuotations = u_bool st
-    let contents = u_osgn_ref st.ientities st
+    let contents = u_osgn_decl st.ientities u_entity_spec_new st
 
     {
         FileName = fileName
