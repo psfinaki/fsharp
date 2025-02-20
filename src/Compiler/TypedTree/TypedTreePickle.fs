@@ -531,15 +531,15 @@ let lookup_uniq st tbl n =
 // between internal representations relatively easily
 //-------------------------------------------------------------------------
 
-let p_array_core f (x: 'T[]) st =
+let inline p_array_core f (x: 'T[]) st =
     for i = 0 to x.Length-1 do
         f x[i] st
 
-let p_array f (x: 'T[]) st =
+let inline p_array f (x: 'T[]) st =
     p_int x.Length st
     p_array_core f x st
 
-let p_list_core f (xs: 'T list) st =
+let inline p_list_core f (xs: 'T list) st =
     for x in xs do
         f x st
 
@@ -626,17 +626,17 @@ let p_hole2 () =
     let mutable h = None
     (fun f -> h <- Some f), (fun arg x st -> match h with Some f -> f arg x st | None -> pfailwith st "p_hole2: unfilled hole")
 
-let u_array_core f n st =
+let inline u_array_core f n st =
     let res = Array.zeroCreate n
     for i = 0 to n-1 do
         res[i] <- f st
     res
 
-let u_array f st =
+let inline u_array f st =
     let n = u_int st
     u_array_core f n st
 
-let u_list_core f n st =
+let inline u_list_core f n st =
     List.init n (fun _ -> f st)
 
 let inline u_list f st =
@@ -2691,8 +2691,13 @@ and p_attribkind x st =
     | ILAttrib x -> p_byte 0 st; p_ILMethodRef x st
     | FSAttrib x -> p_byte 1 st; p_vref "attrib" x st
 
-and p_attrib (Attrib (a, b, c, d, e, _targets, f)) st = // AttributeTargets are not preserved
-    p_tup6 (p_tcref "attrib") p_attribkind (p_list p_attrib_expr) (p_list p_attrib_arg) p_bool p_dummy_range (a, b, c, d, e, f) st
+and p_attrib (Attrib (tcref, kind, unnamedArgs, propVal, appliedtoagos, _targets, range)) st = // AttributeTargets are not preserved
+    (p_tcref "attrib") tcref st
+    p_attribkind kind st
+    (p_list p_attrib_expr) unnamedArgs st
+    (p_list p_attrib_arg) propVal st
+    p_bool appliedtoagos st
+    p_dummy_range range st
 
 and p_attrib_expr (AttribExpr(e1, e2)) st =
     p_tup2 p_expr p_expr (e1, e2) st
@@ -3567,8 +3572,13 @@ and u_attribkind st =
     | _ -> ufailwith st "u_attribkind"
 
 and u_attrib st : Attrib =
-    let a, b, c, d, e, f = u_tup6 u_tcref u_attribkind (u_list u_attrib_expr) (u_list u_attrib_arg) u_bool u_dummy_range st
-    Attrib(a, b, c, d, e, None, f)  // AttributeTargets are not preserved
+    let tcref = u_tcref st
+    let kind = u_attribkind st
+    let unnamedArgs = u_list u_attrib_expr st
+    let propVal = u_list u_attrib_arg st
+    let appliedtoagos = u_bool st
+    let range = u_dummy_range st
+    Attrib(tcref, kind, unnamedArgs, propVal, appliedtoagos, None, range)  // AttributeTargets are not preserved
 
 and u_attrib_expr st =
     let a, b = u_tup2 u_expr u_expr st
