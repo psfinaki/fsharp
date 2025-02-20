@@ -258,9 +258,9 @@ type CachingDriver(tcConfig: TcConfig) =
         data.RawData
 
     member this.ReuseTcResults (inputs: ParsedInput list) =
+        let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
         let tcStates = inputs |> List.map (fun input -> this.ReuseTcState (Path.GetFileNameWithoutExtension(input.FileName))) |> List.toArray
         let topAttribs = this.ReuseTopAttribs()
-        let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
 
         tcStates,
         topAttribs,
@@ -300,7 +300,8 @@ type CachingDriver(tcConfig: TcConfig) =
         let thisGraph = getThisCompilationGraph inputs
         writeThisGraph thisGraph
 
+        declaredImpls |> List.iteri (fun i impl -> this.CacheDeclaredImpl(tcStates[i], impl, tcGlobals, outfile))
+
         let pairs = List.zip tcStates inputs
         pairs |> List.iter (fun (state, input) -> this.CacheTcState(Path.GetFileNameWithoutExtension(input.FileName), state, tcGlobals, outfile))
         this.CacheTopAttribs(tcStates |> List.last, topAttribs, tcGlobals, outfile)
-        declaredImpls |> List.iteri (fun i impl -> this.CacheDeclaredImpl(tcStates[i], impl, tcGlobals, outfile))

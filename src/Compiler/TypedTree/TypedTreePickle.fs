@@ -543,7 +543,7 @@ let p_list_core f (xs: 'T list) st =
     for x in xs do
         f x st
 
-let p_list f x st =
+let inline p_list f x st =
     p_int (List.length x) st
     p_list_core f x st
 
@@ -639,7 +639,7 @@ let u_array f st =
 let u_list_core f n st =
     List.init n (fun _ -> f st)
 
-let u_list f st =
+let inline u_list f st =
     let n = u_int st
     u_list_core f n st
 
@@ -2927,7 +2927,7 @@ and p_open_decl (x: OpenDeclaration) st =
     p_tup6
         p_syn_open_decl_target
         (p_option p_range)
-        (p_list p_tcref_new)
+        (p_list (p_tcref2 "test"))
         p_tys
         p_range
         p_bool
@@ -3799,7 +3799,8 @@ and u_ccu_data st : CcuData =
         Contents = contents
         TryGetILModuleDef = Unchecked.defaultof<_>
         MemberSignatureEquality = Unchecked.defaultof<_>
-        TypeForwarders = Unchecked.defaultof<_>
+        // todo
+        TypeForwarders = CcuTypeForwarderTable.Empty
         XmlDocumentationInfo = Unchecked.defaultof<_>
     }
 
@@ -3884,7 +3885,7 @@ and u_open_decl st : OpenDeclaration =
         u_tup6
             u_syn_open_decl_target
             (u_option u_range)
-            (u_list u_tcref_new)
+            (u_list u_tcref2)
             u_tys
             u_range
             u_bool
