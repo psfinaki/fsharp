@@ -2349,6 +2349,23 @@ type ValPublicPath =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
+[<NoEquality; NoComparison>]
+type NonLocalEntityRef2 = 
+    {
+        mutable CcuThunk: CcuThunk
+        mutable Strings: string[]
+    }
+
+    static member NewUnlinked: unit -> NonLocalEntityRef2
+
+    member Link: NonLocalEntityRef2 -> unit
+
+    member IsLinked: bool
+    
+type NonLocalEntityRef2Data = NonLocalEntityRef2
+
+
+
 /// Represents an index into the namespace/module structure of an assembly
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type NonLocalEntityRef =

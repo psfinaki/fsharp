@@ -153,6 +153,7 @@ type WriterState =
     oscope: CcuThunk
     occus: Table<CcuReference>
     oentities: NodeOutTable<EntityData, Entity>
+    onlocs: NodeOutTable<NonLocalEntityRef2, NonLocalEntityRef2>
     otypars: NodeOutTable<TyparData, Typar>
     ovals: NodeOutTable<ValData, Val>
     oanoninfos: NodeOutTable<AnonRecdTypeInfo, AnonRecdTypeInfo>
@@ -190,6 +191,7 @@ type ReaderState =
     iilscope: ILScopeRef
     iccus: InputTable<CcuThunk>
     ientities: NodeInTable<EntityData, Tycon>
+    inlocs: NodeInTable<NonLocalEntityRef2Data, NonLocalEntityRef2>
     itypars: NodeInTable<TyparData, Typar>
     ivals: NodeInTable<ValData, Val>
     ianoninfos: NodeInTable<AnonRecdTypeInfo, AnonRecdTypeInfo>
@@ -484,31 +486,29 @@ let inline u_tup18 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p1
 
 // ctxt is for debugging
 let p_osgn_ref (_ctxt: string) (outMap : NodeOutTable<_, _>) x st =
-    let idx = outMap.Table.FindOrAdd (outMap.NodeStamp x)
-    //if ((idx = 0) && outMap.Name = "oentities") then
-    //    let msg =
-    //        sprintf "idx %d#%d in table %s has name '%s', was defined at '%s' and is referenced from context %s\n"
-    //            idx (outMap.NodeStamp x)
-    //            outMap.Name (outMap.NodeName x)
-    //            (stringOfRange (outMap.GetRange x))
-    //            _ctxt
-    //    System.Diagnostics.Debug.Assert(false, msg )
-    p_int idx st
-
-let p_osgn_decl (outMap : NodeOutTable<_, _>) p x st =
     let stamp = outMap.NodeStamp x
     let idx = outMap.Table.FindOrAdd stamp
-    //dprintf "decl %d#%d in table %s has name %s\n" idx (outMap.NodeStamp x) outMap.Name (outMap.NodeName x)
-    p_tup2 p_int p (idx, outMap.Deref x) st
+
+    p_int idx st
+
+let p_osgn_decl (outMap : NodeOutTable<_, _>) p_data x st =
+    let stamp = outMap.NodeStamp x
+    let idx = outMap.Table.FindOrAdd stamp
+
+    p_int idx st
+
+    let data = outMap.Deref x
+    p_data data st
 
 let u_osgn_ref (inMap: NodeInTable<_, _>) st =
-    let n = u_int st
-    if n < 0 || n >= inMap.Count then ufailwith st ("u_osgn_ref: out of range, table = "+inMap.Name+", n = "+string n)
-    inMap.Get n
+    let idx = u_int st
+    if idx < 0 || idx >= inMap.Count then ufailwith st ("u_osgn_ref: out of range, table = "+inMap.Name+", n = "+string idx)
+    inMap.Get idx
 
-let u_osgn_decl (inMap: NodeInTable<_, _>) u st =
-    let idx, data = u_tup2 u_int u st
-    //   dprintf "unpickling osgn %d in table %s\n" idx nm
+let u_osgn_decl (inMap: NodeInTable<_, _>) u_data st =
+    let idx = u_int st
+    let data = u_data st
+
     let res = inMap.Get idx
     inMap.LinkNode res data
     res
@@ -908,6 +908,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         oscope=scope
         occus= Table<_>.Create "occus"
         oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
+        onlocs=NodeOutTable<_, _>.Create((fun ref -> ref.CcuThunk.Stamp), (fun _ -> ""), (fun _ -> range0), id , "onlocs")
         otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
         ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), id , "ovals")
         oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.IlTypeName), (fun _ -> range0), id, "oanoninfos")
@@ -942,6 +943,7 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
        oscope=scope
        occus= Table<_>.Create "occus (fake)"
        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id, "otycons")
+       onlocs=NodeOutTable<_, _>.Create((fun ref -> ref.CcuThunk.Stamp), (fun _ -> ""), (fun _ -> range0), id , "onlocs")
        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id, "otypars")
        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
        oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.IlTypeName), (fun _ -> range0), id, "oanoninfos")
@@ -996,6 +998,7 @@ let pickleObjWithDanglingCcusNew inMem file g scope p x =
         oscope=scope
         occus= Table<_>.Create "occus"
         oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
+        onlocs=NodeOutTable<_, _>.Create((fun ref -> ref.CcuThunk.Stamp), (fun _ -> ""), (fun _ -> range0), id , "onlocs")
         otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
         ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), id , "ovals")
         oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.IlTypeName), (fun _ -> range0), id, "oanoninfos")
@@ -1015,10 +1018,11 @@ let pickleObjWithDanglingCcusNew inMem file g scope p x =
         oInMem=inMem
         isStructThisArgPos = false }
 
-  let ccuNameTab,(ntycons, ntypars, nvals, nanoninfos, nccudatas),stringTab,pubpathTab,nlerefTab,simpleTyTab,onlerefs2,phase1bytes,phase1bytesB =
+  let ccuNameTab,(ntycons, nnlocs, ntypars, nvals, nanoninfos, nccudatas),stringTab,pubpathTab,nlerefTab,simpleTyTab,onlerefs2,phase1bytes,phase1bytesB =
     p x st1
     let sizes =
       st1.oentities.Size,
+      st1.onlocs.Size,
       st1.otypars.Size,
       st1.ovals.Size,
       st1.oanoninfos.Size,
@@ -1031,6 +1035,7 @@ let pickleObjWithDanglingCcusNew inMem file g scope p x =
        oscope=scope
        occus= Table<_>.Create "occus (fake)"
        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id, "otycons")
+       onlocs=NodeOutTable<_, _>.Create((fun ref -> ref.CcuThunk.Stamp), (fun _ -> ""), (fun _ -> range0), id , "onlocs")
        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id, "otypars")
        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
        oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.IlTypeName), (fun _ -> range0), id, "oanoninfos")
@@ -1055,6 +1060,7 @@ let pickleObjWithDanglingCcusNew inMem file g scope p x =
     // Add a 4th integer indicated by a negative 1st integer
     let z1 = if nanoninfos > 0 then  -ntycons-1 else ntycons
     p_int z1 st2
+    p_int nnlocs st2
     p_tup2 p_int p_int (ntypars, nvals) st2
     if nanoninfos > 0 then
         p_int nanoninfos st2
@@ -1100,6 +1106,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
          iilscope = viewedScope
          iccus = new_itbl "iccus (fake)" [| |]
          ientities = NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
+         inlocs = NodeInTable<_, _>.Create (NonLocalEntityRef2.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "inlocs", 0)
          itypars = NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
          ivals = NodeInTable<_, _>.Create (Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
          ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
@@ -1136,6 +1143,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
              iccus = ccuTab
              iilscope = viewedScope
              ientities = NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
+             inlocs = NodeInTable<_, _>.Create (NonLocalEntityRef2.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "inlocs", 0)
              itypars = NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
              ivals = NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
              ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
@@ -1164,6 +1172,7 @@ let unpickleObjWithDanglingCcusNew file viewedScope (ilModule: ILModuleDef optio
          iilscope = viewedScope
          iccus = new_itbl "iccus (fake)" [| |]
          ientities = NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
+         inlocs = NodeInTable<_, _>.Create (NonLocalEntityRef2.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "inlocs", 0)
          itypars = NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
          ivals = NodeInTable<_, _>.Create (Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
          ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
@@ -1178,6 +1187,7 @@ let unpickleObjWithDanglingCcusNew file viewedScope (ilModule: ILModuleDef optio
     let ccuNameTab = u_array u_encoded_ccuref st2
     let z1 = u_int st2
     let ntycons = if z1 < 0 then -z1-1 else z1
+    let nnlocs = u_int st2
     let ntypars, nvals = u_tup2 u_int u_int st2
     let nanoninfos = if z1 < 0 then u_int st2 else 0
     let nccudatas = u_int st2
@@ -1204,6 +1214,7 @@ let unpickleObjWithDanglingCcusNew file viewedScope (ilModule: ILModuleDef optio
              iccus = ccuTab
              iilscope = viewedScope
              ientities = NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
+             inlocs = NodeInTable<_, _>.Create (NonLocalEntityRef2.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "inlocs", nnlocs)
              itypars = NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
              ivals = NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
              ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
@@ -1756,15 +1767,6 @@ let p_tcref ctxt (x: EntityRef) st =
         p_byte 1 st; 
         p_nleref x st
 
-let p_tcref2 ctxt (x: EntityRef) st =
-    match x with
-    | ERefLocal x -> 
-        p_byte 0 st; 
-        p_local_item_ref ctxt st.oentities x st
-    | ERefNonLocal x -> 
-        p_byte 1 st; 
-        p_nleref2 x st
-
 let p_ucref (UnionCaseRef(a, b)) st = p_tup2 (p_tcref "ucref") p_string (a, b) st
 
 let p_rfref (RecdFieldRef(a, b)) st = p_tup2 (p_tcref "rfref") p_string (a, b) st
@@ -1784,16 +1786,7 @@ let u_tcref st =
     | _ -> ufailwith st "u_item_ref"
 
 
-let u_tcref2 st =
-    let tag = u_byte st
-    match tag with
-    | 0 -> 
-        let r = u_local_item_ref st.ientities st
-        ERefLocal r
-    | 1 -> 
-        let r = u_nleref2 st 
-        ERefNonLocal r
-    | _ -> ufailwith st "u_item_ref"
+
 
 
 
@@ -2856,7 +2849,24 @@ and p_ccu_data (x: CcuData) st =
     p_bool x.IsProviderGenerated st
 #endif
     p_bool x.UsesFSharp20PlusQuotations st
-    p_entity_spec_data_new x.Contents st
+    //p_entity_spec_data_new x.Contents st
+
+
+and p_onloc (x: NonLocalEntityRef2) st =
+    p_ccu_data x.CcuThunk.target st
+    p_string x.CcuThunk.name st
+    p_array p_string x.Strings st
+
+and p_tcref2 ctxt (x: EntityRef) st =
+    match x with
+    | ERefLocal x -> 
+        p_byte 0 st; 
+        p_local_item_ref ctxt st.oentities x st
+    | ERefNonLocal x -> 
+        let (NonLocalEntityRef (ccuThunk, strings)) = x
+        p_byte 1 st;
+        let onloc = { CcuThunk = ccuThunk; Strings = strings}
+        p_osgn_decl st.onlocs p_onloc onloc st
 
 and p_ccu x st =
     p_osgn_decl st.occudatas p_ccu_data x st
@@ -2879,8 +2889,12 @@ and p_nleref_new (x: NonLocalEntityRef) st =
 
 and p_tcref_new (x: EntityRef) st =
     match x with
-    | ERefLocal x -> p_byte 0 st; p_entity_spec_new x st
-    | ERefNonLocal x -> p_byte 1 st; p_nleref_new x st
+    | ERefLocal x -> 
+        p_byte 0 st;
+        p_entity_spec_new x st
+    | ERefNonLocal x -> 
+        p_byte 1 st; 
+        p_nleref_new x st
 
 and p_nonlocal_val_ref_new (nlv: NonLocalValOrMemberRef) st =
     let a = nlv.EnclosingEntity
@@ -3024,13 +3038,10 @@ and p_expr_new (expr: Expr) st =
     | Expr.Const (x, m, ty)              -> p_byte 1 st; p_tup3 p_const p_dummy_range p_ty_new (x, m, ty) st
     | Expr.Val (a, b, m)                 -> 
         p_byte 2 st
-        p_tup4 
-            p_vref_new 
-            p_vrefFlags 
-            p_dummy_range 
-            (p_non_null_slot p_Val_new)
-            (a, b, m, a.binding) 
-            st
+        p_vref "test" a st
+        p_vrefFlags b st
+        p_dummy_range m st
+        //(p_non_null_slot p_Val_new) a.binding st
     | Expr.Op (a, b, c, d)                 -> p_byte 3 st; p_tup4 p_op_new  p_tys_new p_exprs_new p_dummy_range (a, b, c, d) st
     | Expr.Sequential (a, b, c, d)      -> p_byte 4 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
     | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 5 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
@@ -3757,7 +3768,7 @@ and u_ccu_data st : CcuData =
     let isProviderGenerated = u_bool st
 #endif
     let usesFSharp20PlusQuotations = u_bool st
-    let contents = u_entity_spec_data_new st
+    //let contents = u_entity_spec_data_new st
 
     {
         FileName = fileName
@@ -3772,12 +3783,40 @@ and u_ccu_data st : CcuData =
         ImportProvidedType = Unchecked.defaultof<_>
 #endif
         UsesFSharp20PlusQuotations = usesFSharp20PlusQuotations
-        Contents = contents
+        Contents = Unchecked.defaultof<_>
         TryGetILModuleDef = Unchecked.defaultof<_>
         MemberSignatureEquality = Unchecked.defaultof<_>
         TypeForwarders = Unchecked.defaultof<_>
         XmlDocumentationInfo = Unchecked.defaultof<_>
     }
+
+and u_nloc st : NonLocalEntityRef2 =
+    let target = u_ccu_data st
+    let name = u_string st
+    let strings = u_array u_string st
+
+    let ccuThunk : CcuThunk = {
+        target = target
+        name = name
+    }
+
+    {
+        CcuThunk = ccuThunk
+        Strings = strings
+    }
+
+
+and u_tcref2 st : EntityRef =
+    let tag = u_byte st
+    match tag with
+    | 0 -> 
+        u_entity_spec_new st 
+        |> ERefLocal
+    | 1 -> 
+        let nloc = u_osgn_decl st.inlocs u_nloc st
+        let x = NonLocalEntityRef (nloc.CcuThunk, nloc.Strings)
+        x |> ERefNonLocal
+    | _ -> ufailwith st "u_item_ref"
 
 and u_ccu st =
     u_osgn_decl st.iccudatas u_ccu_data st
@@ -3986,12 +4025,12 @@ and u_expr_new st : Expr =
            let b = u_dummy_range st
            let c = u_ty_new st
            Expr.Const (a, b, c)
-    | 2 -> let valRef = u_vref_new st
+    | 2 -> let valRef = u_vref st
            let flags = u_vrefFlags st
            let range = u_dummy_range st
-           let binding = (u_non_null_slot u_Val_new) st
+           //let binding = (u_non_null_slot u_Val_new) st
 
-           valRef.binding <- binding
+           //valRef.binding <- binding
            let expr = Expr.Val (valRef, flags, range)
            expr
     | 3 -> let a = u_op_new st

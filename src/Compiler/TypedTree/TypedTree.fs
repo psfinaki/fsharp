@@ -3416,6 +3416,27 @@ type ValPublicPath =
 
     override _.ToString() = sprintf "ValPubPath(...)"
 
+[<NoEquality; NoComparison>]
+type NonLocalEntityRef2 = 
+    {
+        mutable CcuThunk: CcuThunk
+        mutable Strings: string[]
+    }
+
+    static member NewUnlinked() : NonLocalEntityRef2 = 
+        { CcuThunk = Unchecked.defaultof<_>
+          Strings = Unchecked.defaultof<_> }
+
+    member x.Link d = 
+        x.CcuThunk <- d.CcuThunk
+        x.Strings <- d.Strings
+
+    member x.IsLinked = (match box x.CcuThunk with null -> true | _ -> false)
+    
+type NonLocalEntityRef2Data = NonLocalEntityRef2
+
+
+
 /// Represents an index into the namespace/module structure of an assembly
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type NonLocalEntityRef = 
@@ -3588,7 +3609,7 @@ type NonLocalEntityRef =
     member x.DebugText = x.ToString()
 
     override x.ToString() = x.DisplayName
-        
+
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityRef = 
     {
