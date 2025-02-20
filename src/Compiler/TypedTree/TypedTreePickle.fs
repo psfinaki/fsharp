@@ -2849,7 +2849,7 @@ and p_ccu_data (x: CcuData) st =
     p_bool x.IsProviderGenerated st
 #endif
     p_bool x.UsesFSharp20PlusQuotations st
-    //p_entity_spec_data_new x.Contents st
+    p_osgn_ref "test" st.oentities x.Contents st
 
 
 and p_onloc (x: NonLocalEntityRef2) st =
@@ -3768,7 +3768,7 @@ and u_ccu_data st : CcuData =
     let isProviderGenerated = u_bool st
 #endif
     let usesFSharp20PlusQuotations = u_bool st
-    //let contents = u_entity_spec_data_new st
+    let contents = u_osgn_ref st.ientities st
 
     {
         FileName = fileName
@@ -3783,7 +3783,7 @@ and u_ccu_data st : CcuData =
         ImportProvidedType = Unchecked.defaultof<_>
 #endif
         UsesFSharp20PlusQuotations = usesFSharp20PlusQuotations
-        Contents = Unchecked.defaultof<_>
+        Contents = contents
         TryGetILModuleDef = Unchecked.defaultof<_>
         MemberSignatureEquality = Unchecked.defaultof<_>
         TypeForwarders = Unchecked.defaultof<_>
