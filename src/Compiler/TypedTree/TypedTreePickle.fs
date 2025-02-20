@@ -2591,6 +2591,12 @@ and p_entity_spec_data (x: Entity) st =
     else
         p_space 1 () st
 
+
+and p_modul_typ_2 (x: ModuleOrNamespaceType) st =
+    p_istype x.ModuleOrNamespaceKind st
+    p_qlist p_Val x.AllValsAndMembers st
+    p_qlist (p_osgn_ref "test" st.oentities) x.AllEntities st
+
 and p_entity_spec_data_new (x: Entity) st =
     p_tyar_specs (x.entity_typars.Force(x.entity_range)) st
     p_string x.entity_logical_name st
@@ -2608,7 +2614,7 @@ and p_entity_spec_data_new (x: Entity) st =
     p_kind x.TypeOrMeasureKind st
     p_int64 x.entity_flags.Flags st
     p_option p_cpath x.entity_cpath st
-    //p_maybe_lazy p_modul_typ x.entity_modul_type st
+    p_maybe_lazy p_modul_typ_2 x.entity_modul_type st
     p_exnc_repr x.ExceptionInfo st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -3426,6 +3432,13 @@ and u_entity_spec_data st : Entity =
                        entity_exn_info = x14 }
     }
 
+
+and u_modul_typ_2 st =
+    let x1 = u_istype st
+    let x3 = u_qlist u_Val st
+    let x5 = (u_qlist (u_osgn_ref st.ientities)) st
+    ModuleOrNamespaceType(x1, x3, x5)
+
 and u_entity_spec_data_new st : Entity =
     let x1, x2a, x2b, x2c, stamp, x3, (x4a, x4b), x6, x7, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
        u_tup18
@@ -3444,7 +3457,7 @@ and u_entity_spec_data_new st : Entity =
           u_kind
           u_int64
           (u_option u_cpath )
-          (fun _ -> Unchecked.defaultof<_>)
+          (u_lazy u_modul_typ_2)
           u_exnc_repr
           (u_used_space1 u_xmldoc)
           st
@@ -3462,7 +3475,7 @@ and u_entity_spec_data_new st : Entity =
       entity_tycon_tcaug=x9
       entity_flags=EntityFlags x11
       entity_cpath=x12
-      entity_modul_type=x13
+      entity_modul_type=MaybeLazy.Lazy x13
       entity_il_repr_cache=newCache()
       entity_opt_data=
         match x2b, x10b, x15, x8, x4a, x4b, x14 with
