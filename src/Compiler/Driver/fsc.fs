@@ -167,7 +167,7 @@ let TypeCheck
         if tcConfig.reuseTcResults = ReuseTcResults.On then
             let cachingDriver = CachingDriver(tcConfig)
 
-            let cacheOpt = cachingDriver.CanReuseTcResults(inputs)
+            let cacheOpt = cachingDriver.GetTcCacheState(inputs)
             match cacheOpt with
             | Some (canReuse, _) when canReuse.Length = inputs.Length ->
                 let _, topAttrs, declaredImpls = cachingDriver.ReuseTcResults canReuse

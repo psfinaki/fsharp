@@ -207,7 +207,7 @@ type CachingDriver(tcConfig: TcConfig) =
         }
 
 
-    member _.CanReuseTcResults (inputs: ParsedInput list) =
+    member _.GetTcCacheState (inputs: ParsedInput list) =
         let prevTcDataOpt = readPrevTcData ()
 
         let thisTcData =
@@ -306,20 +306,19 @@ type CachingDriver(tcConfig: TcConfig) =
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes(tcSharedDataFilePath, resource)
 
-    member private _.CacheDeclaredImpl(tcState: TcState, impl: CheckedImplFile, tcGlobals, outfile) =
+    member private _.CacheDeclaredImpl(fileName, tcState: TcState, impl, tcGlobals, outfile) =
         let encodedData =
             EncodeCheckedImplFile(tcConfig, tcGlobals, tcState.Ccu, outfile, false, impl)
 
-        let fileName = Path.GetFileNameWithoutExtension(impl.QualifiedNameOfFile.Range.FileName)
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes($"{tcInputFilePath}{fileName}", resource)
 
-    member private _.CacheTcState(name: string, tcState: TcState, tcGlobals, outfile) =
+    member private _.CacheTcState(fileName: string, tcState: TcState, tcGlobals, outfile) =
         let encodedData =
             EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcState)
 
         let resource = encodedData[0].GetBytes().ToArray()
-        File.WriteAllBytes($"{tcStateFilePath}{name}", resource)
+        File.WriteAllBytes($"{tcStateFilePath}{fileName}", resource)
 
     member this.CacheTcResults(tcStates: TcState list, topAttribs: TopAttribs, declaredImpls: CheckedImplFile list, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
         let thisTcData =
@@ -336,4 +335,4 @@ type CachingDriver(tcConfig: TcConfig) =
         let pairs = List.zip tcStates inputs
         pairs |> List.iter (fun (state, input) -> this.CacheTcState(Path.GetFileNameWithoutExtension(input.FileName), state, tcGlobals, outfile))
         this.CacheSharedData(tcStates |> List.last, topAttribs, tcGlobals, outfile)
-        declaredImpls |> List.iteri (fun i impl -> this.CacheDeclaredImpl(tcStates[i], impl, tcGlobals, outfile))
+        declaredImpls |> List.iteri (fun i impl -> this.CacheDeclaredImpl(Path.GetFileNameWithoutExtension(impl.QualifiedNameOfFile.Range.FileName), tcStates[i], impl, tcGlobals, outfile))
