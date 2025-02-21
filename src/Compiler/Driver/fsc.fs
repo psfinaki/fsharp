@@ -167,12 +167,16 @@ let TypeCheck
         if tcConfig.reuseTcResults = ReuseTcResults.On then
             let cachingDriver = CachingDriver(tcConfig)
 
-            let cacheOpt = cachingDriver.GetTcCacheState(inputs)
-            match cacheOpt with
-            | Some (canReuse, _) when canReuse.Length = inputs.Length ->
-                let _, topAttrs, declaredImpls = cachingDriver.ReuseTcResults canReuse
+            let tcCacheState = cachingDriver.GetTcCacheState(inputs)
+            match tcCacheState with
+            | TcCacheState.Present files when files |> List.forall (fun (_file, canReuse) -> canReuse) ->
+                let _, topAttrs, declaredImpls = cachingDriver.ReuseTcResults inputs
                 tcInitialState, topAttrs, declaredImpls, tcInitialState.TcEnvFromImpls
-            | Some (canReuse, cannotReuse) when canReuse.Length > 0 ->
+            | TcCacheState.Present files when files |> List.exists (fun (_file, canReuse) -> canReuse) ->
+                let canReuse, cannotReuse =
+                    files
+                    |> List.partition (fun (_file, canReuse) -> canReuse)
+                    |> fun (a, b) -> a |> List.map fst, b |> List.map fst
 
                 let states, topAttrs, declaredImpls1 = cachingDriver.ReuseTcResults canReuse
 

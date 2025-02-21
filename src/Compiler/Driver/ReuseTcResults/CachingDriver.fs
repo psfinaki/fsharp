@@ -225,26 +225,30 @@ type CachingDriver(tcConfig: TcConfig) =
             use _ = Activity.start Activity.Events.reuseTcResultsCachePresent []
 
             if prevTcData = thisTcData then
-                use _ = Activity.start Activity.Events.reuseTcResultsCacheHit []
+                match readPrevGraph () with
+                | Some graph ->
+                    let thisGraph = getThisCompilationGraph inputs
 
-                let prevGraphOpt = readPrevGraph ()
-                let thisGraph = getThisCompilationGraph inputs
-                match prevGraphOpt with
-                | Some prevGraph ->
-                    let result = compareGraphs inputs thisGraph prevGraph
-                    let canReuse, cannotReuse =
-                        result 
-                        |> List.partition (fun (_, canReuse) -> canReuse)
-                    Some (canReuse |> List.map fst, cannotReuse |> List.map fst)
-                | None -> None
+                    let graphComparisonResult = graph |> compareGraphs inputs thisGraph
+
+                    // we'll need more events do distinguish scenarios here
+                    use _ =
+                        if graphComparisonResult |> Seq.forall (fun (_file, canUse) -> canUse) then
+                            Activity.start Activity.Events.reuseTcResultsCacheHit []
+                        else
+                            Activity.start Activity.Events.reuseTcResultsCacheMissed []
+
+                    TcCacheState.Present graphComparisonResult
+                | None ->
+                    use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
+                    TcCacheState.Empty
             else
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
-                None
+                TcCacheState.Empty
 
         | None ->
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
-            None
-
+            TcCacheState.Empty
     member private _.ReuseSharedData() =
         let bytes = File.ReadAllBytes(tcSharedDataFilePath)
         let memory = ByteMemory.FromArray(bytes)
