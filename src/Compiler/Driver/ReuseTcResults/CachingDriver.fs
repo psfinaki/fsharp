@@ -299,16 +299,15 @@ type CachingDriver(tcConfig: TcConfig) =
         data.RawData
 
     member this.ReuseTcResults (inputs: ParsedInput list) =
+        let sharedData = this.ReuseSharedData()
         let tcStates = inputs |> List.map (fun input -> this.ReuseTcState (Path.GetFileNameWithoutExtension(input.FileName))) |> List.toArray
-        let topAttribs = this.ReuseSharedData()
         let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
 
         tcStates,
-        topAttribs.TopAttribs,
+        sharedData.TopAttribs,
         declaredImpls
 
-    member private _.CacheSharedData(tcState: TcState, topAttribs: TopAttribs, tcGlobals, outfile) =
-        let sharedData = { TopAttribs = topAttribs}
+    member private _.CacheSharedData(tcState: TcState, sharedData, tcGlobals, outfile) =
         let encodedData =
             EncodeSharedData(tcConfig, tcGlobals, tcState.Ccu, outfile, false, sharedData)
 
@@ -341,7 +340,9 @@ type CachingDriver(tcConfig: TcConfig) =
         let thisGraph = getThisCompilationGraph inputs
         writeThisGraph thisGraph
 
+        let sharedData = { TopAttribs = topAttribs }
+        this.CacheSharedData(tcStates |> List.last, sharedData, tcGlobals, outfile)
+
         let pairs = List.zip tcStates inputs
         pairs |> List.iter (fun (state, input) -> this.CacheTcState(Path.GetFileNameWithoutExtension(input.FileName), state, tcGlobals, outfile))
-        this.CacheSharedData(tcStates |> List.last, topAttribs, tcGlobals, outfile)
         declaredImpls |> List.iteri (fun i impl -> this.CacheDeclaredImpl(Path.GetFileNameWithoutExtension(impl.QualifiedNameOfFile.Range.FileName), tcStates[i], impl, tcGlobals, outfile))
