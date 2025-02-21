@@ -240,22 +240,6 @@ type CachingDriver(tcConfig: TcConfig) =
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
             None
 
-    member private _.ReuseTcState (name: string) : TcState =
-        let bytes = File.ReadAllBytes($"{tcStateFilePath}{name}")
-        let memory = ByteMemory.FromArray(bytes)
-        let byteReaderA () = ReadOnlyByteMemory(memory)
-
-        let data =
-            GetTypecheckingDataTcState(
-                "", // assembly.FileName,
-                ILScopeRef.Local, // assembly.ILScopeRef,
-                None, //assembly.RawMetadata.TryGetILModuleDef(),
-                byteReaderA,
-                None
-            )
-
-        data.RawData
-
     member private _.ReuseSharedData() =
         let bytes = File.ReadAllBytes(tcSharedDataFilePath)
         let memory = ByteMemory.FromArray(bytes)
@@ -289,6 +273,22 @@ type CachingDriver(tcConfig: TcConfig) =
 
         data.RawData
 
+    member private _.ReuseTcState (name: string) : TcState =
+        let bytes = File.ReadAllBytes($"{tcStateFilePath}{name}")
+        let memory = ByteMemory.FromArray(bytes)
+        let byteReaderA () = ReadOnlyByteMemory(memory)
+
+        let data =
+            GetTypecheckingDataTcState(
+                "", // assembly.FileName,
+                ILScopeRef.Local, // assembly.ILScopeRef,
+                None, //assembly.RawMetadata.TryGetILModuleDef(),
+                byteReaderA,
+                None
+            )
+
+        data.RawData
+
     member this.ReuseTcResults (inputs: ParsedInput list) =
         let tcStates = inputs |> List.map (fun input -> this.ReuseTcState (Path.GetFileNameWithoutExtension(input.FileName))) |> List.toArray
         let topAttribs = this.ReuseSharedData()
@@ -297,13 +297,6 @@ type CachingDriver(tcConfig: TcConfig) =
         tcStates,
         topAttribs.TopAttribs,
         declaredImpls
-    
-    member private _.CacheTcState(name: string, tcState: TcState, tcGlobals, outfile) =
-        let encodedData =
-            EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcState)
-
-        let resource = encodedData[0].GetBytes().ToArray()
-        File.WriteAllBytes($"{tcStateFilePath}{name}", resource)
 
     member private _.CacheSharedData(tcState: TcState, topAttribs: TopAttribs, tcGlobals, outfile) =
         let sharedData = { TopAttribs = topAttribs}
@@ -320,6 +313,13 @@ type CachingDriver(tcConfig: TcConfig) =
         let fileName = Path.GetFileNameWithoutExtension(impl.QualifiedNameOfFile.Range.FileName)
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes($"{tcInputFilePath}{fileName}", resource)
+
+    member private _.CacheTcState(name: string, tcState: TcState, tcGlobals, outfile) =
+        let encodedData =
+            EncodeTypecheckingDataTcState(tcConfig, tcGlobals, tcState.Ccu, outfile, false, tcState)
+
+        let resource = encodedData[0].GetBytes().ToArray()
+        File.WriteAllBytes($"{tcStateFilePath}{name}", resource)
 
     member this.CacheTcResults(tcStates: TcState list, topAttribs: TopAttribs, declaredImpls: CheckedImplFile list, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
         let thisTcData =
