@@ -13,13 +13,13 @@ open FSharp.Compiler.TypedTreePickle
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 
+type TcSharedData = { TopAttribs: TopAttribs }
 
-// pickling 
+// pickling
 
 let p_context_info (x: ContextInfo) st =
     match x with
-    | ContextInfo.NoContext ->
-        p_byte 0 st
+    | ContextInfo.NoContext -> p_byte 0 st
     | ContextInfo.IfExpression range ->
         p_byte 1 st
         p_range range st
@@ -29,18 +29,14 @@ let p_context_info (x: ContextInfo) st =
     | ContextInfo.ElseBranchResult range ->
         p_byte 3 st
         p_range range st
-    | ContextInfo.RecordFields ->
-        p_byte 4 st
-    | ContextInfo.TupleInRecordFields ->
-        p_byte 5 st
-    | ContextInfo.CollectionElement (bool, range) ->
+    | ContextInfo.RecordFields -> p_byte 4 st
+    | ContextInfo.TupleInRecordFields -> p_byte 5 st
+    | ContextInfo.CollectionElement(bool, range) ->
         p_byte 6 st
         p_bool bool st
         p_range range st
-    | ContextInfo.ReturnInComputationExpression ->
-        p_byte 7 st
-    | ContextInfo.YieldInComputationExpression ->
-        p_byte 8 st
+    | ContextInfo.ReturnInComputationExpression -> p_byte 7 st
+    | ContextInfo.YieldInComputationExpression -> p_byte 8 st
     | ContextInfo.RuntimeTypeTest bool ->
         p_byte 9 st
         p_bool bool st
@@ -59,12 +55,11 @@ let p_context_info (x: ContextInfo) st =
 
 let p_safe_init_data (x: SafeInitData) st =
     match x with
-    | SafeInitField (recdFieldRef, recdField) ->
+    | SafeInitField(recdFieldRef, recdField) ->
         p_byte 0 st
         p_rfref recdFieldRef st
         p_recdfield_spec recdField st
-    | NoSafeInitInfo ->
-        p_byte 1 st
+    | NoSafeInitInfo -> p_byte 1 st
 
 let p_ctor_info (x: CtorInfo) st =
     p_int x.ctorShapeCounter st
@@ -76,28 +71,27 @@ let p_module_and_namespace (s: string, l: ModuleOrNamespaceRef list) st =
     p_string s st
     p_list (p_tcref "test") l st
 
-let p_union_case_info (UnionCaseInfo (typeInst, ucref)) st =
+let p_union_case_info (UnionCaseInfo(typeInst, ucref)) st =
     p_tys_new typeInst st
     p_ucref ucref st
 
 let p_item (x: Item) st =
     match x with
-    | Item.Value vref -> 
+    | Item.Value vref ->
         p_byte 0 st
         p_vref "test" vref st
         p_non_null_slot p_Val_new vref.binding st
     | Item.UnqualifiedType tcrefs ->
         p_byte 1 st
         p_list (p_tcref "test") tcrefs st
-    | Item.UnionCase (unionCaseInfo, hasAttrs) ->
+    | Item.UnionCase(unionCaseInfo, hasAttrs) ->
         p_byte 2 st
         p_union_case_info unionCaseInfo st
         p_bool hasAttrs st
     | Item.ExnCase tcref ->
         p_byte 3 st
         p_tcref "test" tcref st
-    | _ ->
-        ()
+    | _ -> ()
 
 let p_name_resolution_env (env: NameResolutionEnv) st =
     // eDisplayEnv
@@ -105,17 +99,17 @@ let p_name_resolution_env (env: NameResolutionEnv) st =
     // eUnqualifiedEnclosingTypeInsts
     // ePatItems
     (p_list p_module_and_namespace) (env.eModulesAndNamespaces |> Map.toList) st
-    // eFullyQualifiedModulesAndNamespaces
-    // eFieldLabels
-    // eUnqualifiedRecordOrUnionTypeInsts
-    // eTyconsByAccessNames
-    // eFullyQualifiedTyconsByAccessNames
-    // eTyconsByDemangledNameAndArity
-    // eFullyQualifiedTyconsByDemangledNameAndArity
-    // eIndexedExtensionMembers
-    // eUnindexedExtensionMembers
-    // eTypars
-    
+// eFullyQualifiedModulesAndNamespaces
+// eFieldLabels
+// eUnqualifiedRecordOrUnionTypeInsts
+// eTyconsByAccessNames
+// eFullyQualifiedTyconsByAccessNames
+// eTyconsByDemangledNameAndArity
+// eFullyQualifiedTyconsByDemangledNameAndArity
+// eIndexedExtensionMembers
+// eUnindexedExtensionMembers
+// eTypars
+
 let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     p_name_resolution_env tcEnv.eNameResEnv st
     // tcEnv.eUngeneralizableItems
@@ -131,7 +125,22 @@ let p_tc_env (tcEnv: TcEnv) (st: WriterState) =
     p_option p_string tcEnv.eCallerMemberName st
     p_list (p_list (p_ArgReprInfo)) tcEnv.eLambdaArgInfos st
     p_bool tcEnv.eIsControlFlow st
-    // tcEnv.eCachedImplicitYieldExpressions
+// tcEnv.eCachedImplicitYieldExpressions
+
+let p_tcs_root_sig (qualifiedNameOfFile, moduleOrNamespaceType) st =
+    p_tup2 p_qualified_name_of_file p_modul_typ_new (qualifiedNameOfFile, moduleOrNamespaceType) st
+
+// pickling top
+
+let pickleSharedData sharedData st =
+    p_tup3
+        p_attribs
+        p_attribs
+        p_attribs
+        (sharedData.TopAttribs.mainMethodAttrs, sharedData.TopAttribs.netModuleAttrs, sharedData.TopAttribs.assemblyAttrs)
+        st
+
+let pickleCheckedImplFile checkedImplFile st = p_checked_impl_file checkedImplFile st
 
 let pickleTcState (tcState: TcState) (st: WriterState) =
     p_ccuref_new tcState.tcsCcu st
@@ -142,71 +151,58 @@ let pickleTcState (tcState: TcState) (st: WriterState) =
     p_list p_qualified_name_of_file (tcState.tcsRootImpls.ToList()) st
     p_modul_typ_new tcState.tcsCcuSig st
     p_list p_open_decl tcState.tcsImplicitOpenDeclarations st
-    
-let pickleTopAttribs (tcInfo: TopAttribs) (st: WriterState) =
-    p_tup3
-        p_attribs
-        p_attribs
-        p_attribs
-        (tcInfo.mainMethodAttrs, tcInfo.netModuleAttrs, tcInfo.assemblyAttrs)
-        st
-
-let pickleCheckedImplFile (checkedImplFile: CheckedImplFile) (st: WriterState) =
-    p_checked_impl_file checkedImplFile st
-
 
 // unpickling
 
 let u_context_info st : ContextInfo =
-    let tag = u_byte st 
+    let tag = u_byte st
+
     match tag with
     | 0 -> ContextInfo.NoContext
-    | 1 -> 
+    | 1 ->
         let range = u_range st
         ContextInfo.IfExpression range
     | 2 ->
-        let range = u_range st 
+        let range = u_range st
         ContextInfo.OmittedElseBranch range
-    | 3 -> 
+    | 3 ->
         let range = u_range st
         ContextInfo.ElseBranchResult range
     | 4 -> ContextInfo.RecordFields
     | 5 -> ContextInfo.TupleInRecordFields
-    | 6 -> 
+    | 6 ->
         let bool = u_bool st
         let range = u_range st
-        ContextInfo.CollectionElement (bool, range)
+        ContextInfo.CollectionElement(bool, range)
     | 7 -> ContextInfo.ReturnInComputationExpression
     | 8 -> ContextInfo.YieldInComputationExpression
-    | 9 -> 
+    | 9 ->
         let bool = u_bool st
-        ContextInfo.RuntimeTypeTest bool 
+        ContextInfo.RuntimeTypeTest bool
     | 10 ->
         let bool = u_bool st
         ContextInfo.DowncastUsedInsteadOfUpcast bool
-    | 11 -> 
+    | 11 ->
         let range = u_range st
         ContextInfo.FollowingPatternMatchClause range
     | 12 ->
         let range = u_range st
         ContextInfo.PatternMatchGuard range
-    | 13 -> 
+    | 13 ->
         let ttype = u_ty st
         ContextInfo.SequenceExpression ttype
-    | _ -> 
-        ufailwith st "u_context_info"
+    | _ -> ufailwith st "u_context_info"
 
 let u_safe_init_data st : SafeInitData =
     let tag = u_byte st
+
     match tag with
-    | 0 -> 
+    | 0 ->
         let recdFieldRef = u_rfref st
         let recdField = u_recdfield_spec st
-        SafeInitField (recdFieldRef, recdField)
-    | 1 ->
-        NoSafeInitInfo
-    | _ ->
-        ufailwith st "u_safe_init_data"
+        SafeInitField(recdFieldRef, recdField)
+    | 1 -> NoSafeInitInfo
+    | _ -> ufailwith st "u_safe_init_data"
 
 let u_ctor_info st : CtorInfo =
     let ctorShapeCounter = u_int st
@@ -229,12 +225,13 @@ let u_module_and_namespace st : string * ModuleOrNamespaceRef list =
 let u_union_case_info st =
     let typeInst = u_tys_new st
     let ucref = u_ucref st
-    UnionCaseInfo (typeInst, ucref)
+    UnionCaseInfo(typeInst, ucref)
 
-let u_item st : Item = 
+let u_item st : Item =
     let tag = u_byte st
+
     match tag with
-    | 0 -> 
+    | 0 ->
         let vref = u_vref st
         let binding = u_non_null_slot u_Val_new st
         vref.binding <- binding
@@ -243,24 +240,27 @@ let u_item st : Item =
         let tcrefs = u_list u_tcref st
         Item.UnqualifiedType tcrefs
 
-    | 2 -> 
+    | 2 ->
         let unionCaseInfo = u_union_case_info st
         let hasAttrs = u_bool st
-        Item.UnionCase (unionCaseInfo, hasAttrs)
-    | 3 -> 
+        Item.UnionCase(unionCaseInfo, hasAttrs)
+    | 3 ->
         let tcref = u_tcref st
         Item.ExnCase tcref
-    | _ -> 
-        ufailwith st "u_item"
+    | _ -> ufailwith st "u_item"
 
 let u_name_resolution_env st : NameResolutionEnv =
     let eUnqualifiedItems = u_Map u_string u_item st
-    let eModulesAndNamespaces : NameMultiMap<ModuleOrNamespaceRef> = u_list u_module_and_namespace st |> Map.ofList
 
-    let g : TcGlobals = Unchecked.defaultof<_>
+    let eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef> =
+        u_list u_module_and_namespace st |> Map.ofList
+
+    let g: TcGlobals = Unchecked.defaultof<_>
+
     { NameResolutionEnv.Empty g with
         eUnqualifiedItems = eUnqualifiedItems
-        eModulesAndNamespaces = eModulesAndNamespaces }
+        eModulesAndNamespaces = eModulesAndNamespaces
+    }
 
 let u_tc_env (st: ReaderState) : TcEnv =
     let eNameResEnv = u_name_resolution_env st
@@ -297,6 +297,29 @@ let u_tc_env (st: ReaderState) : TcEnv =
         eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural)
     }
 
+let u_tcs_root_sig st =
+    let qualifiedNameOfFile, moduleOrNamespaceType =
+        u_tup2 u_qualified_name_of_file u_modul_typ_new st
+
+    qualifiedNameOfFile, moduleOrNamespaceType
+
+// unpickling top
+
+let unpickleSharedData st =
+    let mainMethodAttrs, netModuleAttrs, assemblyAttrs =
+        u_tup3 u_attribs u_attribs u_attribs st
+
+    let attribs =
+        {
+            mainMethodAttrs = mainMethodAttrs
+            netModuleAttrs = netModuleAttrs
+            assemblyAttrs = assemblyAttrs
+        }
+
+    { TopAttribs = attribs }
+
+let unpickleCheckedImplFile st = u_checked_impl_file st
+
 let unpickleTcState (st: ReaderState) : TcState =
     let tcsCcu = u_ccuref_new st
     let tcsTcSigEnv = u_tc_env st
@@ -307,7 +330,7 @@ let unpickleTcState (st: ReaderState) : TcState =
     let tcsCcuSig = u_modul_typ_new st
     let tcsImplicitOpenDeclarations = u_list u_open_decl st
 
-    { 
+    {
         tcsCcu = tcsCcu
         tcsCreatesGeneratedProvidedTypes = tcsCreatesGeneratedProvidedTypes
         tcsTcSigEnv = tcsTcSigEnv
@@ -315,22 +338,5 @@ let unpickleTcState (st: ReaderState) : TcState =
         tcsRootSigs = RootSigs.FromList(qnameOrder, tcsRootSigs)
         tcsRootImpls = RootImpls.Create(qnameOrder, tcsRootImpls)
         tcsCcuSig = tcsCcuSig
-        tcsImplicitOpenDeclarations = tcsImplicitOpenDeclarations 
+        tcsImplicitOpenDeclarations = tcsImplicitOpenDeclarations
     }
-
-let unpickleTopAttribs st : TopAttribs =
-    let mainMethodAttrs, netModuleAttrs, assemblyAttrs =
-        u_tup3
-            u_attribs
-            u_attribs
-            u_attribs
-            st
-
-    {
-        mainMethodAttrs = mainMethodAttrs
-        netModuleAttrs = netModuleAttrs
-        assemblyAttrs = assemblyAttrs
-    }
-
-let unpickleCheckedImplFile st : CheckedImplFile =
-    u_checked_impl_file st
