@@ -463,8 +463,8 @@
     <Content Include="Driver\GraphChecking\Docs.md" />
     <Compile Include="Driver\ParseAndCheckInputs.fsi" />
     <Compile Include="Driver\ParseAndCheckInputs.fs" />
-    <Compile Include="Driver\ReuseTcResults\TcPickle.fs" />
-    <Compile Include="Driver\ReuseTcResults\Imports.fs" />
+    <Compile Include="Driver\ReuseTcResults\TcResultsPickle.fs" />
+    <Compile Include="Driver\ReuseTcResults\TcResultsImport.fs" />
     <Compile Include="Driver\ReuseTcResults\CachingDriver.fs" />
     <Compile Include="Driver\ScriptClosure.fsi" />
     <Compile Include="Driver\ScriptClosure.fs" />

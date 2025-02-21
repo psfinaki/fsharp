@@ -12,7 +12,7 @@ open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.ReuseTcResults.Imports
+open FSharp.Compiler.ReuseTcResults.TcResultImport
 open FSharp.Compiler.AbstractIL.IL
 
 type TcData =
