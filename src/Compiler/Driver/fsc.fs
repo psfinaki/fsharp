@@ -206,7 +206,7 @@ let TypeCheck
                         inputs
                     )
 
-                cachingDriver.CacheTcResults(tcStates |> Array.toList, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
+                cachingDriver.CacheTcResults(tcStates, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
                 tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
         else
             let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, _tcStates = CheckClosedInputSet(

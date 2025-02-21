@@ -5,6 +5,7 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System.Collections.Generic
 open System.IO
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
@@ -144,8 +145,6 @@ val ParseInputFiles:
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
 val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv * OpenDeclaration list
 
-open Internal.Utilities.Collections
-
 type RootSigs = Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
 
 type RootImpls = Zset<QualifiedNameOfFile>
@@ -154,16 +153,14 @@ val qnameOrder: IComparer<QualifiedNameOfFile>
 
 /// Represents the incremental type checking state for a set of inputs
 type TcState =
-    {
-        tcsCcu: CcuThunk
-        tcsTcSigEnv: TcEnv
-        tcsTcImplEnv: TcEnv
-        tcsCreatesGeneratedProvidedTypes: bool
-        tcsRootSigs: RootSigs
-        tcsRootImpls: RootImpls
-        tcsCcuSig: ModuleOrNamespaceType
-        tcsImplicitOpenDeclarations: OpenDeclaration list
-    }
+    { tcsCcu: CcuThunk
+      tcsTcSigEnv: TcEnv
+      tcsTcImplEnv: TcEnv
+      tcsCreatesGeneratedProvidedTypes: bool
+      tcsRootSigs: RootSigs
+      tcsRootImpls: RootImpls
+      tcsCcuSig: ModuleOrNamespaceType
+      tcsImplicitOpenDeclarations: OpenDeclaration list }
 
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
@@ -258,7 +255,7 @@ val CheckClosedInputSet:
     tcState: TcState *
     eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) *
     inputs: ParsedInput list ->
-        TcState * TopAttribs * CheckedImplFile list * TcEnv * TcState array
+        TcState * TopAttribs * CheckedImplFile list * TcEnv * TcState list
 
 /// Check a single input and finish the checking
 val CheckOneInputAndFinish:
