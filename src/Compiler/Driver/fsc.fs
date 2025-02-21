@@ -210,7 +210,16 @@ let TypeCheck
                         inputs
                     )
 
-                cachingDriver.CacheTcResults(tcStates, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile)
+                let tcResults =
+                    List.zip3 inputs declaredImpls tcStates
+                    |> List.map (fun (input, impl, state) ->
+                        {
+                            Input = input
+                            DeclaredImpl = impl
+                            State = state
+                        })
+
+                cachingDriver.CacheTcResults(tcResults, topAttrs, tcEnvAtEndOfLastFile, tcGlobals, outfile)
                 tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
         else
             let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, _tcStates = CheckClosedInputSet(

@@ -328,7 +328,7 @@ type CachingDriver(tcConfig: TcConfig) =
         let resource = encodedData[0].GetBytes().ToArray()
         File.WriteAllBytes($"{tcStateFilePath}{fileName}", resource)
 
-    member this.CacheTcResults(tcStates: TcState list, topAttribs: TopAttribs, declaredImpls: CheckedImplFile list, tcEnvAtEndOfLastFile, inputs, tcGlobals, outfile) =
+    member this.CacheTcResults(tcResults, topAttribs, _tcEnvAtEndOfLastFile, tcGlobals, outfile) =
         let thisTcData =
             {
                 CmdLine = getThisCompilationCmdLine tcConfig.cmdLineArgs
@@ -337,12 +337,18 @@ type CachingDriver(tcConfig: TcConfig) =
 
         writeThisTcData thisTcData
 
+        let inputs = tcResults |> List.map (fun r -> r.Input)
         let thisGraph = getThisCompilationGraph inputs
         writeThisGraph thisGraph
 
         let sharedData = { TopAttribs = topAttribs }
-        this.CacheSharedData(tcStates |> List.last, sharedData, tcGlobals, outfile)
 
-        let pairs = List.zip tcStates inputs
-        pairs |> List.iter (fun (state, input) -> this.CacheTcState(Path.GetFileNameWithoutExtension(input.FileName), state, tcGlobals, outfile))
-        declaredImpls |> List.iteri (fun i impl -> this.CacheDeclaredImpl(Path.GetFileNameWithoutExtension(impl.QualifiedNameOfFile.Range.FileName), tcStates[i], impl, tcGlobals, outfile))
+        let lastState = tcResults |> List.map (fun r -> r.State) |> List.last
+        this.CacheSharedData(lastState, sharedData, tcGlobals, outfile)
+
+        tcResults
+        |> List.iter (fun r ->
+            // TODO: bare file name is not enough
+            let fileName = Path.GetFileNameWithoutExtension(r.Input.FileName)
+            this.CacheDeclaredImpl(fileName, r.State, r.DeclaredImpl, tcGlobals, outfile)
+            this.CacheTcState(fileName, r.State, tcGlobals, outfile))
