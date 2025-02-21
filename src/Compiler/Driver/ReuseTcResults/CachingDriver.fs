@@ -29,7 +29,11 @@ type GraphFileLine =
         Stamp: int64
     }
 
-type Graph = GraphFileLine array
+type Graph =
+    {
+        Files: GraphFileLine list
+        Dependencies: string list
+    }
 
 type GraphComparisonResult =
     {
@@ -60,7 +64,7 @@ type CachingDriver(tcConfig: TcConfig) =
     [<Literal>]
     let ReferencesHeader = "REFERENCES"
 
-    let writeThisTcData (tcData: TcCompilationData) =
+    let writeThisTcData tcData =
         use tcDataFile = FileSystem.OpenFileForWriteShim tcDataFilePath
 
         let lines = ResizeArray<string>()
@@ -102,23 +106,35 @@ type CachingDriver(tcConfig: TcConfig) =
     let writeThisGraph (graph: Graph) =
         use tcDataFile = FileSystem.OpenFileForWriteShim graphFilePath
 
-        graph
-        |> Array.map (fun line -> sprintf "%i,%s,%i" line.Index line.FileName line.Stamp)
+        let formatGraphFileLine l =
+            sprintf "%i,%s,%i" l.Index l.FileName l.Stamp
+
+        (graph.Files |> List.map formatGraphFileLine) @ graph.Dependencies
         |> tcDataFile.WriteAllLines
 
-    let readPrevGraph () : Graph option =
+    let readPrevGraph () =
         if FileSystem.FileExistsShim graphFilePath then
             use graphFile = FileSystem.OpenFileForReadShim graphFilePath
-            graphFile.ReadAllLines()
-            |> Array.map (fun line ->
-                let parts = line.Split(',') |> Array.toList
+
+            let parseGraphFileLine (l: string) =
+                let parts = l.Split(',') |> Array.toList
+
                 {
-                    Index = int (parts[0])
+                    Index = int parts[0]
                     FileName = parts[1]
-                    Stamp = int64 (parts[2])
+                    Stamp = int64 parts[2]
                 }
-            )
-            |> Some
+
+            let depLines, fileLines =
+                graphFile.ReadAllLines()
+                |> Array.toList
+                |> List.partition (fun l -> l.Contains "-->")
+
+            Some
+                {
+                    Files = fileLines |> List.map parseGraphFileLine
+                    Dependencies = depLines
+                }
         else
             None
 
@@ -143,25 +159,33 @@ type CachingDriver(tcConfig: TcConfig) =
 
         let filePairs = FilePairMap sourceFiles
         let graph, _ = DependencyResolution.mkGraph filePairs sourceFiles
+        let graphFileLines =
+            [
+                for KeyValue(idx, _) in graph do
+                    let fileName = sourceFiles[idx].FileName
+                    let lastWriteTime = FileSystem.GetLastWriteTimeShim fileName
 
-        let list = List<GraphFileLine>()
+                    let graphFileLine =
+                        {
+                            Index = idx
+                            FileName = fileName
+                            Stamp = lastWriteTime.Ticks
+                        }
 
-        for KeyValue(idx, _) in graph do
-            let fileName = sourceFiles[idx].FileName
-            let lastWriteTime = FileSystem.GetLastWriteTimeShim fileName
-            let graphLine = {
-                Index = idx
-                FileName = fileName
-                Stamp = lastWriteTime.Ticks
-            }
+                    yield graphFileLine
+            ]
 
-            list.Add(graphLine)
+        let dependencies =
+            [
+                for KeyValue(idx, deps) in graph do
+                    for depIdx in deps do
+                        yield $"%i{idx} --> %i{depIdx}"
+            ]
 
-        //for KeyValue(idx, deps) in graph do
-        //    for depIdx in deps do
-        //        list.Add $"%i{idx} --> %i{depIdx}"
-
-        list.ToArray()
+        {
+            Files = graphFileLines
+            Dependencies = dependencies
+        }
 
     let getThisCompilationReferences = Seq.map formatAssemblyReference >> Seq.toArray
 
@@ -169,8 +193,8 @@ type CachingDriver(tcConfig: TcConfig) =
         let canReuse = ResizeArray<string>()
         let cannotReuse = ResizeArray<string>()
 
-        for thisGraphLine in thisGraph do
-            let baseGraphLineOpt = baseGraph |> Seq.tryFind (fun line -> line.FileName = thisGraphLine.FileName)
+        for thisGraphLine in thisGraph.Files do
+            let baseGraphLineOpt = baseGraph.Files |> Seq.tryFind (fun line -> line.FileName = thisGraphLine.FileName)
             match baseGraphLineOpt with
             | Some baseGraphLine when baseGraphLine.Stamp = thisGraphLine.Stamp ->
                 canReuse.Add(thisGraphLine.FileName)
