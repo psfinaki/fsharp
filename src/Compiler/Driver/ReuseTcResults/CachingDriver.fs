@@ -35,11 +35,12 @@ type Graph =
         Dependencies: string list
     }
 
-type GraphComparisonResult =
-    {
-        CanReuseFileNames: string array
-        CannotReuseFileNames: string array
-    }
+type GraphComparisonResult = (ParsedInput * bool) list
+
+[<RequireQualifiedAccess>]
+type TcCacheState =
+    | Empty
+    | Present of GraphComparisonResult
 
 type TcResult =
     {
@@ -189,22 +190,25 @@ type CachingDriver(tcConfig: TcConfig) =
 
     let getThisCompilationReferences = Seq.map formatAssemblyReference >> Seq.toArray
 
-    let compareGraphs (thisGraph: Graph) (baseGraph: Graph) =
-        let canReuse = ResizeArray<string>()
-        let cannotReuse = ResizeArray<string>()
+    // TODO: don't ignore dependencies
+    let compareGraphs (inputs: ParsedInput list) thisGraph baseGraph : GraphComparisonResult =
 
-        for thisGraphLine in thisGraph.Files do
-            let baseGraphLineOpt = baseGraph.Files |> Seq.tryFind (fun line -> line.FileName = thisGraphLine.FileName)
-            match baseGraphLineOpt with
-            | Some baseGraphLine when baseGraphLine.Stamp = thisGraphLine.Stamp ->
-                canReuse.Add(thisGraphLine.FileName)
-            | _ -> 
-                cannotReuse.Add(thisGraphLine.FileName)
+        let isPresentInBaseGraph thisLine =
+            baseGraph.Files
+            |> Seq.tryFind (fun baseLine -> baseLine.FileName = thisLine.FileName)
+            |> Option.exists (fun baseLine -> baseLine.Stamp = thisLine.Stamp)
 
-        {
-            CanReuseFileNames = canReuse.ToArray()
-            CannotReuseFileNames = cannotReuse.ToArray()
-        }
+        // TODO: make this robust
+        let findMatchingInput thisLine =
+            inputs
+            |> Seq.where (fun input -> input.FileName = thisLine.FileName)
+            |> Seq.exactlyOne
+
+        thisGraph.Files
+        |> List.map (fun thisLine ->
+            let input = findMatchingInput thisLine
+            let canReuse = isPresentInBaseGraph thisLine
+            input, canReuse)
 
 
     member _.GetTcCacheState (inputs: ParsedInput list) =
@@ -227,10 +231,11 @@ type CachingDriver(tcConfig: TcConfig) =
                 let thisGraph = getThisCompilationGraph inputs
                 match prevGraphOpt with
                 | Some prevGraph ->
-                    let result = compareGraphs thisGraph prevGraph
-                    let canReuse = inputs |> List.where (fun input -> result.CanReuseFileNames |> Seq.contains input.FileName)
-                    let cannotReuse = inputs |> List.where (fun input -> result.CannotReuseFileNames |> Seq.contains input.FileName)
-                    Some (canReuse, cannotReuse)
+                    let result = compareGraphs inputs thisGraph prevGraph
+                    let canReuse, cannotReuse =
+                        result 
+                        |> List.partition (fun (_, canReuse) -> canReuse)
+                    Some (canReuse |> List.map fst, cannotReuse |> List.map fst)
                 | None -> None
             else
                 use _ = Activity.start Activity.Events.reuseTcResultsCacheMissed []
