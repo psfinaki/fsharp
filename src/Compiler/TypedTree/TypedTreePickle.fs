@@ -2580,9 +2580,40 @@ and p_vref_new (x: ValRef) st =
     | VRefLocal x    -> p_byte 0 st; p_local_item_ref "valref" st.ovals x st
     | VRefNonLocal x -> p_byte 1 st; p_nonlocal_val_ref_new x st
 
+and p_entity_modul_type (x: ModuleOrNamespaceType) st =
+    p_istype x.ModuleOrNamespaceKind st
+    (p_qlist p_Val) x.AllValsAndMembers st
+    (p_qlist (p_entity_bare)) x.AllEntities st
+
+and p_entity_bare (x: ModuleOrNamespace) st =
+    p_string x.entity_logical_name st
+    p_option p_string x.EntityCompiledName st
+    p_range  x.entity_range st
+    p_stamp x.entity_stamp st
+    p_option p_pubpath x.entity_pubpath st
+    p_access x.Accessibility st
+    p_access  x.TypeReprAccessibility st
+    p_kind x.TypeOrMeasureKind st
+    p_int64 x.entity_flags.Flags st
+    p_option p_cpath x.entity_cpath st
+    (p_maybe_lazy p_entity_modul_type) x.entity_modul_type st
+
+and p_ccu_target (x: CcuData) st =
+    p_option p_string x.FileName st
+    p_ILScopeRef x.ILScopeRef st
+    p_stamp x.Stamp st
+    p_option p_string x.QualifiedName st
+    p_string x.SourceCodeDirectory st
+    p_bool x.IsFSharp st
+#if !NO_TYPEPROVIDERS
+    p_bool x.IsProviderGenerated st
+#endif
+    p_bool x.UsesFSharp20PlusQuotations st
+    p_entity_bare x.Contents st
+
 and p_ccu_thunk (x: CcuThunk) st =
     let ({CcuThunk.target = target; CcuThunk.name = name }) = x
-    p_ccu_data target st
+    p_ccu_target target st
     p_string name st
 
 and p_module_or_namespace_ref (x: ModuleOrNamespaceRef) st =
@@ -3500,8 +3531,89 @@ and u_vref_new st : ValRef =
     | 1 -> u_nonlocal_val_ref_new st |> VRefNonLocal
     | _ -> ufailwith st "u_item_ref"
 
+and u_entity_module_type st : ModuleOrNamespaceType =
+    let kind = u_istype st
+    let vals = u_qlist u_Val st
+    let entities = u_qlist (u_entity_bare) st
+    ModuleOrNamespaceType(kind, vals, entities)
+
+and u_entity_bare st : Entity =
+    let logicalName = u_string st
+    let compiledName = u_option u_string st
+    let range = u_range st
+    let stamp = u_stamp st
+    let pubPath = u_option u_pubpath st
+    let accessibility = u_access st
+    let typeReprAccessibility = u_access st
+    let typeOrMeasureKind = u_kind st
+    let flags = u_int64 st
+    let cpath = u_option u_cpath st
+    let moduleType = u_lazy u_entity_module_type st
+
+    { entity_typars=LazyWithContext.NotLazy Typars.Empty
+      entity_stamp=stamp
+      entity_logical_name=logicalName
+      entity_range=range
+      entity_pubpath=pubPath
+      entity_attribs=Attribs.Empty
+      entity_tycon_repr=TyconRepresentation.TNoRepr
+      entity_tycon_tcaug=TyconAugmentation.Create()
+      entity_flags=EntityFlags flags
+      entity_cpath=cpath
+      entity_modul_type=MaybeLazy.Lazy moduleType
+      entity_il_repr_cache=newCache()
+      entity_opt_data=
+        match compiledName, typeOrMeasureKind, accessibility, typeReprAccessibility with
+        | None, TyparKind.Type, TAccess [], TAccess [] -> None
+        | _ ->
+            Some { Entity.NewEmptyEntityOptData() with
+                       entity_compiled_name = compiledName
+                       entity_kind = typeOrMeasureKind
+                       entity_xmldoc= XmlDoc.Empty
+                       entity_xmldocsig = System.String.Empty
+                       entity_tycon_abbrev = None
+                       entity_accessibility = accessibility
+                       entity_tycon_repr_accessibility = typeReprAccessibility
+                       entity_exn_info = ExceptionInfo.TExnNone }
+    }
+
+
+and u_ccu_target st : CcuData =
+    let fileName = u_option u_string st
+    let ilScopeRef = u_ILScopeRef st
+    let stamp = u_stamp st
+    let qualifiedName = u_option u_string st
+    let sourceCodeDirectory = u_string st
+    let isFSharp = u_bool st
+#if !NO_TYPEPROVIDERS
+    let isProviderGenerated = u_bool st
+#endif
+    let usesFSharp20PlusQuotations = u_bool st
+    let contents = u_entity_bare st
+
+    {
+        FileName = fileName
+        ILScopeRef = ilScopeRef
+        Stamp = stamp
+        QualifiedName = qualifiedName
+        SourceCodeDirectory = sourceCodeDirectory
+        IsFSharp = isFSharp
+#if !NO_TYPEPROVIDERS
+        IsProviderGenerated = isProviderGenerated
+        InvalidateEvent = Unchecked.defaultof<_>
+        ImportProvidedType = Unchecked.defaultof<_>
+#endif
+        UsesFSharp20PlusQuotations = usesFSharp20PlusQuotations
+        Contents = contents
+        TryGetILModuleDef = Unchecked.defaultof<_>
+        MemberSignatureEquality = Unchecked.defaultof<_>
+        TypeForwarders = CcuTypeForwarderTable.Empty
+        XmlDocumentationInfo = Unchecked.defaultof<_>
+    }
+
+
 and u_ccu_thunk st : CcuThunk =
-    let ccuData = u_ccu_data st
+    let ccuData = u_ccu_target st
     let name = u_string st
     {
         target = ccuData
