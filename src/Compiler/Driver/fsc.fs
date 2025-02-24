@@ -170,8 +170,7 @@ let TypeCheck
             let tcCacheState = cachingDriver.GetTcCacheState(inputs)
             match tcCacheState with
             | TcCacheState.Present files when files |> List.forall (fun (_file, canReuse) -> canReuse) ->
-                // incorrect - last state should be sent back here, not the initial state
-                // doesn't work yet
+                // TODO: last state should be sent back here, not the initial state
                 let _lastState, topAttrs, declaredImpls, tcEnvFromImpls = cachingDriver.ReuseTcResults inputs
                 tcInitialState, topAttrs, declaredImpls, tcEnvFromImpls
             | TcCacheState.Present files when files |> List.exists (fun (_file, canReuse) -> canReuse) ->
