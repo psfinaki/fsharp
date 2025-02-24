@@ -201,7 +201,7 @@ let prim_p_int32B i st =
 
 /// Compress integers according to the same scheme used by CLR metadata 
 /// This halves the size of pickled data 
-let p_int32 n st = 
+let inline p_int32 n st = 
     if n >= 0 && n <= 0x7F then 
         p_byte (b0 n) st
     else if n >= 0x80 && n <= 0x3FFF then
@@ -250,7 +250,7 @@ let p_prim_string (s: string) st =
     p_int32 len st
     st.os.EmitBytes bytes
 
-let p_int c st = p_int32 c st
+let inline p_int c st = p_int32 c st
 let p_intB c st = p_int32B c st
 let p_int8 (i: sbyte) st = p_int32 (int32 i) st
 let p_uint8 (i: byte) st = p_byte (int i) st
@@ -320,7 +320,7 @@ let prim_u_int32B st =
     let b3 = u_byteB st
     b0 ||| (b1 <<< 8) ||| (b2 <<< 16) ||| (b3 <<< 24)
 
-let u_int32 st =
+let inline u_int32 st =
     let b0 = u_byte st
     if b0 <= 0x7F then b0
     else if b0 <= 0xbf then
@@ -355,7 +355,7 @@ let u_prim_string st =
     let len =  (u_int32 st)
     st.is.ReadUtf8String len
 
-let u_int st = u_int32 st
+let inline u_int st = u_int32 st
 let u_intB st = u_int32B st
 let u_int8 st = sbyte (u_int32 st)
 let u_uint8 st = byte (u_byte st)
@@ -496,19 +496,19 @@ let lookup_uniq st tbl n =
 // between internal representations relatively easily
 //-------------------------------------------------------------------------
 
-let p_array_core f (x: 'T[]) st =
+let inline p_array_core f (x: 'T[]) st =
     for i = 0 to x.Length-1 do
         f x[i] st
 
-let p_array f (x: 'T[]) st =
+let inline p_array f (x: 'T[]) st =
     p_int x.Length st
     p_array_core f x st
 
-let p_list_core f (xs: 'T list) st =
+let inline p_list_core f (xs: 'T list) st =
     for x in xs do
         f x st
 
-let p_list f x st =
+let inline p_list f x st =
     p_int (List.length x) st
     p_list_core f x st
 
@@ -591,20 +591,20 @@ let p_hole2 () =
     let mutable h = None
     (fun f -> h <- Some f), (fun arg x st -> match h with Some f -> f arg x st | None -> pfailwith st "p_hole2: unfilled hole")
 
-let u_array_core f n st =
+let inline u_array_core f n st =
     let res = Array.zeroCreate n
     for i = 0 to n-1 do
         res[i] <- f st
     res
 
-let u_array f st =
+let inline u_array f st =
     let n = u_int st
     u_array_core f n st
 
-let u_list_core f n st =
+let inline u_list_core f n st =
     List.init n (fun _ -> f st)
 
-let u_list f st =
+let inline u_list f st =
     let n = u_int st
     u_list_core f n st
 
