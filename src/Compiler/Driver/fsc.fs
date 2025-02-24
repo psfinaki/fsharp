@@ -179,26 +179,36 @@ let TypeCheck
                     |> List.partition (fun (_file, canReuse) -> canReuse)
                     |> fun (a, b) -> a |> List.map fst, b |> List.map fst
 
-                let lastState, topAttrs, declaredImpls1, _  = cachingDriver.ReuseTcResults canReuse
+                let tcCurrentState, _, reusedImpls, _ = cachingDriver.ReuseTcResults canReuse
 
-                let tcState, _, declaredImpls2, tcEnvAtEndOfLastFile, _tcStates = CheckClosedInputSet(
+                let lastState, topAttrs, newImpls, tcEnvAtEndOfLastFile, tcStates =
+                    CheckClosedInputSet(
                         ctok,
                         diagnosticsLogger.CheckForErrors,
                         tcConfig,
                         tcImports,
                         tcGlobals,
                         None,
-                        lastState,
+                        tcCurrentState,
                         eagerFormat,
                         cannotReuse
                     )
 
-                let declaredImpls = declaredImpls1 @ declaredImpls2
+                let _tcResults =
+                    List.zip3 cannotReuse newImpls tcStates
+                    |> List.map (fun (input, impl, state) ->
+                        {
+                            Input = input
+                            DeclaredImpl = impl
+                            State = state
+                        })
 
-                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+                // TODO: cache new stuff
+                // cachingDriver.CacheTcResults(tcResults, topAttrs, tcEnvAtEndOfLastFile, tcGlobals, outfile)
 
+                lastState, topAttrs, reusedImpls @ newImpls, tcEnvAtEndOfLastFile
             | _ ->
-                let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, tcStates =
+                let lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, tcStates =
                     CheckClosedInputSet(
                         ctok,
                         diagnosticsLogger.CheckForErrors,
@@ -221,9 +231,9 @@ let TypeCheck
                         })
 
                 cachingDriver.CacheTcResults(tcResults, topAttrs, tcEnvAtEndOfLastFile, tcGlobals, outfile)
-                tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+                lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
         else
-            let tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, _tcStates = CheckClosedInputSet(
+            let lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile, _tcStates = CheckClosedInputSet(
                 ctok,
                 diagnosticsLogger.CheckForErrors,
                 tcConfig,
@@ -235,7 +245,7 @@ let TypeCheck
                 inputs
             )
 
-            tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+            lastState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
     with exn ->
         errorRecovery exn rangeStartup
