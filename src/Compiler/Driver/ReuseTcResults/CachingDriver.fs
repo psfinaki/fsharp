@@ -249,6 +249,7 @@ type CachingDriver(tcConfig: TcConfig) =
         | None ->
             use _ = Activity.start Activity.Events.reuseTcResultsCacheAbsent []
             TcCacheState.Empty
+
     member private _.ReuseSharedData() =
         let bytes = File.ReadAllBytes(tcSharedDataFilePath)
         let memory = ByteMemory.FromArray(bytes)
@@ -298,14 +299,15 @@ type CachingDriver(tcConfig: TcConfig) =
 
         data.RawData
 
-    member this.ReuseTcResults (inputs: ParsedInput list) =
+    member this.ReuseTcResults inputs =
         let sharedData = this.ReuseSharedData()
-        let tcStates = inputs |> List.map (fun input -> this.ReuseTcState (Path.GetFileNameWithoutExtension(input.FileName))) |> List.toArray
         let declaredImpls = inputs |> List.map this.ReuseDeclaredImpl
 
-        tcStates,
-        sharedData.TopAttribs,
-        declaredImpls
+        let lastInput = inputs |> List.last
+        let fileName = Path.GetFileNameWithoutExtension(lastInput.FileName)
+        let lastState = this.ReuseTcState fileName
+
+        lastState, sharedData.TopAttribs, declaredImpls, lastState.TcEnvFromImpls
 
     member private _.CacheSharedData(tcState: TcState, sharedData, tcGlobals, outfile) =
         let encodedData =

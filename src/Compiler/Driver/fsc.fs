@@ -170,15 +170,17 @@ let TypeCheck
             let tcCacheState = cachingDriver.GetTcCacheState(inputs)
             match tcCacheState with
             | TcCacheState.Present files when files |> List.forall (fun (_file, canReuse) -> canReuse) ->
-                let _, topAttrs, declaredImpls = cachingDriver.ReuseTcResults inputs
-                tcInitialState, topAttrs, declaredImpls, tcInitialState.TcEnvFromImpls
+                // incorrect - last state should be sent back here, not the initial state
+                // doesn't work yet
+                let _lastState, topAttrs, declaredImpls, tcEnvFromImpls = cachingDriver.ReuseTcResults inputs
+                tcInitialState, topAttrs, declaredImpls, tcEnvFromImpls
             | TcCacheState.Present files when files |> List.exists (fun (_file, canReuse) -> canReuse) ->
                 let canReuse, cannotReuse =
                     files
                     |> List.partition (fun (_file, canReuse) -> canReuse)
                     |> fun (a, b) -> a |> List.map fst, b |> List.map fst
 
-                let states, topAttrs, declaredImpls1 = cachingDriver.ReuseTcResults canReuse
+                let lastState, topAttrs, declaredImpls1, _  = cachingDriver.ReuseTcResults canReuse
 
                 let tcState, _, declaredImpls2, tcEnvAtEndOfLastFile, _tcStates = CheckClosedInputSet(
                         ctok,
@@ -187,7 +189,7 @@ let TypeCheck
                         tcImports,
                         tcGlobals,
                         None,
-                        states |> Array.last,
+                        lastState,
                         eagerFormat,
                         cannotReuse
                     )
