@@ -2580,11 +2580,21 @@ and p_vref_new (x: ValRef) st =
     | VRefLocal x    -> p_byte 0 st; p_local_item_ref "valref" st.ovals x st
     | VRefNonLocal x -> p_byte 1 st; p_nonlocal_val_ref_new x st
 
+and p_ccu_thunk (x: CcuThunk) st =
+    let ({CcuThunk.target = target; CcuThunk.name = name }) = x
+    p_ccu_data target st
+    p_string name st
+
+and p_module_or_namespace_ref (x: ModuleOrNamespaceRef) st =
+    let (NonLocalEntityRef (ccuThunk, mp)) = x.nlr
+    p_ccu_thunk ccuThunk st
+    p_array p_string mp st
+
 and p_open_decl (x: OpenDeclaration) st =
     p_tup6
         p_syn_open_decl_target
         (p_option p_range)
-        (p_list p_tcref_new)
+        (p_list p_module_or_namespace_ref)
         p_tys
         p_range
         p_bool
@@ -3490,12 +3500,25 @@ and u_vref_new st : ValRef =
     | 1 -> u_nonlocal_val_ref_new st |> VRefNonLocal
     | _ -> ufailwith st "u_item_ref"
 
+and u_ccu_thunk st : CcuThunk =
+    let ccuData = u_ccu_data st
+    let name = u_string st
+    {
+        target = ccuData
+        name = name
+    }
+
+and u_module_or_namespace_ref st : ModuleOrNamespaceRef = 
+    let ccuThunk = u_ccu_thunk st
+    let mp = u_array u_string st
+    mkNonLocalEntityRef ccuThunk mp |> ERefNonLocal
+
 and u_open_decl st : OpenDeclaration =
     let target, range, modules, types, appliedScope, isOwnNamespace =
         u_tup6
             u_syn_open_decl_target
             (u_option u_range)
-            (u_list u_tcref_new)
+            (u_list u_module_or_namespace_ref)
             u_tys
             u_range
             u_bool
