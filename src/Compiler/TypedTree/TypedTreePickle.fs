@@ -2382,8 +2382,10 @@ and p_attrib_arg (AttribNamedArg(a, b, c, d)) st =
     p_tup4 p_string p_ty p_bool p_attrib_expr (a, b, c, d) st
 
 and p_member_info (x: ValMemberInfo) st =
-    p_tup4 (p_tcref "member_info")  p_MemberFlags (p_list p_slotsig) p_bool
-        (x.ApparentEnclosingEntity, x.MemberFlags, x.ImplementedSlotSigs, x.IsImplemented) st
+    p_tcref "member_info" x.ApparentEnclosingEntity st
+    p_MemberFlags x.MemberFlags st
+    (p_list p_slotsig) x.ImplementedSlotSigs st
+    p_bool x.IsImplemented st
 
 and p_tycon_objmodel_kind x st =
     match x with
@@ -3305,11 +3307,15 @@ and u_attrib_arg st  =
     AttribNamedArg(a, b, c, d)
 
 and u_member_info st : ValMemberInfo =
-    let x2, x3, x4, x5 = u_tup4 u_tcref u_MemberFlags (u_list u_slotsig) u_bool st
-    { ApparentEnclosingEntity=x2
-      MemberFlags=x3
-      ImplementedSlotSigs=x4
-      IsImplemented=x5  }
+    let apparentEnclosingEntity = u_tcref st
+    let memberFlags = u_MemberFlags st
+    let slotSigs = u_list u_slotsig st
+    let isImplemented = u_bool st
+
+    { ApparentEnclosingEntity=apparentEnclosingEntity
+      MemberFlags=memberFlags
+      ImplementedSlotSigs=slotSigs
+      IsImplemented=isImplemented  }
 
 and u_tycon_objmodel_kind st =
     let tag = u_byte st
