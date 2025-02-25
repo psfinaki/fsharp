@@ -3303,91 +3303,85 @@ and u_vrefFlags st =
     | _ -> ufailwith st "u_vrefFlags"
 
 and u_ValData st =
-    let x1, x1z, x1a, x2, x4, x8, x9, x10, x12, x13, x13b, x14, x15 =
-      u_tup13
-        u_string
-        (u_option u_string)
-        u_ranges
-        u_ty
-        u_int64
-        (u_option u_member_info)
-        u_attribs
-        (u_option u_ValReprInfo)
-        u_string
-        u_access
-        u_parentref
-        (u_option u_const)
-        (u_used_space1 u_xmldoc)
-        st
+    let logicalName = u_string st
+    let compiledName = u_option u_string st
+    let ranges = u_ranges st
+    let ty = u_ty st
+    let flags = u_int64 st
+    let memberInfo = u_option u_member_info st
+    let attribs = u_attribs st
+    let valReprInfo = u_option u_ValReprInfo st
+    let xmlDocSig = u_string st
+    let access = u_access st
+    let declaringEntity = u_parentref st
+    let valConst = u_option u_const st
+    let xmlDoc = u_used_space1 u_xmldoc st
 
-    { val_logical_name = x1
-      val_range        = (match x1a with None -> range0 | Some(a, _) -> a)
-      val_type         = x2
+    { val_logical_name = logicalName
+      val_range        = (match ranges with None -> range0 | Some(a, _) -> a)
+      val_type         = ty
       val_stamp        = newStamp()
-      val_flags        = ValFlags x4
+      val_flags        = ValFlags flags
       val_opt_data     =
-          match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
+          match compiledName, ranges, valReprInfo, valConst, access, xmlDoc, memberInfo, declaringEntity, xmlDocSig, attribs with
           | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None
           | _ ->
-              Some { val_compiled_name    = x1z
-                     val_other_range      = (match x1a with None -> None | Some(_, b) -> Some(b, true))
+              Some { val_compiled_name    = compiledName
+                     val_other_range      = (match ranges with None -> None | Some(_, b) -> Some(b, true))
                      val_defn             = None
-                     val_repr_info        = x10
+                     val_repr_info        = valReprInfo
                      val_repr_info_for_display = None
                      arg_repr_info_for_display = None
-                     val_const            = x14
-                     val_access           = x13
-                     val_xmldoc           = defaultArg x15 XmlDoc.Empty
+                     val_const            = valConst
+                     val_access           = access
+                     val_xmldoc           = defaultArg xmlDoc XmlDoc.Empty
                      val_other_xmldoc     = None
-                     val_member_info      = x8
-                     val_declaring_entity = x13b
-                     val_xmldocsig        = x12
-                     val_attribs          = x9 }
+                     val_member_info      = memberInfo
+                     val_declaring_entity = declaringEntity
+                     val_xmldocsig        = xmlDocSig
+                     val_attribs          = attribs }
     }
 
 
 and u_ValData_new st =
-    let x1, x1z, x1a, x2, stamp, x4, x8, x9, x10, x12, x13, x13b, x14, x15 =
-      u_tup14
-        u_string
-        (u_option u_string)
-        u_ranges
-        u_ty_new
-        u_stamp
-        u_int64
-        (u_option u_member_info)
-        u_attribs
-        (u_option u_ValReprInfo)
-        u_string
-        u_access
-        u_parentref
-        (u_option u_const)
-        (u_used_space1 u_xmldoc)
-        st
+    let logicalName = u_string st
+    let compiledName = u_option u_string st
+    let ranges = u_ranges st
+    let ty = u_ty_new st
+    let stamp = u_stamp st
+    let flags = u_int64 st
+    let memberInfo = u_option u_member_info st
+    let attribs = u_attribs st
+    let valReprInfo = u_option u_ValReprInfo st
+    let xmlDocSig = u_string st
+    let access = u_access st
+    let declaringEntity = u_parentref st
+    let valConst = u_option u_const st
+    let xmlDoc = u_used_space1 u_xmldoc st
 
-    { val_logical_name = x1
-      val_range        = (match x1a with None -> range0 | Some(a, _) -> a)
-      val_type         = x2
+    { val_logical_name = logicalName
+      val_range        = (match ranges with None -> range0 | Some(a, _) -> a)
+      val_type         = ty
       val_stamp        = stamp
-      val_flags        = ValFlags x4
+      val_flags        = ValFlags flags
       val_opt_data     =
-          match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
+          match compiledName, ranges, valReprInfo, valConst, access, xmlDoc, memberInfo, declaringEntity, xmlDocSig, attribs with
           | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None
           | _ ->
-              Some { val_compiled_name    = x1z
-                     val_other_range      = (match x1a with None -> None | Some(_, b) -> Some(b, true))
+              Some { val_compiled_name    = compiledName
+                     val_other_range      = (match ranges with None -> None | Some(_, b) -> Some(b, true))
                      val_defn             = None
-                     val_repr_info        = x10
+                     val_repr_info        = valReprInfo
                      val_repr_info_for_display = None
                      arg_repr_info_for_display = None
-                     val_const            = x14
-                     val_access           = x13
-                     val_xmldoc           = defaultArg x15 XmlDoc.Empty
+                     val_const            = valConst
+                     val_access           = access
+                     val_xmldoc           = defaultArg xmlDoc XmlDoc.Empty
                      val_other_xmldoc     = None
-                     val_member_info      = x8
-                     val_declaring_entity = x13b
-                     val_xmldocsig        = x12
-                     val_attribs          = x9 }
+                     val_member_info      = memberInfo
+                     val_declaring_entity = declaringEntity
+                     val_xmldocsig        = xmlDocSig
+                     val_attribs          = attribs }
     }
 
 and u_Val st = u_osgn_decl st.ivals u_ValData st
@@ -3790,7 +3784,7 @@ and u_expr_vref st : ValRef =
         }
 
     let vref = VRefNonLocal x
-    let tau = vref.TauType
+    let stamp = vref.Stamp
     vref
 
 and u_expr_new st : Expr =
