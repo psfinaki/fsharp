@@ -3844,15 +3844,17 @@ and u_expr_nlvref st : NonLocalValOrMemberRef =
     let totalArgCount = u_int st
     let ty = u_option u_ty st
 
-    { 
-        EnclosingEntity = tcref
-        ItemKey = ValLinkageFullKey(
+    let key = ValLinkageFullKey(
             { 
                 MemberParentMangledName=memberParentMangledName
                 MemberIsOverride=memberIsOverride
                 LogicalName=logicalName
                 TotalArgCount=totalArgCount 
             }, ty) 
+
+    { 
+        EnclosingEntity = tcref
+        ItemKey = key
     }
 
 
@@ -3860,7 +3862,11 @@ and u_expr_vref st =
     let tag = u_byte st
     match tag with
     | 0 -> u_local_item_ref st.ivals st |> VRefLocal
-    | 1 -> u_expr_nlvref st |> VRefNonLocal
+    | 1 -> 
+        let vref1 = u_expr_nlvref st 
+        let vref2 = vref1 |> VRefNonLocal
+        let _tau = vref2.TauType
+        vref2
     | _ -> ufailwith st "u_item_ref"
 
 and u_expr_new st : Expr =
