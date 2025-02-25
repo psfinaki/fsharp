@@ -141,7 +141,7 @@ type FSharpXunitFramework(sink: IMessageSink) =
 
     interface IDisposable with
         member _.Dispose() =
-            cleanUpTemporaryDirectoryOfThisTestRun ()
+            //cleanUpTemporaryDirectoryOfThisTestRun ()
             base.Dispose()        
 
     override this.CreateDiscoverer (assemblyInfo) =

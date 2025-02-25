@@ -2431,6 +2431,29 @@ and p_ValData x st =
     else
         p_space 1 () st
 
+and p_ValData2 x st =
+    p_string x.val_logical_name st
+    p_option p_string x.ValCompiledName st
+    // only keep range information on published values, not on optimization data
+    p_ranges (x.ValReprInfo |> Option.map (fun _ -> x.val_range, x.DefinitionRange)) st
+    p_stamp x.val_stamp st
+
+    let isStructThisArgPos = x.IsMember && checkForInRefStructThisArg st x.Type
+    p_ty2 isStructThisArgPos x.val_type st
+
+    p_int64 x.val_flags.PickledBits st
+    p_option p_member_info x.MemberInfo st
+    p_attribs x.Attribs st
+    p_option p_ValReprInfo x.ValReprInfo st
+    p_string x.XmlDocSig st
+    p_access x.Accessibility st
+    p_parentref x.TryDeclaringEntity st
+    p_option p_const x.LiteralValue st
+    if st.oInMem then
+        p_used_space1 (p_xmldoc x.XmlDoc) st
+    else
+        p_space 1 () st
+
 and p_ValData_new x st =
     p_string x.val_logical_name st
     p_option p_string x.ValCompiledName st
@@ -2455,6 +2478,9 @@ and p_ValData_new x st =
 
 and p_Val x st =
     p_osgn_decl st.ovals p_ValData x st
+
+and p_Val2 x st =
+    p_osgn_decl st.ovals p_ValData2 x st
 
 and p_Val_new x st =
     p_osgn_decl st.ovals p_ValData_new x st
@@ -2582,7 +2608,7 @@ and p_vref_new (x: ValRef) st =
 
 and p_entity_modul_type (x: ModuleOrNamespaceType) st =
     p_istype x.ModuleOrNamespaceKind st
-    (p_qlist p_Val) x.AllValsAndMembers st
+    (p_qlist p_Val2) x.AllValsAndMembers st
     (p_qlist (p_entity_bare)) x.AllEntities st
 
 and p_entity_bare (x: ModuleOrNamespace) st =
@@ -3343,6 +3369,47 @@ and u_ValData st =
     }
 
 
+and u_ValData2 st =
+    let logicalName = u_string st
+    let compiledName = u_option u_string st
+    let ranges = u_ranges st
+    let stamp = u_stamp st
+    let ty = u_ty st
+    let flags = u_int64 st
+    let memberInfo = u_option u_member_info st
+    let attribs = u_attribs st
+    let valReprInfo = u_option u_ValReprInfo st
+    let xmlDocSig = u_string st
+    let access = u_access st
+    let declaringEntity = u_parentref st
+    let valConst = u_option u_const st
+    let xmlDoc = u_used_space1 u_xmldoc st
+
+    { val_logical_name = logicalName
+      val_range        = (match ranges with None -> range0 | Some(a, _) -> a)
+      val_type         = ty
+      val_stamp        = stamp
+      val_flags        = ValFlags flags
+      val_opt_data     =
+          match compiledName, ranges, valReprInfo, valConst, access, xmlDoc, memberInfo, declaringEntity, xmlDocSig, attribs with
+          | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None
+          | _ ->
+              Some { val_compiled_name    = compiledName
+                     val_other_range      = (match ranges with None -> None | Some(_, b) -> Some(b, true))
+                     val_defn             = None
+                     val_repr_info        = valReprInfo
+                     val_repr_info_for_display = None
+                     arg_repr_info_for_display = None
+                     val_const            = valConst
+                     val_access           = access
+                     val_xmldoc           = defaultArg xmlDoc XmlDoc.Empty
+                     val_other_xmldoc     = None
+                     val_member_info      = memberInfo
+                     val_declaring_entity = declaringEntity
+                     val_xmldocsig        = xmlDocSig
+                     val_attribs          = attribs }
+    }
+
 and u_ValData_new st =
     let logicalName = u_string st
     let compiledName = u_option u_string st
@@ -3385,6 +3452,8 @@ and u_ValData_new st =
     }
 
 and u_Val st = u_osgn_decl st.ivals u_ValData st
+
+and u_Val2 st = u_osgn_decl st.ivals u_ValData2 st
 
 and u_Val_new st = u_osgn_decl st.ivals u_ValData_new st
 
@@ -3540,7 +3609,7 @@ and u_vref_new st : ValRef =
 
 and u_entity_module_type st : ModuleOrNamespaceType =
     let kind = u_istype st
-    let vals = u_qlist u_Val st
+    let vals = u_qlist u_Val2 st
     let entities = u_qlist (u_entity_bare) st
     ModuleOrNamespaceType(kind, vals, entities)
 
