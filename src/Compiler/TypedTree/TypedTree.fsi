@@ -2299,7 +2299,7 @@ type ValMemberInfo =
     {
 
         /// The parent type. For an extension member this is the type being extended
-        ApparentEnclosingEntity: TyconRef
+        mutable ApparentEnclosingEntity: TyconRef
 
         /// Updated with the full implemented slotsig after interface implementation relation is checked
         mutable ImplementedSlotSigs: SlotSig list
