@@ -2616,7 +2616,7 @@ and p_ccu_thunk (x: CcuThunk) st =
     p_ccu_target target st
     p_string name st
 
-and p_module_or_namespace_ref (x: ModuleOrNamespaceRef) st =
+and p_bare_nlref (x: ModuleOrNamespaceRef) st =
     let (NonLocalEntityRef (ccuThunk, mp)) = x.nlr
     p_ccu_thunk ccuThunk st
     p_array p_string mp st
@@ -2625,7 +2625,7 @@ and p_open_decl (x: OpenDeclaration) st =
     p_tup6
         p_syn_open_decl_target
         (p_option p_range)
-        (p_list p_module_or_namespace_ref)
+        (p_list p_bare_nlref)
         p_tys
         p_range
         p_bool
@@ -2725,19 +2725,32 @@ and p_tys_new l =
     let _count = l.Length
     p_list p_ty_new l
 
+and p_expr_vref (x: ValRef) st =
+    let nlv = x.nlr
+
+    let a = nlv.EnclosingEntity
+    let key = nlv.ItemKey
+    let pkey = key.PartialKey
+    p_bare_nlref a st
+    p_option p_string pkey.MemberParentMangledName st
+    p_bool pkey.MemberIsOverride st
+    p_string pkey.LogicalName st
+    p_int pkey.TotalArgCount st
+    let isStructThisArgPos =
+        match key.TypeForLinkage with
+        | None -> false
+        | Some ty -> checkForInRefStructThisArg st ty
+    p_option (p_ty2 isStructThisArgPos) key.TypeForLinkage st
+
 and p_expr_new (expr: Expr) st =
     match expr with
     | Expr.Link e -> p_byte 0 st; p_expr_new e.Value st
     | Expr.Const (x, m, ty)              -> p_byte 1 st; p_tup3 p_const p_dummy_range p_ty_new (x, m, ty) st
-    | Expr.Val (a, b, m)                 -> 
+    | Expr.Val (vref, valUseFlag, range)                 -> 
         p_byte 2 st
-        p_tup4 
-            p_vref_new 
-            p_vrefFlags 
-            p_dummy_range 
-            (p_non_null_slot p_Val_new)
-            (a, b, m, a.binding) 
-            st
+        p_expr_vref vref st
+        p_vrefFlags valUseFlag st
+        p_dummy_range range st
     | Expr.Op (a, b, c, d)                 -> p_byte 3 st; p_tup4 p_op_new  p_tys_new p_exprs_new p_dummy_range (a, b, c, d) st
     | Expr.Sequential (a, b, c, d)      -> p_byte 4 st; p_tup4 p_expr_new p_expr_new p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
     | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 5 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr_new p_dummy_range p_ty_new (a1, b0, b1, c, d, e) st
@@ -3620,7 +3633,7 @@ and u_ccu_thunk st : CcuThunk =
         name = name
     }
 
-and u_module_or_namespace_ref st : ModuleOrNamespaceRef = 
+and u_bare_nleref st : ModuleOrNamespaceRef = 
     let ccuThunk = u_ccu_thunk st
     let mp = u_array u_string st
     mkNonLocalEntityRef ccuThunk mp |> ERefNonLocal
@@ -3630,7 +3643,7 @@ and u_open_decl st : OpenDeclaration =
         u_tup6
             u_syn_open_decl_target
             (u_option u_range)
-            (u_list u_module_or_namespace_ref)
+            (u_list u_bare_nleref)
             u_tys
             u_range
             u_bool
@@ -3756,6 +3769,30 @@ and u_ty_new st : TType =
 
 and u_tys_new = u_list u_ty_new
 
+and u_expr_vref st : ValRef =
+    let tcref = u_bare_nleref st
+    let memberParentMangledName = u_option u_string st
+    let memberIsOverride = u_bool st
+    let logicalName = u_string st
+    let totalArgCount = u_int st
+    let ty = u_option u_ty st
+
+    let x: NonLocalValOrMemberRef =
+        { 
+            EnclosingEntity = tcref
+            ItemKey = ValLinkageFullKey(
+                { 
+                    MemberParentMangledName=memberParentMangledName
+                    MemberIsOverride=memberIsOverride
+                    LogicalName=logicalName
+                    TotalArgCount=totalArgCount 
+                }, ty) 
+        }
+
+    let vref = VRefNonLocal x
+    let tau = vref.TauType
+    vref
+
 and u_expr_new st : Expr =
     let tag = u_byte st
     match tag with
@@ -3766,12 +3803,12 @@ and u_expr_new st : Expr =
            let b = u_dummy_range st
            let c = u_ty_new st
            Expr.Const (a, b, c)
-    | 2 -> let valRef = u_vref_new st
+    | 2 -> let valRef = u_expr_vref st
            let flags = u_vrefFlags st
            let range = u_dummy_range st
-           let binding = (u_non_null_slot u_Val_new) st
+           //let binding = (u_non_null_slot u_Val_new) st
 
-           valRef.binding <- binding
+           //valRef.binding <- binding
            let expr = Expr.Val (valRef, flags, range)
            expr
     | 3 -> let a = u_op_new st
